@@ -145,6 +145,16 @@ API_URL=http://localhost:3000
 | `/novo-schema <tabela>` | Adiciona tabela ao Drizzle com tipos inferidos |
 | `/migrar-db` | Gera migration, revisa e aplica na VPS |
 | `/atualizar-tasks` | Atualiza `base_knowledge/tasks.html` com novas implementações |
+| `/fazer-commit` | Delega o commit ao agente commit-writer (ver regra abaixo) |
+
+## Regra de Commits — OBRIGATÓRIO
+
+**Nunca execute `git commit` diretamente.** Sempre acione o agente `commit-writer` para gerar e executar o commit. Ele analisa o diff real, classifica o tipo correto (`[FEAT]`, `[FIX]`, `[CHORE]`, etc.) e verifica coesão das mudanças.
+
+Fluxo correto ao final de qualquer implementação:
+1. Implementação concluída
+2. `/atualizar-tasks` (se for implementação relevante)
+3. Acionar `commit-writer` via Agent tool para commitar
 
 ## base_knowledge
 
