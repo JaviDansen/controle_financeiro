@@ -33,13 +33,12 @@ async function checkDatabase(): Promise<void> {
     const message = err instanceof Error ? err.message : String(err)
     console.error('✘ Falha ao conectar no banco de dados:', message)
     console.error('  Host:', getConnectionLabel())
-    process.exit(1)
   } finally {
     await pool.end()
   }
 }
 
-app.listen(PORT, async () => {
+app.listen(PORT, () => {
   console.log(`API rodando na porta ${PORT}`)
-  await checkDatabase()
+  checkDatabase()
 })
