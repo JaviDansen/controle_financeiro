@@ -156,6 +156,93 @@ Fluxo correto ao final de qualquer implementação:
 2. `/atualizar-tasks` (se for implementação relevante)
 3. Acionar `commit-writer` via Agent tool para commitar
 
+## Skills Globais — Quando Usar no FinApp
+
+Quatro skills globais disponíveis que se aplicam ao desenvolvimento das telas mobile.
+
+---
+
+### `/impeccable` — Auditoria e melhoria de interfaces
+
+**O que faz:** Skill completa de design de UI/UX. Cobre hierarquia visual, acessibilidade, tipografia, espaçamento, cores, micro-interações, estados de erro, empty states e responsividade.
+
+**Quando usar no FinApp:**
+- Antes de finalizar qualquer tela mobile — rodar `/impeccable critique <tela>` para auditoria de UX
+- Quando uma tela parecer "genérica" ou sem personalidade — `/impeccable bolder`
+- Para revisar copy (labels, mensagens de erro, placeholders) — `/impeccable clarify`
+- Para adicionar animações com propósito — `/impeccable animate`
+
+**Pré-requisito:** A skill precisa de um `PRODUCT.md` para contextualizar o produto. Antes do primeiro uso, rodar `/impeccable teach` para criar esse arquivo com as informações do FinApp (público-alvo: micro-empreendedores, tom: direto e confiável, anti-referências: apps bancários formais).
+
+**Subcomandos mais úteis para o projeto:**
+
+| Subcomando | Quando usar |
+|---|---|
+| `/impeccable critique <tela>` | Auditoria de UX antes de finalizar |
+| `/impeccable polish <tela>` | Último ajuste de qualidade antes de entregar |
+| `/impeccable animate <tela>` | Adicionar animações com propósito |
+| `/impeccable harden <tela>` | Garantir estados de erro, loading e edge cases |
+| `/impeccable clarify <tela>` | Revisar labels, copy e mensagens |
+
+---
+
+### `/emil-design-eng` — Decisões de animação e polish
+
+**O que faz:** Encoda a filosofia de design de Emil Kowalski. Define quando animar (e quando não animar), quais easing curves usar, durações corretas, spring physics, e os detalhes invisíveis que fazem uma interface parecer premium.
+
+**Quando usar no FinApp:**
+- Ao implementar transições entre telas (login → home, telas dos tabs)
+- Em qualquer elemento interativo: botões de submit, swipe em transações, pull-to-refresh
+- Quando uma animação parecer estranha ou lenta — a skill tem framework de diagnóstico
+- Para decidir se um elemento DEVE animar (a resposta frequentemente é: não)
+
+**Regras críticas desta skill que se aplicam ao React Native:**
+- Botões precisam de `scale(0.97)` no `:active` — feedback tátil imediato
+- Nunca animar a partir de `scale(0)` — sempre de `scale(0.95)` com opacidade
+- Animações de UI devem ficar abaixo de 300ms
+- Ações frequentes (ex: abrir teclado, navegar entre tabs) — **sem animação**
+- `ease-out` para elementos entrando, `ease-in-out` para movimento na tela
+
+---
+
+### `/taste-skill` — Arquitetura de componentes e padrões visuais
+
+**O que faz:** Senior UI/UX Engineer com regras métricas estritas. Combate padrões genéricos de AI (Inter font, gradients em texto, glows roxos, grids de 3 cards iguais). Configura baselines de design: `DESIGN_VARIANCE: 8`, `MOTION_INTENSITY: 6`, `VISUAL_DENSITY: 4`.
+
+**Quando usar no FinApp:**
+- Ao criar componentes reutilizáveis (`components/`) — para não cair em padrões genéricos
+- No Dashboard/Home — que tende a virar "hero-metric template" (número grande + label)
+- Para componentes de lista de transações — evitar o grid de 3 cards idênticos
+- Em qualquer tela que pareça "feita por IA" — a skill tem checklist específico
+
+**Regras desta skill que substituem defaults:**
+- Nunca usar `h-screen` — sempre `min-h-[100dvh]` para evitar bug no iOS Safari
+- Nunca usar `Inter` — preferir `Geist`, `Satoshi` ou `Cabinet Grotesk`
+- Cards só quando elevação comunica hierarquia — agrupar com `border-t` ou espaçamento
+- Empty states são obrigatórios — toda lista precisa de um estado vazio bem composto
+- Loading: skeleton loaders no layout real, nunca spinner genérico circular
+
+---
+
+### `/graphify` — Knowledge graph da arquitetura
+
+**O que faz:** Transforma qualquer conjunto de arquivos em um knowledge graph navegável com detecção de comunidades, conexões surpresa e relatório de auditoria. Gera HTML interativo.
+
+**Quando usar no FinApp:**
+- Quando o projeto crescer e for difícil rastrear dependências entre módulos
+- Para mapear visualmente como `packages/db`, `apps/api` e `apps/mobile` se conectam
+- Antes de grandes refatorações — para entender o impacto de mudanças
+- Para onboarding de novos colaboradores — gera mapa visual da arquitetura
+
+**Como usar:**
+```bash
+/graphify apps/        # mapa de toda a camada de aplicação
+/graphify packages/db/ # dependências do schema compartilhado
+/graphify .            # projeto completo
+```
+
+---
+
 ## base_knowledge
 
 Pasta local (ignorada pelo Git) com artefatos auxiliares do projeto:
