@@ -136,6 +136,24 @@ API_URL=http://localhost:3000
 | Vercel | `apps/mobile` (web, se houver) | Push no GitHub → deploy automático |
 | VPS | PostgreSQL | Manual via SSH |
 
+## Skills Disponíveis
+
+| Comando | O que faz |
+|---|---|
+| `/nova-rota <módulo>` | Cria route + controller com JWT, Zod e Drizzle |
+| `/nova-tela <nome> <grupo>` | Cria tela Expo + hook React Query + service |
+| `/novo-schema <tabela>` | Adiciona tabela ao Drizzle com tipos inferidos |
+| `/migrar-db` | Gera migration, revisa e aplica na VPS |
+| `/atualizar-tasks` | Atualiza `base_knowledge/tasks.html` com novas implementações |
+
+## base_knowledge
+
+Pasta local (ignorada pelo Git) com artefatos auxiliares do projeto:
+
+- `base_knowledge/tasks.html` — histórico visual de todas as implementações concluídas
+
+Após qualquer implementação relevante, rodar `/atualizar-tasks` para manter o histórico atualizado.
+
 ## O Que NÃO Fazer
 
 - Não usar Neon — banco é PostgreSQL na VPS própria
