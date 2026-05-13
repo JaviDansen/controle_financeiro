@@ -86,36 +86,40 @@ npm install
 
 ### Variáveis de ambiente
 
-Crie um arquivo `.env` na raiz com:
+Crie um arquivo `.env` na raiz com base no `.env.example`:
 
 ```env
-DATABASE_URL=postgresql://...   # Connection string da VPS
-JWT_SECRET=sua_chave_secreta
+DATABASE_URL=postgresql://...        # Connection string da VPS
+JWT_SECRET=sua_chave_secreta_longa
 PORT=3000
+API_URL=http://localhost:3000
+
+# Trello MCP (opcional)
+TRELLO_API_KEY=
+TRELLO_TOKEN=
+
+# Google Service Account (documentação automática)
+GOOGLE_SERVICE_ACCOUNT_KEY={"type":"service_account",...}
 ```
 
-> Nunca commite o `.env`. Adicione-o ao `.gitignore`.
+> Nunca commite o `.env`. Consulte `.env.example` para o template completo.
 
 ### Banco de dados
 
 ```bash
-cd packages/db
-
-npx drizzle-kit generate   # Gera migrations
-npx drizzle-kit migrate    # Aplica no PostgreSQL da VPS
-npx drizzle-kit studio     # Abre GUI local
+npm run db:generate   # Gera migrations após alterar schema
+npm run migrations    # Aplica na VPS PostgreSQL
+npm run db:studio     # Abre GUI local (Drizzle Studio)
 ```
 
 ### Rodar localmente
 
 ```bash
-# Backend
-cd apps/api
-npm run dev
+# Backend (porta 3000)
+npm run api
 
 # Mobile (em outro terminal)
-cd apps/mobile
-npx expo start
+npm run mobile
 # Escaneie o QR code com o Expo Go no celular
 ```
 
