@@ -2,7 +2,7 @@
   "name": "@finapp/db",
   "version": "1.0.0",
   "private": true,
-  "main": "./dist/index.js",
+  "main": "./dist/src/index.js",
   "scripts": {
     "build": "tsc",
     "generate": "drizzle-kit generate",
