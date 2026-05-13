@@ -52,3 +52,5 @@ document_stack_proj.md
 base_knowledge/*
 !base_knowledge/tasks/
 !base_knowledge/tasks/**
+!base_knowledge/technical/
+!base_knowledge/technical/**

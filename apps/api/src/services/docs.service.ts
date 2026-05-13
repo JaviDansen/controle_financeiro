@@ -57,6 +57,31 @@ export async function appendToDocument(documentId: string, text: string) {
   })
 }
 
+export async function exportDocument(documentId: string): Promise<string> {
+  const drive = await getDriveClient()
+  const res = await drive.files.export(
+    { fileId: documentId, mimeType: 'text/plain' },
+    { responseType: 'text' }
+  )
+  return res.data as string
+}
+
+export async function replaceDocumentContent(documentId: string, newContent: string) {
+  const docs = await getDocsClient()
+  const doc = await docs.documents.get({ documentId, fields: 'body' })
+  const endIndex = doc.data.body?.content?.at(-1)?.endIndex ?? 2
+
+  await docs.documents.batchUpdate({
+    documentId,
+    requestBody: {
+      requests: [
+        { deleteContentRange: { range: { startIndex: 1, endIndex: endIndex - 1 } } },
+        { insertText: { location: { index: 1 }, text: newContent } },
+      ],
+    },
+  })
+}
+
 export async function replaceSection(documentId: string, marker: string, newContent: string) {
   const docs = await getDocsClient()
 
