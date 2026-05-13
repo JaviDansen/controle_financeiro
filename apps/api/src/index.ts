@@ -18,6 +18,10 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok' })
 })
 
+app.get('/hello', (_req, res) => {
+  res.json({ message: 'Hello World', env: process.env.NODE_ENV ?? 'development' })
+})
+
 async function checkDatabase(): Promise<void> {
   const pool = new Pool({ connectionString: buildConnectionString() })
   try {
