@@ -209,6 +209,22 @@
             </svg>
           </div>
           <div class="task-body">
+            <div class="task-name">Criar contas: Gmail/Verce/Railway</div>
+            <div class="task-desc">Provisionamento inicial das contas de infraestrutura e operação do projeto para viabilizar autenticação, deploy e administração do ambiente.</div>
+            <div class="task-meta">
+              <span class="tag tag-config">config</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
             <div class="task-name">Estrutura do Monorepo</div>
             <div class="task-desc">Criação do monorepo com npm workspaces. Organiza o projeto em três pacotes independentes: <code>apps/api</code>, <code>apps/mobile</code> e <code>packages/db</code>. O <code>package.json</code> raiz define os scripts globais para rodar cada camada.</div>
             <div class="task-meta">
@@ -250,6 +266,54 @@
           </div>
         </div>
 
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">Node.js 24.15.0 + .nvmrc</div>
+            <div class="task-desc">Versão do Node.js fixada em <code>24.15.0</code> no campo <code>engines</code> do <code>package.json</code> raiz e documentada no <code>CLAUDE.md</code> e <code>README.md</code>. Arquivo <code>.nvmrc</code> adicionado na raiz do monorepo para que o <code>nvm use</code> selecione automaticamente a versão correta no ambiente local.</div>
+            <div class="task-meta">
+              <span class="tag tag-config">config</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">.env.example — Variáveis do MCP do Trello</div>
+            <div class="task-desc">Template de ambiente expandido para documentar a integração do Trello via MCP. Inclui <code>TRELLO_API_KEY</code>, <code>TRELLO_TOKEN</code>, <code>TRELLO_BOARD_ID</code> opcional e <code>TRELLO_WORKSPACE_ID</code> opcional.</div>
+            <div class="task-meta">
+              <span class="tag tag-config">config</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">.env.example — Google Service Account</div>
+            <div class="task-desc">Seção de Google Service Account adicionada ao <code>.env.example</code>. Documenta a variável <code>GOOGLE_SERVICE_ACCOUNT_KEY</code> como JSON minificado em uma única linha, com instruções de onde gerar as credenciais no Google Cloud Console e como compartilhar o documento com o <code>client_email</code> da service account.</div>
+            <div class="task-meta">
+              <span class="tag tag-config">config</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -267,6 +331,22 @@
           <div class="task-body">
             <div class="task-name">API Base — Express + TypeScript</div>
             <div class="task-desc">Inicialização do servidor Express com TypeScript, CORS e parsing de JSON. Entry point em <code>apps/api/src/index.ts</code> com rota <code>GET /health</code> para verificação de disponibilidade. Configuração de <code>tsconfig.json</code> e <code>ts-node-dev</code> para hot reload em desenvolvimento.</div>
+            <div class="task-meta">
+              <span class="tag tag-api">api</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">Integração Google Docs/Drive — Serviços de Documentação Automática</div>
+            <div class="task-desc">Pacote <code>googleapis@171</code> instalado no <code>apps/api</code>. Dois serviços criados: <code>google-auth.service.ts</code> — singleton de autenticação via service account com escopos de Drive e Docs; <code>docs.service.ts</code> — operações sobre o documento <code>OFFICIAL-FinApp_Documentacao_Tecnica</code> (busca por nome no Drive, leitura, <code>appendToDocument</code> e <code>replaceSection</code> via batchUpdate). Teste de integração em <code>apps/api/tests/google-connection.test.js</code> validado com sucesso: autentica, localiza o documento pelo nome e lê o conteúdo.</div>
             <div class="task-meta">
               <span class="tag tag-api">api</span>
               <span class="task-date">13 mai 2026</span>
@@ -538,11 +618,27 @@
           </div>
         </div>
 
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">MCP do Trello — Configuração do Servidor no Projeto</div>
+            <div class="task-desc">Integração do Trello via MCP configurada no projeto para uso com Claude Code. Inclui <code>.mcp.json</code> com o servidor <code>trello-mcp</code>, habilitação por projeto em <code>.claude/settings.json</code>, permissões locais do MCP e validação de subida com o <code>.env</code>.</div>
+            <div class="task-meta">
+              <span class="tag tag-agents">agentes</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
     <footer>
-      FinApp · Fase 1 MVP · Atualizado em 13 mai 2026 (v6)
+      FinApp · Fase 1 MVP · Atualizado em 13 mai 2026 (v8)
     </footer>
 
   </div>
@@ -554,6 +650,7 @@
     // Conta arquivos mencionados nas descrições (aproximado)
     const files = [
       'package.json', '.gitignore', '.npmrc', '.env.example',
+      '.mcp.json',
       'apps/api/src/index.ts', 'apps/api/tsconfig.json', 'apps/api/package.json',
       'packages/db/schema/users.ts', 'packages/db/schema/categories.ts',
       'packages/db/schema/cards.ts', 'packages/db/schema/transactions.ts',
@@ -562,7 +659,10 @@
       'packages/db/migrations/0000_new_unus.sql', 'packages/db/migrations/meta/_journal.json',
       'apps/mobile/package.json', 'apps/mobile/app.json', 'apps/mobile/app/_layout.tsx',
       'apps/mobile/babel.config.js', 'apps/mobile/tailwind.config.js',
-      'CLAUDE.md', '.claude/settings.json',
+      '.nvmrc',
+      'apps/api/src/services/google-auth.service.ts', 'apps/api/src/services/docs.service.ts',
+      'apps/api/tests/google-connection.test.js',
+      'CLAUDE.md', '.claude/settings.json', '.mcp.json',
       '.claude/skills/nova-rota/SKILL.md', '.claude/skills/nova-tela/SKILL.md',
       '.claude/skills/novo-schema/SKILL.md', '.claude/skills/migrar-db/SKILL.md',
       '.claude/skills/atualizar-tasks/SKILL.md', '.claude/skills/fazer-commit/SKILL.md',
