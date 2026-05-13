@@ -241,8 +241,8 @@
             </svg>
           </div>
           <div class="task-body">
-            <div class="task-name">.env.example</div>
-            <div class="task-desc">Template de variáveis de ambiente documentando todas as chaves necessárias: <code>DATABASE_URL</code> (PostgreSQL na VPS), <code>JWT_SECRET</code>, <code>PORT</code> e <code>API_URL</code>.</div>
+            <div class="task-name">.env.example com Parâmetros Individuais</div>
+            <div class="task-desc">Template de variáveis de ambiente atualizado com duas opções de conexão ao banco: <strong>Opção 1</strong> — <code>DATABASE_URL</code> completa (tem prioridade); <strong>Opção 2</strong> — parâmetros individuais <code>DATABASE_HOST</code>, <code>DATABASE_PORT</code>, <code>DATABASE_USER</code>, <code>DATABASE_PASSWORD</code> e <code>DATABASE_NAME</code> como fallback. Também documenta <code>JWT_SECRET</code>, <code>PORT</code> e <code>API_URL</code>.</div>
             <div class="task-meta">
               <span class="tag tag-config">config</span>
               <span class="task-date">13 mai 2026</span>
@@ -267,6 +267,22 @@
           <div class="task-body">
             <div class="task-name">API Base — Express + TypeScript</div>
             <div class="task-desc">Inicialização do servidor Express com TypeScript, CORS e parsing de JSON. Entry point em <code>apps/api/src/index.ts</code> com rota <code>GET /health</code> para verificação de disponibilidade. Configuração de <code>tsconfig.json</code> e <code>ts-node-dev</code> para hot reload em desenvolvimento.</div>
+            <div class="task-meta">
+              <span class="tag tag-api">api</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">Verificação de Conexão ao Banco na Inicialização</div>
+            <div class="task-desc">Função <code>checkDatabase()</code> executada no startup da API que testa a conexão ao PostgreSQL com <code>SELECT 1</code>. Em caso de sucesso exibe <code>✔ Banco de dados conectado: host:porta/banco</code>; em caso de falha exibe o erro com host e encerra o processo com <code>exit(1)</code>. Roda dentro do callback de <code>app.listen()</code> em <code>apps/api/src/index.ts</code>.</div>
             <div class="task-meta">
               <span class="tag tag-api">api</span>
               <span class="task-date">13 mai 2026</span>
@@ -307,6 +323,38 @@
           <div class="task-body">
             <div class="task-name">Pacote @finapp/db — Conexão e Exportações</div>
             <div class="task-desc">Configuração do pacote compartilhado <code>@finapp/db</code> com conexão ao PostgreSQL via pool, <code>drizzle.config.ts</code> apontando para a VPS e exportação centralizada de todos os schemas. É importado pela API e pelo mobile como fonte única de verdade dos tipos.</div>
+            <div class="task-meta">
+              <span class="tag tag-db">banco</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">Utilitário de Conexão com Fallback — connection.ts</div>
+            <div class="task-desc">Novo arquivo <code>packages/db/src/connection.ts</code> com duas funções exportadas: <strong>buildConnectionString()</strong> prioriza <code>DATABASE_URL</code> e constrói a URL a partir de parâmetros individuais como fallback, usando <code>encodeURIComponent</code> na senha para suportar caracteres especiais como <code>@</code>; <strong>getConnectionLabel()</strong> usa <code>new URL()</code> para exibir o host de forma segura sem expor a senha. Ambas são exportadas pelo <code>packages/db/src/index.ts</code> e usadas pela API.</div>
+            <div class="task-meta">
+              <span class="tag tag-db">banco</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">Migration Inicial — 5 Tabelas na VPS</div>
+            <div class="task-desc">Primeira migration gerada pelo Drizzle Kit (<code>migrations/0000_new_unus.sql</code>) e aplicada com sucesso no PostgreSQL da VPS. Cria as cinco tabelas da Fase 1: <strong>users</strong>, <strong>categories</strong>, <strong>cards</strong>, <strong>transactions</strong> e <strong>goals</strong>. O <code>drizzle.config.ts</code> foi corrigido para carregar o <code>.env</code> da raiz do monorepo e usar <code>buildConnectionString()</code> com suporte a parâmetros individuais.</div>
             <div class="task-meta">
               <span class="tag tag-db">banco</span>
               <span class="task-date">13 mai 2026</span>
@@ -462,7 +510,7 @@
     </div>
 
     <footer>
-      FinApp · Fase 1 MVP · Atualizado em 13 mai 2026 (v2)
+      FinApp · Fase 1 MVP · Atualizado em 13 mai 2026 (v4)
     </footer>
 
   </div>
@@ -478,7 +526,8 @@
       'packages/db/schema/users.ts', 'packages/db/schema/categories.ts',
       'packages/db/schema/cards.ts', 'packages/db/schema/transactions.ts',
       'packages/db/schema/goals.ts', 'packages/db/schema/index.ts',
-      'packages/db/src/index.ts', 'packages/db/drizzle.config.ts',
+      'packages/db/src/index.ts', 'packages/db/src/connection.ts', 'packages/db/drizzle.config.ts',
+      'packages/db/migrations/0000_new_unus.sql', 'packages/db/migrations/meta/_journal.json',
       'apps/mobile/package.json', 'apps/mobile/app.json', 'apps/mobile/app/_layout.tsx',
       'apps/mobile/babel.config.js', 'apps/mobile/tailwind.config.js',
       'CLAUDE.md', '.claude/settings.json',
