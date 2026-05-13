@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "trello-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@xenral/trello-mcp",
+        "start",
+        "--env-file",
+        ".env"
+      ]
+    }
+  }
+}
