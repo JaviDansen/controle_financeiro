@@ -66,7 +66,7 @@ finapp/
 
 ### Pré-requisitos
 
-- Node.js 20 LTS
+- Node.js 24.15.0
 - Git
 - Expo Go (celular — Play Store / App Store)
 - Acesso à VPS com PostgreSQL configurado

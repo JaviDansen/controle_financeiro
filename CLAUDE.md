@@ -20,7 +20,7 @@ Aplicativo mobile de controle financeiro pessoal. Monorepo com três camadas:
 | Mobile | NativeWind | ^4.1.23 |
 | Mobile | Zustand | ^5.0.0 |
 | Mobile | React Query | ^5.40.0 |
-| Backend | Node.js | 20 LTS |
+| Backend | Node.js | 24.15.0 |
 | Backend | Express | ^4.19.2 |
 | Banco | Drizzle ORM | ^0.31.2 |
 | Banco | PostgreSQL | VPS própria |

@@ -14,6 +14,6 @@
     "db:studio": "npm run studio --workspace=packages/db"
   },
   "engines": {
-    "node": ">=20"
+    "node": "24.15.0"
   }
 }
