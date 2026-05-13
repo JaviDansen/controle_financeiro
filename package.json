@@ -10,7 +10,7 @@
     "api": "npm run dev --workspace=apps/api",
     "mobile": "npm run start --workspace=apps/mobile",
     "db:generate": "npm run generate --workspace=packages/db",
-    "db:migrate": "npm run migrate --workspace=packages/db",
+    "migrations": "npm run migrations --workspace=packages/db",
     "db:studio": "npm run studio --workspace=packages/db"
   },
   "engines": {
