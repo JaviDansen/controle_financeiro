@@ -49,4 +49,6 @@ Thumbs.db
 document_stack_proj.md
 
 # Arquivos auxiliares locais
-base_knowledge/
+base_knowledge/*
+!base_knowledge/tasks/
+!base_knowledge/tasks/**

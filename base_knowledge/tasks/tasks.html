@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinApp — Tasks Concluídas</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 48px 24px;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 48px;
+    }
+
+    header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #f8fafc;
+      letter-spacing: -0.5px;
+    }
+
+    header p {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .stats {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      background: #1e2330;
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      padding: 16px 24px;
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #6ee7b7;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .phase {
+      margin-bottom: 36px;
+    }
+
+    .phase-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #6366f1;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #1e2330;
+    }
+
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .task {
+      background: #1a1f2e;
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      transition: border-color 0.15s;
+    }
+
+    .task:hover {
+      border-color: #4a5568;
+    }
+
+    .task-check {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #065f46;
+      border: 2px solid #059669;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .task-check svg {
+      width: 10px;
+      height: 10px;
+    }
+
+    .task-body {
+      flex: 1;
+    }
+
+    .task-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #f1f5f9;
+      margin-bottom: 4px;
+    }
+
+    .task-desc {
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+
+    .task-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.2px;
+    }
+
+    .tag-api     { background: #1e3a5f; color: #60a5fa; }
+    .tag-mobile  { background: #1e3352; color: #818cf8; }
+    .tag-db      { background: #1e3a2e; color: #4ade80; }
+    .tag-config  { background: #2d2d1e; color: #facc15; }
+    .tag-agents  { background: #2d1e3a; color: #c084fc; }
+
+    .task-date {
+      font-size: 11px;
+      color: #475569;
+      margin-left: auto;
+    }
+
+    footer {
+      margin-top: 56px;
+      text-align: center;
+      font-size: 12px;
+      color: #334155;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <header>
+      <h1>FinApp — Tasks Concluídas</h1>
+      <p>Histórico de implementações do projeto · Fase 1 — MVP</p>
+    </header>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value" id="total-tasks">0</div>
+        <div class="stat-label">Tasks concluídas</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="total-files">0</div>
+        <div class="stat-label">Arquivos criados</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">1</div>
+        <div class="stat-label">Fase atual</div>
+      </div>
+    </div>
+
+    <!-- ───── SETUP ───── -->
+    <div class="phase">
+      <div class="phase-title">Setup &amp; Configuração</div>
+      <div class="task-list">
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">Estrutura do Monorepo</div>
+            <div class="task-desc">Criação do monorepo com npm workspaces. Organiza o projeto em três pacotes independentes: <code>apps/api</code>, <code>apps/mobile</code> e <code>packages/db</code>. O <code>package.json</code> raiz define os scripts globais para rodar cada camada.</div>
+            <div class="task-meta">
+              <span class="tag tag-config">config</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">.gitignore e .npmrc</div>
+            <div class="task-desc">Configuração do repositório Git. O <code>.gitignore</code> cobre <code>node_modules</code>, <code>.env</code>, builds do Expo, Drizzle e arquivos de SO. O <code>.npmrc</code> define <code>legacy-peer-deps=true</code> para compatibilidade com o ecossistema React Native.</div>
+            <div class="task-meta">
+              <span class="tag tag-config">config</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">.env.example</div>
+            <div class="task-desc">Template de variáveis de ambiente documentando todas as chaves necessárias: <code>DATABASE_URL</code> (PostgreSQL na VPS), <code>JWT_SECRET</code>, <code>PORT</code> e <code>API_URL</code>.</div>
+            <div class="task-meta">
+              <span class="tag tag-config">config</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ───── BACKEND ───── -->
+    <div class="phase">
+      <div class="phase-title">Backend — API</div>
+      <div class="task-list">
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">API Base — Express + TypeScript</div>
+            <div class="task-desc">Inicialização do servidor Express com TypeScript, CORS e parsing de JSON. Entry point em <code>apps/api/src/index.ts</code> com rota <code>GET /health</code> para verificação de disponibilidade. Configuração de <code>tsconfig.json</code> e <code>ts-node-dev</code> para hot reload em desenvolvimento.</div>
+            <div class="task-meta">
+              <span class="tag tag-api">api</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ───── BANCO DE DADOS ───── -->
+    <div class="phase">
+      <div class="phase-title">Banco de Dados — Drizzle ORM</div>
+      <div class="task-list">
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">Schema Drizzle — Fase 1</div>
+            <div class="task-desc">Definição completa das tabelas da Fase 1 em <code>packages/db/schema/</code>: <strong>users</strong> (autenticação), <strong>categories</strong> (categorias por usuário), <strong>cards</strong> (cartões de crédito/débito), <strong>transactions</strong> (receitas e despesas) e <strong>goals</strong> (metas financeiras). Todas as tabelas usam UUID como PK e timestamps automáticos.</div>
+            <div class="task-meta">
+              <span class="tag tag-db">banco</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">Pacote @finapp/db — Conexão e Exportações</div>
+            <div class="task-desc">Configuração do pacote compartilhado <code>@finapp/db</code> com conexão ao PostgreSQL via pool, <code>drizzle.config.ts</code> apontando para a VPS e exportação centralizada de todos os schemas. É importado pela API e pelo mobile como fonte única de verdade dos tipos.</div>
+            <div class="task-meta">
+              <span class="tag tag-db">banco</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ───── MOBILE ───── -->
+    <div class="phase">
+      <div class="phase-title">Mobile — React Native + Expo</div>
+      <div class="task-list">
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">Mobile Base — Expo SDK 53</div>
+            <div class="task-desc">Configuração do projeto mobile com Expo SDK 53 e React Native 0.79. Inclui Expo Router 4 com estrutura de grupos <code>(auth)</code> e <code>(tabs)</code>, NativeWind 4 para estilização com Tailwind, Zustand 5 para estado global, React Query 5 para cache de requisições e <code>babel.config.js</code> configurado para NativeWind.</div>
+            <div class="task-meta">
+              <span class="tag tag-mobile">mobile</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ───── AGENTES ───── -->
+    <div class="phase">
+      <div class="phase-title">Ambiente de Agentes</div>
+      <div class="task-list">
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">CLAUDE.md — Instruções do Projeto</div>
+            <div class="task-desc">Arquivo de instruções lido automaticamente em toda conversa dentro do repositório. Define stack com versões fixas, estrutura de diretórios, comandos de desenvolvimento, convenções de código para API/mobile/banco e regras de arquitetura (o que nunca fazer).</div>
+            <div class="task-meta">
+              <span class="tag tag-agents">agentes</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">Skills do Projeto</div>
+            <div class="task-desc">Quatro skills criadas em <code>.claude/skills/</code>: <strong>/nova-rota</strong> (cria rota + controller com JWT e Zod), <strong>/nova-tela</strong> (cria tela Expo + hook React Query + service), <strong>/novo-schema</strong> (adiciona tabela Drizzle com tipos inferidos) e <strong>/migrar-db</strong> (gera e aplica migrations com revisão de segurança).</div>
+            <div class="task-meta">
+              <span class="tag tag-agents">agentes</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">base_knowledge — Arquivos Auxiliares Locais</div>
+            <div class="task-desc">Pasta local (ignorada pelo Git) para artefatos auxiliares do projeto: este registro de tasks, diagramas, notas e qualquer documento de referência. Mantida fora do repositório para não poluir o histórico.</div>
+            <div class="task-meta">
+              <span class="tag tag-agents">agentes</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">Skill /atualizar-tasks</div>
+            <div class="task-desc">Skill em <code>.claude/skills/atualizar-tasks/SKILL.md</code> que instrui o agente a manter o <code>base_knowledge/tasks.html</code> atualizado após cada implementação relevante. Define grupos, classes de tag, padrão de bloco HTML e regras de quando registrar (apenas mudanças que alteram comportamento ou adicionam funcionalidade).</div>
+            <div class="task-meta">
+              <span class="tag tag-agents">agentes</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">Skill /fazer-commit — Regra de Delegação</div>
+            <div class="task-desc">Skill em <code>.claude/skills/fazer-commit/SKILL.md</code> que proíbe <code>git commit</code> direto e define o agente <code>commit-writer</code> como responsável exclusivo por todos os commits. Documenta o fluxo correto pós-implementação e o que nunca fazer (mensagens genéricas, commitar sem analisar o diff, incluir <code>.env</code>). Regra reforçada também no <code>CLAUDE.md</code>.</div>
+            <div class="task-meta">
+              <span class="tag tag-agents">agentes</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">Skills Globais Documentadas no CLAUDE.md</div>
+            <div class="task-desc">Seção "Skills Globais — Quando Usar no FinApp" adicionada ao <code>CLAUDE.md</code> cobrindo as quatro skills globais disponíveis: <strong>/impeccable</strong> (auditoria e melhoria de UI, com pré-requisito de <code>PRODUCT.md</code>), <strong>/emil-design-eng</strong> (decisões de animação e polish, regras de easing e duração), <strong>/taste-skill</strong> (arquitetura de componentes, combate a padrões genéricos) e <strong>/graphify</strong> (knowledge graph da arquitetura do monorepo). Cada skill documenta quando acionar, subcomandos úteis e regras específicas para React Native.</div>
+            <div class="task-meta">
+              <span class="tag tag-agents">agentes</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">commit-writer Configurado para Português Brasileiro</div>
+            <div class="task-desc">Agente global <code>~/.claude/agents/commit-writer.md</code> atualizado com seção "Idioma — OBRIGATÓRIO": todas as mensagens de commit devem ser em português brasileiro. O prefixo <code>[TYPE]</code> permanece em inglês por ser identificador técnico padronizado. Checklist do agente atualizado com item de verificação de idioma. Preferência salva na memória do projeto.</div>
+            <div class="task-meta">
+              <span class="tag tag-agents">agentes</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <footer>
+      FinApp · Fase 1 MVP · Atualizado em 13 mai 2026 (v2)
+    </footer>
+
+  </div>
+
+  <script>
+    const tasks = document.querySelectorAll('.task').length
+    document.getElementById('total-tasks').textContent = tasks
+
+    // Conta arquivos mencionados nas descrições (aproximado)
+    const files = [
+      'package.json', '.gitignore', '.npmrc', '.env.example',
+      'apps/api/src/index.ts', 'apps/api/tsconfig.json', 'apps/api/package.json',
+      'packages/db/schema/users.ts', 'packages/db/schema/categories.ts',
+      'packages/db/schema/cards.ts', 'packages/db/schema/transactions.ts',
+      'packages/db/schema/goals.ts', 'packages/db/schema/index.ts',
+      'packages/db/src/index.ts', 'packages/db/drizzle.config.ts',
+      'apps/mobile/package.json', 'apps/mobile/app.json', 'apps/mobile/app/_layout.tsx',
+      'apps/mobile/babel.config.js', 'apps/mobile/tailwind.config.js',
+      'CLAUDE.md', '.claude/settings.json',
+      '.claude/skills/nova-rota/SKILL.md', '.claude/skills/nova-tela/SKILL.md',
+      '.claude/skills/novo-schema/SKILL.md', '.claude/skills/migrar-db/SKILL.md',
+      '.claude/skills/atualizar-tasks/SKILL.md', '.claude/skills/fazer-commit/SKILL.md',
+      'base_knowledge/tasks.html',
+      '~/.claude/agents/commit-writer.md',
+    ]
+    document.getElementById('total-files').textContent = files.length
+  </script>
+</body>
+</html>
