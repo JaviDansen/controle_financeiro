@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm run build:web --workspace=apps/mobile",
+  "outputDirectory": "apps/mobile/dist",
+  "installCommand": "npm install"
+}

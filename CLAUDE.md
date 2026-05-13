@@ -14,9 +14,9 @@ Aplicativo mobile de controle financeiro pessoal. Monorepo com três camadas:
 
 | Camada | Tecnologia | Versão |
 |---|---|---|
-| Mobile | Expo SDK | ~53.0.0 |
-| Mobile | React Native | 0.79.2 |
-| Mobile | Expo Router | ~4.0.0 |
+| Mobile | Expo SDK | ~54.0.0 |
+| Mobile | React Native | 0.81.5 |
+| Mobile | Expo Router | ~6.0.0 |
 | Mobile | NativeWind | ^4.1.23 |
 | Mobile | Zustand | ^5.0.0 |
 | Mobile | React Query | ^5.40.0 |

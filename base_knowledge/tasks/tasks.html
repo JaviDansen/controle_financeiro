@@ -377,8 +377,24 @@
             </svg>
           </div>
           <div class="task-body">
-            <div class="task-name">Mobile Base — Expo SDK 53</div>
-            <div class="task-desc">Configuração do projeto mobile com Expo SDK 53 e React Native 0.79. Inclui Expo Router 4 com estrutura de grupos <code>(auth)</code> e <code>(tabs)</code>, NativeWind 4 para estilização com Tailwind, Zustand 5 para estado global, React Query 5 para cache de requisições e <code>babel.config.js</code> configurado para NativeWind.</div>
+            <div class="task-name">Upgrade para Expo SDK 54</div>
+            <div class="task-desc">Atualização do projeto mobile para Expo SDK 54 com React Native 0.81.5 e React 19.1.0. Pacotes atualizados: <code>expo@~54.0.0</code>, <code>expo-router@~6.0.0</code>, <code>expo-secure-store@~15.0.0</code>, <code>expo-status-bar@~3.0.0</code>, <code>@types/react@~19.1.0</code>, <code>typescript@~5.9.2</code>. Instaladas as dependências nativas exigidas pelo expo-router 6: <code>react-native-worklets</code>, <code>react-native-safe-area-context</code>, <code>react-native-screens</code>, <code>react-native-gesture-handler</code>, <code>react-native-reanimated</code>, <code>expo-linking</code>, <code>expo-constants</code>, <code>expo-asset</code> e <code>expo-font</code>. Plugin <code>react-native-reanimated/plugin</code> adicionado ao <code>babel.config.js</code> (deve ser o último plugin).</div>
+            <div class="task-meta">
+              <span class="tag tag-mobile">mobile</span>
+              <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">Tela Hello World + Deploy Vercel</div>
+            <div class="task-desc">Primeira tela do mobile criada em <code>apps/mobile/app/index.tsx</code> com "Hello World" usando <code>View</code> e <code>Text</code> nativos. Suporte web habilitado: <code>react-dom</code>, <code>react-native-web</code> instalados; <code>app.json</code> configurado com <code>"web": { "output": "static", "bundler": "metro" }</code>; scripts <code>web</code> e <code>build:web</code> adicionados ao <code>package.json</code> do mobile. <code>vercel.json</code> criado na raiz do monorepo apontando build para <code>apps/mobile</code> e output para <code>apps/mobile/dist</code>. Aplicação rodando com sucesso no browser via Expo Metro.</div>
             <div class="task-meta">
               <span class="tag tag-mobile">mobile</span>
               <span class="task-date">13 mai 2026</span>
@@ -510,7 +526,7 @@
     </div>
 
     <footer>
-      FinApp · Fase 1 MVP · Atualizado em 13 mai 2026 (v4)
+      FinApp · Fase 1 MVP · Atualizado em 13 mai 2026 (v5)
     </footer>
 
   </div>
