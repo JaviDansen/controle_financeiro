@@ -1,7 +1,4 @@
 {
-  "enabledMcpjsonServers": [
-    "trello-mcp"
-  ],
   "permissions": {
     "allow": [
       "Bash(npm run *)",
@@ -16,7 +13,11 @@
       "Bash(git push *)",
       "WebFetch(domain:smithery.ai)",
       "mcp__trello__trello_update_label",
-      "mcp__trello__trello_create_card"
+      "mcp__trello__trello_create_card",
+      "mcp__trello__trello_create_label"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "trello-mcp"
+  ]
 }

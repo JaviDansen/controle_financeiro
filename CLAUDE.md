@@ -251,6 +251,24 @@ Pasta local (ignorada pelo Git) com artefatos auxiliares do projeto:
 
 Após qualquer implementação relevante, rodar `/atualizar-tasks` para manter o histórico atualizado.
 
+## Regra de Testes — TDD — OBRIGATÓRIO
+
+O projeto segue **Test-Driven Development (TDD)**. A ordem correta é sempre:
+
+1. **Escrever o teste primeiro** — define o contrato esperado
+2. **Rodar o teste** — ele deve falhar (red)
+3. **Implementar o código mínimo** para o teste passar (green)
+4. **Refatorar** se necessário, mantendo os testes passando
+
+### Regra absoluta — NUNCA viole isso:
+
+> **Jamais altere um teste para fazer o código passar.**
+> **O código é que deve ser modificado. O teste é a especificação.**
+
+Se um teste estiver falhando, o problema está no código de produção, não no teste. A única exceção é quando o requisito de negócio mudou explicitamente — nesse caso, o teste deve ser reescrito **antes** de alterar o código, não depois.
+
+Isso vale para todos os testes: unitários, de integração, e2e.
+
 ## O Que NÃO Fazer
 
 - Não usar Neon — banco é PostgreSQL na VPS própria
@@ -260,3 +278,4 @@ Após qualquer implementação relevante, rodar `/atualizar-tasks` para manter o
 - Não fazer queries SQL diretamente — sempre Drizzle ORM
 - Não retornar `passwordHash` em nenhum endpoint
 - Não criar arquivos de documentação `.md` sem pedido explícito
+- **Não alterar testes para o código passar** — sempre o contrário
