@@ -269,6 +269,51 @@ Se um teste estiver falhando, o problema está no código de produção, não no
 
 Isso vale para todos os testes: unitários, de integração, e2e.
 
+### Setup do ambiente de testes (apps/api)
+
+| Pacote | Versão | Função |
+|---|---|---|
+| `jest` | ^30 | Runner de testes |
+| `ts-jest` | ^29 | Transpilação TypeScript para Jest |
+| `supertest` | ^7 | Testes HTTP de integração |
+| `@types/jest` | ^30 | Tipos TypeScript do Jest |
+| `@types/supertest` | ^7 | Tipos TypeScript do Supertest |
+
+**Comandos:**
+```bash
+cd apps/api
+npm test          # Roda todos os testes
+npm run test:watch  # Modo watch
+```
+
+**Arquivos de configuração:**
+- `apps/api/jest.config.ts` — configuração do Jest (preset ts-jest, testMatch, globalSetup)
+- `apps/api/tests/helpers/global-setup.ts` — carrega `.env` e aponta `DATABASE_URL` para o banco de teste
+- `apps/api/tests/helpers/global-teardown.ts` — encerra conexões após todos os testes
+- `apps/api/tests/helpers/db.ts` — exporta `testDb` (instância Drizzle no banco de teste) e `clearTables()`
+- `apps/api/tests/helpers/app.ts` — exporta `api()` com supertest apontando para a instância Express
+
+**Convenção de nomenclatura dos testes:**
+`tests/<módulo>_<tipo>_test.ts` — exemplos: `auth_integration_test.ts`, `transactions_unit_test.ts`
+
+**Variável de ambiente obrigatória para testes com banco:**
+```
+DATABASE_URL_TEST=postgres://usuario:senha@host:porta/finapp-test?sslmode=disable
+```
+
+**Como usar os helpers em um teste:**
+```typescript
+import { api } from './helpers/app'
+import { clearTables } from './helpers/db'
+
+beforeEach(async () => { await clearTables() })
+
+it('GET /health retorna ok', async () => {
+  const res = await api().get('/health')
+  expect(res.status).toBe(200)
+})
+```
+
 ## O Que NÃO Fazer
 
 - Não usar Neon — banco é PostgreSQL na VPS própria

@@ -41,6 +41,7 @@ O FinApp é um aplicativo mobile de controle financeiro pessoal construído em f
 | Integração Google Docs/Drive | ✅ Concluído |
 | Ambiente de agentes Claude Code | ✅ Concluído |
 | Mobile — tela inicial (Hello World) | ✅ Concluído |
+| Ambiente de testes da API (Jest + Supertest) | ✅ Concluído |
 | Autenticação (rotas e telas) | 🔲 Planejado |
 | Módulo de Transações | 🔲 Planejado |
 | Módulo de Cartões | 🔲 Planejado |
@@ -362,6 +363,7 @@ Crie `.env` na raiz com base no `.env.example`. **Nunca commitar o `.env`.**
 | `API_URL` | Não | URL base da API usada pelo mobile |
 | `TRELLO_API_KEY` | Não | API key do Trello (MCP) |
 | `TRELLO_TOKEN` | Não | Token de acesso do Trello (MCP) |
+| `DATABASE_URL_TEST` | Não | Connection string do banco isolado para testes |
 | `GOOGLE_SERVICE_ACCOUNT_KEY` | Não | JSON da service account (minificado, uma linha) |
 
 > \* `DATABASE_URL` tem prioridade. Se não definida, os parâmetros individuais são usados como fallback.
@@ -405,6 +407,39 @@ npm run mobile
 4. Em **Variables**, adicione todas as variáveis do `.env`
 5. A Railway detecta Node.js automaticamente e faz o build
 6. Anote a URL pública gerada — será usada como `API_URL` no mobile
+
+### Testes da API
+
+O ambiente de testes está configurado em `apps/api`. Utiliza **Jest + ts-jest + Supertest**.
+
+```bash
+# Rodar todos os testes (a partir da raiz)
+cd apps/api && npm test
+
+# Modo watch
+cd apps/api && npm run test:watch
+```
+
+**Estrutura de testes:**
+
+```
+apps/api/
+├── tests/
+│   ├── helpers/
+│   │   ├── global-setup.ts    # Carrega .env e aponta DATABASE_URL para o banco de teste
+│   │   ├── global-teardown.ts # Encerra conexões após todos os testes
+│   │   ├── db.ts              # Instância testDb + helper clearTables()
+│   │   └── app.ts             # Helper api() com supertest para testes de integração
+│   └── <modulo>_<tipo>_test.ts  # Ex: auth_integration_test.ts
+└── jest.config.ts
+```
+
+**Convenção de nomenclatura dos arquivos de teste:**
+`<módulo>_<tipo>_test.ts` — exemplos: `auth_integration_test.ts`, `transactions_unit_test.ts`
+
+**Pré-requisito:** definir `DATABASE_URL_TEST` no `.env` apontando para um banco PostgreSQL separado (`finapp-test`). Se não definida, os testes que acessam o banco falharão com aviso.
+
+---
 
 ### Extensões recomendadas (VS Code)
 
