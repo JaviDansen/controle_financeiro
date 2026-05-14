@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken'
 import { api } from './helpers/app'
 import { clearTables } from './helpers/db'
 
@@ -101,6 +102,13 @@ describe('POST /auth/login', () => {
     const res = await createUserAndLogin()
     const parts = res.body.data.token.split('.')
     expect(parts).toHaveLength(3)
+  })
+
+  it('payload do JWT contém userId', async () => {
+    const res = await createUserAndLogin()
+    const payload = jwt.decode(res.body.data.token) as { userId?: string }
+    expect(payload).toHaveProperty('userId')
+    expect(typeof payload.userId).toBe('string')
   })
 
   it('retorna dados do usuário junto com o token', async () => {
