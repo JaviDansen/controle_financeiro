@@ -8,7 +8,7 @@ config({ path: resolve(__dirname, '../../../.env') })
 
 import { buildConnectionString, getConnectionLabel } from '@finapp/db'
 
-const app = express()
+export const app = express()
 const PORT = process.env.PORT || 3000
 
 app.use(cors())
@@ -38,7 +38,9 @@ async function checkDatabase(): Promise<void> {
   }
 }
 
-app.listen(PORT, () => {
-  console.log(`API rodando na porta ${PORT}`)
-  checkDatabase()
-})
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`API rodando na porta ${PORT}`)
+    checkDatabase()
+  })
+}
