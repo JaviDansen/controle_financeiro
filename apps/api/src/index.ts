@@ -18,6 +18,11 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok' })
 })
 
+app.get('/home', (_req, res) => {
+  res.json({ message: 'Home' })
+})
+
+
 app.get('/hello', (_req, res) => {
   res.json({ message: 'Hello World', env: process.env.NODE_ENV ?? 'development' })
 })
