@@ -10,6 +10,7 @@ const config: Config = {
   moduleNameMapper: {
     '^@finapp/db$': '<rootDir>/../../packages/db/src/index.ts',
   },
+  setupFiles: ['<rootDir>/tests/helpers/setup-env.ts'],
   globalSetup: '<rootDir>/tests/helpers/global-setup.ts',
   globalTeardown: '<rootDir>/tests/helpers/global-teardown.ts',
   passWithNoTests: true,
