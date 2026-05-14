@@ -7,12 +7,15 @@ import { Pool } from 'pg'
 config({ path: resolve(__dirname, '../../../.env') })
 
 import { buildConnectionString, getConnectionLabel } from '@finapp/db'
+import authRoutes from './routes/auth.routes'
 
 export const app = express()
 const PORT = process.env.PORT || 3000
 
 app.use(cors())
 app.use(express.json())
+
+app.use('/auth', authRoutes)
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' })
