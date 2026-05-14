@@ -79,7 +79,7 @@ npm run mobile
 
 # Banco de dados
 npm run db:generate   # Gera migration após alterar schema
-npm run db:migrations # Aplica migrations na VPS
+npm run migrations    # Aplica migrations na VPS
 npm run db:studio     # Abre Drizzle Studio local
 ```
 
