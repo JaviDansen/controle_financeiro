@@ -2,7 +2,7 @@
 
 Aplicativo mobile de controle financeiro pessoal para micro-empreendedores e usuários individuais. Monorepo com React Native (Expo), Node.js e PostgreSQL.
 
-> **Versão 1.1 · Fase 1 — MVP** · São Luís, MA, Brasil
+> **Versão 1.2 · Fase 1 — MVP** · Walber Vidigal · São Luís, MA, Brasil
 
 **Links:**
 [GitHub](https://github.com/JaviDansen/controle_financeiro) ·
@@ -18,11 +18,12 @@ Aplicativo mobile de controle financeiro pessoal para micro-empreendedores e usu
 3. [Estrutura do Monorepo](#3-estrutura-do-monorepo)
 4. [Módulos da Fase 1](#4-módulos-da-fase-1)
 5. [Schema do Banco de Dados](#5-schema-do-banco-de-dados)
-6. [Integrações com Google Workspace](#6-integrações-com-google-workspace)
-7. [Ambiente de Agentes (Claude Code)](#7-ambiente-de-agentes-claude-code)
-8. [Variáveis de Ambiente](#8-variáveis-de-ambiente)
-9. [Setup e Instalação](#9-setup-e-instalação)
-10. [Roadmap](#10-roadmap)
+6. [Ambiente de Testes](#6-ambiente-de-testes)
+7. [Integrações com Google Workspace](#7-integrações-com-google-workspace)
+8. [Ambiente de Agentes (Claude Code)](#8-ambiente-de-agentes-claude-code)
+9. [Variáveis de Ambiente](#9-variáveis-de-ambiente)
+10. [Setup e Instalação](#10-setup-e-instalação)
+11. [Roadmap](#11-roadmap)
 
 ---
 
@@ -30,7 +31,26 @@ Aplicativo mobile de controle financeiro pessoal para micro-empreendedores e usu
 
 O FinApp é um aplicativo mobile de controle financeiro pessoal construído em fases incrementais, partindo de controle manual e evoluindo para automações, OCR, inteligência artificial e integrações externas.
 
-### Estado atual da Fase 1
+### 1.1 Roadmap de Fases
+
+| Fase | Nome | Foco principal | Status |
+|---|---|---|---|
+| Fase 1 | Controle Financeiro Manual | Receitas, despesas, cartões, metas, gráficos | **MVP** |
+| Fase 2 | Automações | Categorização automática, alertas, previsões, recorrências | Planejado |
+| Fase 3 | OCR + IA | Leitura de extratos, comprovantes, importação automática | Planejado |
+| Fase 4 | Assistente Financeiro IA | Perguntas em linguagem natural sobre finanças | Planejado |
+| Fase 5 | Integrações Externas | Uber, iFood, Steam — após validação do produto | Futuro |
+
+### 1.2 Escopo do MVP
+
+- Autenticação (Login / Registro / Recuperação de senha)
+- Dashboard Home com resumo financeiro e gráficos
+- Gerenciamento de Transações (receitas e despesas)
+- Gerenciamento de Cartões (crédito e débito)
+- Gerenciamento de Metas financeiras
+- Perfil do usuário
+
+### 1.3 Estado atual da Fase 1
 
 | Módulo | Status |
 |---|---|
@@ -40,22 +60,16 @@ O FinApp é um aplicativo mobile de controle financeiro pessoal construído em f
 | Verificação de conexão ao banco no startup | ✅ Concluído |
 | Integração Google Docs/Drive | ✅ Concluído |
 | Ambiente de agentes Claude Code | ✅ Concluído |
-| Mobile — tela inicial (Hello World) | ✅ Concluído |
 | Ambiente de testes da API (Jest + Supertest) | ✅ Concluído |
-| Autenticação (rotas e telas) | 🔲 Planejado |
+| `POST /auth/register` | ✅ Concluído |
+| Testes TDD mobile (infraestrutura + 33 testes red) | ✅ Concluído |
+| `POST /auth/login` | 🔲 Planejado |
+| `POST /auth/forgot-password` | 🔲 Planejado |
+| Telas mobile de autenticação | 🔲 Planejado |
 | Módulo de Transações | 🔲 Planejado |
 | Módulo de Cartões | 🔲 Planejado |
 | Módulo de Metas | 🔲 Planejado |
 | Dashboard Home | 🔲 Planejado |
-
-### Escopo do MVP
-
-- Autenticação (Login / Registro / Recuperação de senha)
-- Dashboard Home com resumo financeiro e gráficos
-- Gerenciamento de Transações (receitas e despesas)
-- Gerenciamento de Cartões (crédito e débito)
-- Gerenciamento de Metas financeiras
-- Perfil do usuário
 
 ---
 
@@ -84,7 +98,7 @@ Elimina a configuração de ambiente nativo (Android Studio, Xcode). Teste diret
 **Por que Drizzle ORM e não TypeORM?**
 O schema é definido em TypeScript puro — tipos inferidos automaticamente sem decorators. Drizzle Studio fornece interface gráfica local sem ferramentas externas.
 
-**Por que VPS própria e não serviços como Neon?**
+**Por que VPS própria e não Neon/PlanetScale?**
 Elimina dependência de free tiers limitados. Banco em `console.neryautoma.site:9567` com acesso total e sem restrições de conexões ou armazenamento.
 
 **Por que monorepo?**
@@ -98,21 +112,25 @@ O pacote `packages/db` é importado tanto pela API quanto pelo mobile, garantind
 controle-financeiro/
 ├── apps/
 │   ├── mobile/                        # React Native + Expo SDK 54
-│   │   ├── app/                       # Rotas via Expo Router (file-based)
-│   │   │   ├── (auth)/                # Telas de login e registro (planejado)
-│   │   │   └── (tabs)/                # Telas principais com abas (planejado)
+│   │   ├── app/
+│   │   │   ├── (auth)/                # Telas de login, registro e recuperação
+│   │   │   └── (tabs)/                # Telas principais com navegação por abas
 │   │   ├── components/                # Componentes reutilizáveis
 │   │   ├── hooks/                     # Custom hooks (useTransactions, useGoals...)
 │   │   ├── store/                     # Stores Zustand
-│   │   └── services/                  # Funções de chamada à API
+│   │   ├── services/                  # Funções de chamada à API
+│   │   └── __tests__/                 # Testes TDD do mobile (jest-expo)
+│   │       └── helpers/               # render.tsx com QueryClient wrapper
 │   └── api/                           # Node.js + Express + TypeScript
-│       └── src/
-│           ├── index.ts               # Entry point — Express, CORS, health, DB check
-│           ├── routes/                # Rotas da API REST (planejado)
-│           ├── controllers/           # Lógica de negócio por módulo (planejado)
-│           ├── services/              # Serviços e integrações (Google Auth, Docs)
-│           ├── middlewares/           # Auth JWT, validação, erros (planejado)
-│           └── scripts/               # Scripts utilitários (export-doc, update-doc)
+│       ├── src/
+│       │   ├── index.ts               # Entry point — Express, CORS, health, DB check
+│       │   ├── routes/                # Rotas da API REST
+│       │   ├── controllers/           # Lógica de negócio por módulo
+│       │   ├── middlewares/           # Auth JWT, validação, erros
+│       │   └── services/              # Integrações (Google Auth, Docs)
+│       ├── tests/                     # Testes da API (Jest + ts-jest + Supertest)
+│       │   └── helpers/               # global-setup, db, app, setup-env
+│       └── requests/                  # Arquivos .http (REST Client — VS Code)
 ├── packages/
 │   └── db/                            # Schema Drizzle compartilhado
 │       ├── schema/                    # Definição das tabelas em TypeScript
@@ -145,19 +163,26 @@ Ponto de entrada do aplicativo. Gerencia o ciclo completo de autenticação.
 
 **Endpoints:**
 
-| Método | Rota | Descrição |
-|---|---|---|
-| POST | `/auth/register` | Cria novo usuário |
-| POST | `/auth/login` | Autentica e retorna JWT |
-| POST | `/auth/logout` | Invalida sessão |
-| POST | `/auth/forgot-password` | Envia e-mail de recuperação |
-| POST | `/auth/reset-password` | Redefine senha com token |
+| Método | Rota | Descrição | Status |
+|---|---|---|---|
+| POST | `/auth/register` | Cria novo usuário | ✅ Implementado |
+| POST | `/auth/login` | Autentica e retorna JWT | 🔲 Planejado |
+| POST | `/auth/logout` | Invalida sessão | 🔲 Planejado |
+| POST | `/auth/forgot-password` | Envia e-mail de recuperação | 🔲 Planejado |
+| POST | `/auth/reset-password` | Redefine senha com token | 🔲 Planejado |
 
 ---
 
 ### 4.2 Dashboard Home
 
-Tela principal. Exibe resumo financeiro do período atual.
+Tela principal. Exibe resumo financeiro do período atual com acesso rápido às funcionalidades.
+
+**Componentes da interface:**
+
+1. **Card de Saldo do Mês** — receitas, despesas e saldo líquido com indicador visual (verde/vermelho)
+2. **Últimas Transações** — 5 transações mais recentes com link "Ver todas"
+3. **Resumo de Parcelamentos dos Cartões** — fatura e parcelas abertas por cartão de crédito
+4. **FAB** — botão flutuante para registrar nova transação
 
 **Dados carregados:**
 
@@ -165,8 +190,28 @@ Tela principal. Exibe resumo financeiro do período atual.
 |---|---|---|
 | Resumo mensal (receitas, despesas, saldo) | `GET /dashboard/summary` | 5 min |
 | Últimas transações | `GET /transactions?limit=5` | 2 min |
-| Metas ativas com progresso | `GET /goals?active=true` | 5 min |
+| Resumo de parcelamentos por cartão | `GET /dashboard/cards-summary` | 5 min |
 | Dados do usuário | `GET /users/me` | 30 min |
+
+**Endpoint `GET /dashboard/cards-summary`:**
+
+Retorna, por cartão de crédito, o total da fatura do mês e as parcelas em aberto.
+
+```json
+{
+  "data": [
+    {
+      "card_id": "uuid",
+      "card_name": "Nubank",
+      "current_month_total": 1240.00,
+      "open_installments_count": 4,
+      "open_installments_total": 3200.00,
+      "closing_day": 16,
+      "best_purchase_day": 19
+    }
+  ]
+}
+```
 
 ---
 
@@ -202,19 +247,52 @@ Módulo central do MVP. Gerenciamento completo de receitas e despesas.
 
 ### 4.4 Cartões
 
+Cadastro e acompanhamento de cartões de crédito e débito.
+
+**Campos:**
+
 | Campo | Tipo | Observação |
 |---|---|---|
 | `name` | string | Nome do cartão (ex: Nubank) |
 | `type` | enum | `'credit'` ou `'debit'` |
 | `last_four` | string(4) | Últimos 4 dígitos |
 | `credit_limit` | numeric(12,2) | Limite (só crédito) |
-| `closing_day` | int | Dia de fechamento |
+| `closing_day` | int | Dia de fechamento da fatura (1–28) |
 | `due_day` | int | Dia de vencimento |
 | `color` | string | Cor em hex |
+| `best_purchase_day` | int | **Virtual** — calculado pelo backend, não persiste no banco |
+
+**Lógica de cálculo — `best_purchase_day`:**
+
+O melhor dia de compra é calculado com base no `closing_day`, respeitando dias úteis:
+
+1. Verificar se `closing_day` cai em fim de semana
+2. Se sim, avançar para a próxima segunda-feira
+3. Somar 1 dia ao resultado
+
+```
+closing_day = 16 (sábado)
+→ próximo dia útil = 18 (segunda-feira)
+→ best_purchase_day = 19
+```
+
+`best_purchase_day` é retornado pela API no momento da resposta — não é armazenado no banco.
+
+**Endpoints:**
+
+| Método | Rota | Descrição |
+|---|---|---|
+| GET | `/cards` | Lista todos os cartões do usuário |
+| POST | `/cards` | Cadastra novo cartão |
+| GET | `/cards/:id` | Retorna cartão por ID com `best_purchase_day` |
+| PATCH | `/cards/:id` | Atualiza dados do cartão |
+| DELETE | `/cards/:id` | Remove cartão |
 
 ---
 
 ### 4.5 Metas
+
+Objetivos financeiros com valor alvo, prazo e acompanhamento de progresso.
 
 | Campo | Tipo | Observação |
 |---|---|---|
@@ -280,20 +358,102 @@ npm run db:studio     # Abre Drizzle Studio local
 
 ---
 
-## 6. Integrações com Google Workspace
+## 6. Ambiente de Testes
 
-Integração completa com Google Drive e Google Docs via service account para manter a documentação técnica sincronizada com o código.
+O projeto segue **TDD (Test-Driven Development)**: testes escritos antes da implementação, nunca alterados para o código passar.
+
+### 6.1 API — Jest + ts-jest + Supertest
+
+```bash
+# Da raiz
+npm test              # Roda todos os testes da API
+npm run test:watch    # Modo watch
+
+# Ou diretamente
+cd apps/api && npm test
+```
+
+**Estrutura:**
+
+```
+apps/api/
+├── tests/
+│   ├── helpers/
+│   │   ├── global-setup.ts    # Carrega .env antes dos testes
+│   │   ├── setup-env.ts       # Sobrescreve DATABASE_URL com DATABASE_URL_TEST nos workers
+│   │   ├── db.ts              # testDb + clearTables()
+│   │   └── app.ts             # api() com supertest
+│   ├── auth_integration_test.ts        # 21 testes de /auth/*
+│   ├── api_health_integration_test.ts  # 5 testes de /health e /hello
+│   ├── database_migration_integration_test.ts  # 6 testes de migrations
+│   ├── connection_unit_test.ts         # 9 testes de buildConnectionString
+│   └── schema_unit_test.ts             # 11 testes de estrutura Drizzle
+└── jest.config.ts
+```
+
+**Pré-requisito:** `DATABASE_URL_TEST` no `.env` apontando para um banco PostgreSQL separado e isolado.
+
+**Estado atual dos testes da API:**
+
+| Grupo | Testes | Status |
+|---|---|---|
+| `POST /auth/register` | 9/9 | ✅ Passando |
+| Health / Hello | 5/5 | ✅ Passando |
+| Schema Drizzle | 11/11 | ✅ Passando |
+| Connection string | 9/9 | ✅ Passando |
+| Migrations | 6/6 | ✅ Passando |
+| `POST /auth/login` | 0/9 | ⏳ Red (não implementado) |
+| `POST /auth/forgot-password` | 0/4 | ⏳ Red (não implementado) |
+
+### 6.2 Mobile — jest-expo + Testing Library
+
+```bash
+# Da raiz
+npm run test:mobile         # Roda todos os testes do mobile
+npm run test:mobile:watch   # Modo watch
+
+# Ou diretamente
+cd apps/mobile && npm test
+```
+
+**Estrutura:**
+
+```
+apps/mobile/
+├── __tests__/
+│   ├── helpers/
+│   │   └── render.tsx         # renderWithProviders (QueryClient wrapper)
+│   ├── auth.store.test.ts     # 10 testes do Zustand store
+│   ├── login.test.tsx         # 6 testes da tela de login
+│   ├── register.test.tsx      # 12 testes da tela de registro
+│   └── forgot-password.test.tsx  # 5 testes da tela de recuperação
+└── jest.config.js
+```
+
+**Estado atual dos testes do mobile:** 33 testes em estado **red** — aguardando implementação das telas, store e services.
+
+### 6.3 Arquivos `.http` (REST Client)
+
+Alternativa ao Postman integrada ao VS Code (extensão REST Client):
+
+```
+apps/api/requests/
+├── health.http   # GET /health, GET /hello
+└── auth.http     # 16 requisições cobrindo todos os casos de /auth/*
+```
+
+---
+
+## 7. Integrações com Google Workspace
+
+Integração com Google Drive e Google Docs via service account para manter a documentação técnica sincronizada com o código.
 
 ### Serviços implementados
 
-| Arquivo | Função | Descrição |
-|---|---|---|
-| `apps/api/src/services/google-auth.service.ts` | `googleAuth` | Singleton de autenticação via service account |
-| `apps/api/src/services/docs.service.ts` | `findDocumentId()` | Busca o documento pelo nome no Drive |
-| `apps/api/src/services/docs.service.ts` | `exportDocument()` | Exporta o doc como texto plano |
-| `apps/api/src/services/docs.service.ts` | `replaceDocumentContent()` | Substitui todo o conteúdo do documento |
-| `apps/api/src/services/docs.service.ts` | `appendToDocument()` | Insere texto no final |
-| `apps/api/src/services/docs.service.ts` | `replaceSection()` | Substitui trecho por marcador |
+| Arquivo | Função |
+|---|---|
+| `apps/api/src/services/google-auth.service.ts` | Singleton de autenticação via service account |
+| `apps/api/src/services/docs.service.ts` | `findDocumentId`, `exportDocument`, `replaceDocumentContent`, `appendToDocument`, `replaceSection` |
 
 ### Scripts de sincronização
 
@@ -305,15 +465,11 @@ npx ts-node apps/api/src/scripts/export-doc.ts
 npx ts-node apps/api/src/scripts/update-doc.ts
 ```
 
-### Configuração
-
 A service account `revisador-documentacao-projeto@financeiro-nerydansen.iam.gserviceaccount.com` deve ter permissão de **Editor** no documento `OFFICIAL-FinApp_Documentacao_Tecnica` no Google Drive.
-
-Credencial armazenada como JSON minificado em `GOOGLE_SERVICE_ACCOUNT_KEY` no `.env`.
 
 ---
 
-## 7. Ambiente de Agentes (Claude Code)
+## 8. Ambiente de Agentes (Claude Code)
 
 O projeto usa [Claude Code](https://claude.ai/code) como agente de desenvolvimento. Configurações em `.claude/settings.json`.
 
@@ -333,12 +489,11 @@ O projeto usa [Claude Code](https://claude.ai/code) como agente de desenvolvimen
 
 Servidor MCP configurado em `.mcp.json`. Permite ao agente interagir com o Kanban durante o desenvolvimento.
 
-Variáveis necessárias: `TRELLO_API_KEY`, `TRELLO_TOKEN`
-
 ### Regras obrigatórias do projeto
 
 - **Nunca** executar `git commit` diretamente — sempre acionar `commit-writer`
 - Commits sempre em português brasileiro, `[TYPE]` em inglês
+- **TDD obrigatório** — testes escritos antes da implementação, nunca alterados para o código passar
 - **Nunca** usar `StyleSheet.create` no mobile — sempre NativeWind
 - **Nunca** retornar `passwordHash` em nenhum endpoint
 - `userId` sempre vem do JWT, nunca do body ou query string
@@ -346,7 +501,7 @@ Variáveis necessárias: `TRELLO_API_KEY`, `TRELLO_TOKEN`
 
 ---
 
-## 8. Variáveis de Ambiente
+## 9. Variáveis de Ambiente
 
 Crie `.env` na raiz com base no `.env.example`. **Nunca commitar o `.env`.**
 
@@ -357,20 +512,20 @@ Crie `.env` na raiz com base no `.env.example`. **Nunca commitar o `.env`.**
 | `DATABASE_PORT` | Sim* | Porta (padrão: 5432) |
 | `DATABASE_USER` | Sim* | Usuário do banco |
 | `DATABASE_PASSWORD` | Sim* | Senha do banco |
-| `DATABASE_NAME` | Sim* | Nome do banco |
+| `DATABASE_NAME` | Sim* | Nome do banco de produção |
+| `DATABASE_URL_TEST` | Não | Connection string do banco isolado para testes |
 | `JWT_SECRET` | Sim | Chave secreta longa para assinar tokens |
 | `PORT` | Não | Porta da API (padrão: 3000) |
 | `API_URL` | Não | URL base da API usada pelo mobile |
 | `TRELLO_API_KEY` | Não | API key do Trello (MCP) |
 | `TRELLO_TOKEN` | Não | Token de acesso do Trello (MCP) |
-| `DATABASE_URL_TEST` | Não | Connection string do banco isolado para testes |
 | `GOOGLE_SERVICE_ACCOUNT_KEY` | Não | JSON da service account (minificado, uma linha) |
 
 > \* `DATABASE_URL` tem prioridade. Se não definida, os parâmetros individuais são usados como fallback.
 
 ---
 
-## 9. Setup e Instalação
+## 10. Setup e Instalação
 
 ### Pré-requisitos
 
@@ -379,7 +534,15 @@ Crie `.env` na raiz com base no `.env.example`. **Nunca commitar o `.env`.**
 - Expo Go no celular (Play Store / App Store)
 - Acesso à VPS com PostgreSQL configurado
 - Conta no [Railway](https://railway.app) (deploy da API)
-- Conta no [Vercel](https://vercel.com) (deploy do frontend)
+
+### Extensões recomendadas (VS Code)
+
+- **ESLint** — lint em tempo real
+- **Prettier** — formatação automática
+- **REST Client** — executa arquivos `.http` diretamente no editor
+- **Drizzle ORM** — syntax highlight no schema
+- **Expo Tools** — suporte ao Expo Router
+- **GitLens** — histórico de git inline
 
 ### Instalação
 
@@ -395,8 +558,28 @@ npm install
 # Backend (porta 3000)
 npm run api
 
-# Mobile (em outro terminal — escaneie o QR com Expo Go)
+# Mobile — escaneie o QR com Expo Go
 npm run mobile
+```
+
+### Banco de dados
+
+```bash
+npm run db:generate   # Gera migrations após alterar schema
+npm run migrations    # Aplica na VPS
+npm run db:studio     # Abre Drizzle Studio (GUI local)
+```
+
+### Testes
+
+```bash
+# API
+npm test                    # Todos os testes da API
+npm run test:watch          # Modo watch
+
+# Mobile
+npm run test:mobile         # Todos os testes do mobile
+npm run test:mobile:watch   # Modo watch
 ```
 
 ### Deploy na Railway
@@ -408,51 +591,9 @@ npm run mobile
 5. A Railway detecta Node.js automaticamente e faz o build
 6. Anote a URL pública gerada — será usada como `API_URL` no mobile
 
-### Testes da API
-
-O ambiente de testes está configurado em `apps/api`. Utiliza **Jest + ts-jest + Supertest**.
-
-```bash
-# Rodar todos os testes (a partir da raiz)
-cd apps/api && npm test
-
-# Modo watch
-cd apps/api && npm run test:watch
-```
-
-**Estrutura de testes:**
-
-```
-apps/api/
-├── tests/
-│   ├── helpers/
-│   │   ├── global-setup.ts    # Carrega .env e aponta DATABASE_URL para o banco de teste
-│   │   ├── global-teardown.ts # Encerra conexões após todos os testes
-│   │   ├── db.ts              # Instância testDb + helper clearTables()
-│   │   └── app.ts             # Helper api() com supertest para testes de integração
-│   └── <modulo>_<tipo>_test.ts  # Ex: auth_integration_test.ts
-└── jest.config.ts
-```
-
-**Convenção de nomenclatura dos arquivos de teste:**
-`<módulo>_<tipo>_test.ts` — exemplos: `auth_integration_test.ts`, `transactions_unit_test.ts`
-
-**Pré-requisito:** definir `DATABASE_URL_TEST` no `.env` apontando para um banco PostgreSQL separado (`finapp-test`). Se não definida, os testes que acessam o banco falharão com aviso.
-
 ---
 
-### Extensões recomendadas (VS Code)
-
-- **ESLint** — lint em tempo real
-- **Prettier** — formatação automática
-- **Drizzle ORM** — syntax highlight no schema
-- **Thunder Client** — cliente HTTP integrado
-- **Expo Tools** — suporte ao Expo Router
-- **GitLens** — histórico de git inline
-
----
-
-## 10. Roadmap
+## 11. Roadmap
 
 | Fase | Nome | Foco | Status |
 |---|---|---|---|
@@ -464,4 +605,4 @@ apps/api/
 
 ---
 
-*FinApp · Documentação Técnica v1.1 · Atualizado em 13 mai 2026*
+*FinApp · Documentação Técnica v1.2 · Atualizado em mai 2026*
