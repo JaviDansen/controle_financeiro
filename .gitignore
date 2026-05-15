@@ -57,5 +57,6 @@ base_knowledge/*
 !base_knowledge/html_tabs_example/
 !base_knowledge/html_tabs_example/**
 !base_knowledge/htmls_examples/
+!base_knowledge/styles_examples/
 
 .gpt
