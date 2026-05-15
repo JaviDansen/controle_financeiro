@@ -54,5 +54,8 @@ base_knowledge/*
 !base_knowledge/tasks/**
 !base_knowledge/technical/
 !base_knowledge/technical/**
+!base_knowledge/html_tabs_example/
+!base_knowledge/html_tabs_example/**
+!base_knowledge/htmls_examples/
 
 .gpt
