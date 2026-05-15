@@ -14,7 +14,9 @@
     "migrations": "npm run migrations --workspace=packages/db",
     "db:studio": "npm run studio --workspace=packages/db",
     "test": "npm run test --workspace=apps/api",
-    "test:watch": "npm run test:watch --workspace=apps/api"
+    "test:watch": "npm run test:watch --workspace=apps/api",
+    "test:mobile": "npm run test --workspace=apps/mobile",
+    "test:mobile:watch": "npm run test:watch --workspace=apps/mobile"
   },
   "engines": {
     "node": "24.15.0"
