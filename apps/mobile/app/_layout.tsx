@@ -1,11 +1,12 @@
 import '../global.css';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, Alert } from 'react-native';
-import { Tabs, usePathname } from 'expo-router';
+import { Tabs, usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Icon } from '../src/components/ui/Icon';
 import { colors } from '../src/theme/colors';
+import { useAuthStore } from '../store/auth.store';
 
 /* ─── Tab item individual ────────────────────────────────── */
 function TabItem({
@@ -141,6 +142,26 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
 /* ─── Root layout ────────────────────────────────────────── */
 export default function RootLayout() {
+  const router = useRouter()
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated)
+  const [hydrated, setHydrated] = useState(false)
+
+  useEffect(() => {
+    if (useAuthStore.persist.hasHydrated()) {
+      setHydrated(true)
+      return
+    }
+    const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true))
+    return unsub
+  }, [])
+
+  useEffect(() => {
+    if (!hydrated) return
+    if (!isAuthenticated) {
+      router.replace('/(auth)/login')
+    }
+  }, [hydrated, isAuthenticated])
+
   return (
     <Tabs
       tabBar={(props) => <CustomTabBar {...props} />}

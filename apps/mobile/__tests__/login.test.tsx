@@ -1,92 +1,126 @@
-import React from 'react'
-import { fireEvent, waitFor } from '@testing-library/react-native'
-import { renderWithProviders } from './helpers/render'
-import LoginScreen from '@/app/(auth)/login'
+﻿import React from "react"
+import { render, fireEvent, waitFor, act } from "@testing-library/react-native"
 
-jest.mock('expo-router', () => ({
-  useRouter: () => ({ replace: jest.fn(), push: jest.fn() }),
-  Link: ({ children }: { children: React.ReactNode }) => children,
+jest.mock("expo-router", () => ({
+  useRouter: () => ({ replace: jest.fn() }),
+  Link: ({ children }: any) => children,
 }))
 
-jest.mock('expo-secure-store', () => ({
-  getItemAsync: jest.fn(),
-  setItemAsync: jest.fn(),
-  deleteItemAsync: jest.fn(),
+jest.mock("@expo/vector-icons", () => ({
+  Feather: () => null,
 }))
 
-jest.mock('@/services/auth.service', () => ({
+jest.mock("expo-secure-store", () => ({
+  getItemAsync: jest.fn().mockResolvedValue(null),
+  setItemAsync: jest.fn().mockResolvedValue(undefined),
+  deleteItemAsync: jest.fn().mockResolvedValue(undefined),
+}))
+
+jest.mock("../services/auth.service", () => ({
   login: jest.fn(),
 }))
 
-import * as authService from '@/services/auth.service'
-const mockLogin = authService.login as jest.MockedFunction<typeof authService.login>
+import LoginScreen from "../app/(auth)/login"
+import * as authService from "../services/auth.service"
+import { useAuthStore } from "../store/auth.store"
 
-describe('Tela de Login', () => {
-  beforeEach(() => {
-    jest.clearAllMocks()
+beforeEach(() => {
+  jest.clearAllMocks()
+  useAuthStore.setState({ user: null, token: null, isAuthenticated: false })
+})
+
+describe("LoginScreen — renderizacao", () => {
+  it("renderiza campo de email", () => {
+    const { getByPlaceholderText } = render(<LoginScreen />)
+    expect(getByPlaceholderText("seu@email.com")).toBeTruthy()
   })
 
-  it('renderiza campo de e-mail', () => {
-    const { getByPlaceholderText } = renderWithProviders(<LoginScreen />)
-    expect(getByPlaceholderText(/e-mail/i)).toBeTruthy()
+  it("renderiza botao de entrar", () => {
+    const { getByText } = render(<LoginScreen />)
+    expect(getByText("Entrar")).toBeTruthy()
   })
+})
 
-  it('renderiza campo de senha', () => {
-    const { getByPlaceholderText } = renderWithProviders(<LoginScreen />)
-    expect(getByPlaceholderText(/senha/i)).toBeTruthy()
-  })
+describe("LoginScreen — validacao Zod", () => {
+  it("exibe erro quando email e invalido e usuario tenta submeter", async () => {
+    const { getByPlaceholderText, getByText } = render(<LoginScreen />)
 
-  it('exibe erro Zod quando e-mail tem formato inválido', async () => {
-    const { getByPlaceholderText, getByText, getByRole } = renderWithProviders(<LoginScreen />)
-    fireEvent.changeText(getByPlaceholderText(/e-mail/i), 'nao-é-email')
-    fireEvent.changeText(getByPlaceholderText(/senha/i), 'senha123')
-    fireEvent.press(getByRole('button', { name: /entrar/i }))
+    fireEvent.changeText(getByPlaceholderText("seu@email.com"), "nao-e-email")
+    fireEvent.changeText(getByPlaceholderText("••••••••"), "senha123")
+    fireEvent.press(getByText("Entrar"))
+
     await waitFor(() => {
-      expect(getByText(/e-mail.*inv[aá]lido/i)).toBeTruthy()
+      expect(getByText("E-mail inválido")).toBeTruthy()
     })
   })
 
-  it('exibe erro Zod quando senha está vazia', async () => {
-    const { getByPlaceholderText, getByText, getByRole } = renderWithProviders(<LoginScreen />)
-    fireEvent.changeText(getByPlaceholderText(/e-mail/i), 'joao@teste.com')
-    fireEvent.press(getByRole('button', { name: /entrar/i }))
+  it("exibe erro quando senha tem menos de 6 caracteres", async () => {
+    const { getByPlaceholderText, getByText } = render(<LoginScreen />)
+
+    fireEvent.changeText(getByPlaceholderText("seu@email.com"), "joao@teste.com")
+    fireEvent.changeText(getByPlaceholderText("••••••••"), "123")
+    fireEvent.press(getByText("Entrar"))
+
     await waitFor(() => {
-      expect(getByText(/senha.*obrigat[oó]ria/i)).toBeTruthy()
+      expect(getByText("A senha deve ter no mínimo 6 caracteres")).toBeTruthy()
     })
   })
+})
 
-  it('chama serviço de login ao submeter formulário válido', async () => {
-    mockLogin.mockResolvedValueOnce({ token: 'eyJ.abc.def', user: { id: '1', name: 'João', email: 'joao@teste.com' } })
-    const { getByPlaceholderText, getByRole } = renderWithProviders(<LoginScreen />)
-    fireEvent.changeText(getByPlaceholderText(/e-mail/i), 'joao@teste.com')
-    fireEvent.changeText(getByPlaceholderText(/senha/i), 'senha123')
-    fireEvent.press(getByRole('button', { name: /entrar/i }))
-    await waitFor(() => {
-      expect(mockLogin).toHaveBeenCalledWith({ email: 'joao@teste.com', password: 'senha123' })
+describe("LoginScreen — integracao com service", () => {
+  it("chama authService.login ao submeter formulario valido", async () => {
+    ;(authService.login as jest.Mock).mockResolvedValueOnce({
+      token: "eyJhbGci.payload.sig",
+      user: { id: "uuid-1", name: "Joao", email: "joao@teste.com" },
     })
+
+    const { getByPlaceholderText, getByText } = render(<LoginScreen />)
+
+    fireEvent.changeText(getByPlaceholderText("seu@email.com"), "joao@teste.com")
+    fireEvent.changeText(getByPlaceholderText("••••••••"), "senha123")
+
+    await act(async () => {
+      fireEvent.press(getByText("Entrar"))
+    })
+
+    expect(authService.login).toHaveBeenCalledWith("joao@teste.com", "senha123")
   })
 
-  it('redireciona para Home após login bem-sucedido', async () => {
-    const mockReplace = jest.fn()
-    jest.mocked(require('expo-router').useRouter).mockReturnValue({ replace: mockReplace, push: jest.fn() })
-    mockLogin.mockResolvedValueOnce({ token: 'eyJ.abc.def', user: { id: '1', name: 'João', email: 'joao@teste.com' } })
-    const { getByPlaceholderText, getByRole } = renderWithProviders(<LoginScreen />)
-    fireEvent.changeText(getByPlaceholderText(/e-mail/i), 'joao@teste.com')
-    fireEvent.changeText(getByPlaceholderText(/senha/i), 'senha123')
-    fireEvent.press(getByRole('button', { name: /entrar/i }))
-    await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith('/(tabs)')
+  it("salva token no store apos login bem-sucedido", async () => {
+    ;(authService.login as jest.Mock).mockResolvedValueOnce({
+      token: "eyJhbGci.payload.sig",
+      user: { id: "uuid-1", name: "Joao", email: "joao@teste.com" },
     })
+
+    const { getByPlaceholderText, getByText } = render(<LoginScreen />)
+
+    fireEvent.changeText(getByPlaceholderText("seu@email.com"), "joao@teste.com")
+    fireEvent.changeText(getByPlaceholderText("••••••••"), "senha123")
+
+    await act(async () => {
+      fireEvent.press(getByText("Entrar"))
+    })
+
+    expect(useAuthStore.getState().token).toBe("eyJhbGci.payload.sig")
+    expect(useAuthStore.getState().isAuthenticated).toBe(true)
   })
 
-  it('exibe mensagem de erro da API em caso de falha', async () => {
-    mockLogin.mockRejectedValueOnce(new Error('Credenciais inválidas'))
-    const { getByPlaceholderText, getByRole, getByText } = renderWithProviders(<LoginScreen />)
-    fireEvent.changeText(getByPlaceholderText(/e-mail/i), 'joao@teste.com')
-    fireEvent.changeText(getByPlaceholderText(/senha/i), 'senha123')
-    fireEvent.press(getByRole('button', { name: /entrar/i }))
+  it("exibe mensagem de erro da API quando login falha com 401", async () => {
+    ;(authService.login as jest.Mock).mockRejectedValueOnce(
+      new Error("Credenciais invalidas")
+    )
+
+    const { getByPlaceholderText, getByText } = render(<LoginScreen />)
+
+    fireEvent.changeText(getByPlaceholderText("seu@email.com"), "joao@teste.com")
+    fireEvent.changeText(getByPlaceholderText("••••••••"), "senha123")
+
+    await act(async () => {
+      fireEvent.press(getByText("Entrar"))
+    })
+
     await waitFor(() => {
-      expect(getByText(/credenciais inv[aá]lidas/i)).toBeTruthy()
+      expect(getByText("Credenciais invalidas")).toBeTruthy()
     })
   })
 })

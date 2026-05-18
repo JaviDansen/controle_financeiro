@@ -3,10 +3,10 @@ import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvo
 import { Link } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { z } from 'zod';
+import * as authService from '../../services/auth.service';
 
-// Validação Zod para o formulário
 const forgotPasswordSchema = z.object({
-  email: z.string().email('E-mail inválido'),
+  email: z.string().min(1, 'E-mail é obrigatório').email('E-mail inválido'),
 });
 
 export default function ForgotPasswordScreen() {
@@ -19,22 +19,18 @@ export default function ForgotPasswordScreen() {
     try {
       setError('');
       forgotPasswordSchema.parse({ email });
-      
       setLoading(true);
-      
-      // TODO: Implementar chamada React Query useMutation para POST /auth/forgot-password
-      
-      setTimeout(() => {
-        setLoading(false);
-        setSuccess(true); // Exibe a tela de sucesso
-      }, 1000);
-      
+      await authService.forgotPassword(email);
+      setSuccess(true);
     } catch (err) {
       if (err instanceof z.ZodError) {
         setError(err.errors[0].message);
+      } else if (err instanceof Error) {
+        setError(err.message);
       } else {
         setError('Ocorreu um erro ao processar a solicitação');
       }
+    } finally {
       setLoading(false);
     }
   };
@@ -66,7 +62,7 @@ export default function ForgotPasswordScreen() {
               <View className="w-16 h-16 bg-[#10b981] rounded-full items-center justify-center mb-6">
                 <Feather name="check" size={32} color="#fff" />
               </View>
-              <Text className="text-xl font-semibold text-[#15151A] mb-2 text-center">E-mail enviado!</Text>
+              <Text className="text-xl font-semibold text-[#15151A] mb-2 text-center">Link enviado!</Text>
               <Text className="text-[15px] text-[#3B3B43] text-center mb-8 px-4">
                 Verifique sua caixa de entrada (e a pasta de spam) para o e-mail <Text className="font-medium">{email}</Text>.
               </Text>
@@ -91,7 +87,7 @@ export default function ForgotPasswordScreen() {
                     className="flex-1 text-base text-[#15151A]"
                     value={email}
                     onChangeText={setEmail}
-                    placeholder="seu@email.com"
+                    placeholder="seu@e-mail.com"
                     placeholderTextColor="#8B8B92"
                     keyboardType="email-address"
                     autoCapitalize="none"
@@ -100,7 +96,7 @@ export default function ForgotPasswordScreen() {
               </View>
 
               {/* Botão Enviar */}
-              <Pressable onPress={submit} disabled={loading} className={`h-14 rounded-2xl bg-[#15151A] flex-row items-center justify-center gap-2 mt-2 active:scale-[0.97] transition-transform ${loading ? 'opacity-70' : 'opacity-100'}`}>
+              <Pressable onPress={submit} disabled={loading} accessibilityRole="button" accessibilityLabel="Enviar link de recuperação" className={`h-14 rounded-2xl bg-[#15151A] flex-row items-center justify-center gap-2 mt-2 active:scale-[0.97] transition-transform ${loading ? 'opacity-70' : 'opacity-100'}`}>
                 {loading ? <ActivityIndicator color="#fff" /> : <><Text className="text-white text-base font-medium">Enviar link de recuperação</Text><Feather name="arrow-right" size={16} color="#fff" /></>}
               </Pressable>
 
