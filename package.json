@@ -6,6 +6,9 @@
     "apps/*",
     "packages/*"
   ],
+  "overrides": {
+    "react-test-renderer": "19.1.0"
+  },
   "scripts": {
     "api": "npm run dev --workspace=apps/api",
     "build:api": "npm run build --workspace=packages/db && npm run build --workspace=apps/api",

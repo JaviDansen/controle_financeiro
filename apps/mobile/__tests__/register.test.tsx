@@ -109,6 +109,7 @@ describe('Tela de Registro', () => {
       expect(getByText(/senhas.*n[aã]o.*coincidem/i)).toBeTruthy()
     })
   })
+  })
 
   describe('chamada ao serviço', () => {
     it('chama authService.register com os dados corretos', async () => {
