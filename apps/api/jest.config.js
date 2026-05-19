@@ -13,6 +13,7 @@ const config = {
   globalSetup: '<rootDir>/tests/helpers/global-setup.ts',
   globalTeardown: '<rootDir>/tests/helpers/global-teardown.ts',
   passWithNoTests: true,
+  maxWorkers: 1,
 }
 
 module.exports = config
