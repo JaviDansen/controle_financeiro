@@ -10,6 +10,10 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@finapp/db": ["../../packages/db/src/index.ts"]
+    },
     "types": ["jest", "node"]
   },
   "include": ["src/**/*"],

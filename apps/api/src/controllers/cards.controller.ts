@@ -1,4 +1,4 @@
-import { Response } from 'express'
+import { RequestHandler } from 'express'
 import { and, eq, gte, lt, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { cards, db, transactions } from '@finapp/db'
@@ -65,8 +65,9 @@ function currentMonthRange(): { start: string; nextStart: string } {
   }
 }
 
-export async function listCards(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const userCards = await db.select().from(cards).where(eq(cards.userId, req.userId))
+export const listCards: RequestHandler = async (req, res) => {
+  const userId = (req as AuthenticatedRequest).userId
+  const userCards = await db.select().from(cards).where(eq(cards.userId, userId))
   const { start, nextStart } = currentMonthRange()
 
   const data = await Promise.all(
@@ -92,7 +93,8 @@ export async function listCards(req: AuthenticatedRequest, res: Response): Promi
   res.json({ data })
 }
 
-export async function createCard(req: AuthenticatedRequest, res: Response): Promise<void> {
+export const createCard: RequestHandler = async (req, res) => {
+  const userId = (req as AuthenticatedRequest).userId
   const parsed = createCardSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.errors[0].message })
@@ -103,7 +105,7 @@ export async function createCard(req: AuthenticatedRequest, res: Response): Prom
   const [card] = await db
     .insert(cards)
     .values({
-      userId: req.userId,
+      userId,
       name: cardData.name,
       bank: cardData.bank,
       type: cardData.type,
