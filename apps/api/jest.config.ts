@@ -1,6 +1,4 @@
-import type { Config } from 'jest'
-
-const config: Config = {
+const config = {
   testEnvironment: 'node',
   transform: {
     '^.+\\.tsx?$': ['ts-jest', { tsconfig: './tsconfig.json' }],
