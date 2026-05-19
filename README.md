@@ -63,11 +63,14 @@ O FinApp é um aplicativo mobile de controle financeiro pessoal construído em f
 | Ambiente de testes da API (Jest + Supertest) | ✅ Concluído |
 | `POST /auth/register` | ✅ Concluído |
 | Testes TDD mobile (infraestrutura + 33 testes red) | ✅ Concluído |
+| Schema de cartões expandido — Migration 0003 | ✅ Concluído |
+| Testes TDD da API para `/cards` (15 cenários) | ✅ Concluído |
+| Mobile — service, hook e tela de cartões conectada | ✅ Concluído |
 | `POST /auth/login` | 🔲 Planejado |
 | `POST /auth/forgot-password` | 🔲 Planejado |
 | Telas mobile de autenticação | 🔲 Planejado |
 | Módulo de Transações | 🔲 Planejado |
-| Módulo de Cartões | 🔲 Planejado |
+| Módulo de Cartões — implementação da API | 🔧 Testes prontos, aguardando controller |
 | Módulo de Metas | 🔲 Planejado |
 | Dashboard Home | 🔲 Planejado |
 
@@ -254,12 +257,17 @@ Cadastro e acompanhamento de cartões de crédito e débito.
 | Campo | Tipo | Observação |
 |---|---|---|
 | `name` | string | Nome do cartão (ex: Nubank) |
+| `bank` | string | Nome do banco emissor |
 | `type` | enum | `'credit'` ou `'debit'` |
 | `last_four` | string(4) | Últimos 4 dígitos |
+| `holder` | string | Nome do titular impresso no cartão |
+| `expiry` | string | Validade no formato `MM/YY` |
 | `credit_limit` | numeric(12,2) | Limite (só crédito) |
 | `closing_day` | int | Dia de fechamento da fatura (1–28) |
 | `due_day` | int | Dia de vencimento |
-| `color` | string | Cor em hex |
+| `gradient_from` | string | Cor primária do gradiente (hex) — coluna `color` no banco |
+| `gradient_to` | string | Cor secundária do gradiente (hex) |
+| `accent` | string | Cor de destaque do cartão (hex) |
 | `best_purchase_day` | int | **Virtual** — calculado pelo backend, não persiste no banco |
 
 **Lógica de cálculo — `best_purchase_day`:**
@@ -387,8 +395,9 @@ apps/api/
 │   ├── api_health_integration_test.ts  # 5 testes de /health e /hello
 │   ├── database_migration_integration_test.ts  # 6 testes de migrations
 │   ├── connection_unit_test.ts         # 9 testes de buildConnectionString
-│   └── schema_unit_test.ts             # 11 testes de estrutura Drizzle
-└── jest.config.ts
+│   ├── schema_unit_test.ts             # 11 testes de estrutura Drizzle
+│   └── cards_integration_test.ts       # 15 testes de GET /cards e POST /cards
+└── jest.config.js                      # maxWorkers: 1 para evitar conflito de FK
 ```
 
 **Pré-requisito:** `DATABASE_URL_TEST` no `.env` apontando para um banco PostgreSQL separado e isolado.
@@ -402,6 +411,7 @@ apps/api/
 | Schema Drizzle | 11/11 | ✅ Passando |
 | Connection string | 9/9 | ✅ Passando |
 | Migrations | 6/6 | ✅ Passando |
+| `GET /cards` + `POST /cards` | 15/15 | ✅ Escritos (⏳ Red — implementação pendente) |
 | `POST /auth/login` | 0/9 | ⏳ Red (não implementado) |
 | `POST /auth/forgot-password` | 0/4 | ⏳ Red (não implementado) |
 
@@ -422,15 +432,18 @@ cd apps/mobile && npm test
 apps/mobile/
 ├── __tests__/
 │   ├── helpers/
-│   │   └── render.tsx         # renderWithProviders (QueryClient wrapper)
-│   ├── auth.store.test.ts     # 10 testes do Zustand store
-│   ├── login.test.tsx         # 6 testes da tela de login
-│   ├── register.test.tsx      # 12 testes da tela de registro
-│   └── forgot-password.test.tsx  # 5 testes da tela de recuperação
+│   │   └── render.tsx              # renderWithProviders (QueryClient wrapper)
+│   ├── auth.store.test.ts          # 10 testes do Zustand store
+│   ├── login.test.tsx              # 6 testes da tela de login
+│   ├── register.test.tsx           # 12 testes da tela de registro
+│   ├── forgot-password.test.tsx    # 5 testes da tela de recuperação
+│   └── cards.service.test.ts       # 7 testes de getCards e createCard (GREEN)
 └── jest.config.js
 ```
 
-**Estado atual dos testes do mobile:** 33 testes em estado **red** — aguardando implementação das telas, store e services.
+**Estado atual dos testes do mobile:**
+- `cards.service.test.ts` — 7/7 ✅ Passando
+- Demais 33 testes — ⏳ Red — aguardando implementação das telas, store e services de autenticação
 
 ### 6.3 Arquivos `.http` (REST Client)
 
@@ -605,4 +618,4 @@ npm run test:mobile:watch   # Modo watch
 
 ---
 
-*FinApp · Documentação Técnica v1.2 · Atualizado em mai 2026*
+*FinApp · Documentação Técnica v1.3 · Atualizado em 19 mai 2026*

@@ -77,9 +77,16 @@ Verificação de conexão ao banco no startup        Concluído
 Integração Google Docs/Drive        Concluído
 Ambiente de agentes Claude Code        Concluído
 Mobile — Hello World (tela inicial)        Concluído
-Autenticação (rotas e telas)        Planejado
+Ambiente de testes da API (Jest + Supertest)        Concluído
+POST /auth/register        Concluído
+Testes TDD mobile (infraestrutura + 33 testes red)        Concluído
+Schema de cartões expandido — Migration 0003        Concluído
+Testes TDD da API para /cards (15 cenários)        Concluído
+Mobile — service, hook e tela de cartões conectada        Concluído
+POST /auth/login e demais rotas de auth        Planejado
+Telas mobile de autenticação        Planejado
 Módulo de Transações        Planejado
-Módulo de Cartões        Planejado
+Módulo de Cartões — implementação da API        Em andamento (testes prontos, controller pendente)
 Módulo de Metas        Planejado
 Dashboard Home        Planejado
 
@@ -313,12 +320,18 @@ Cadastro e acompanhamento de cartões de crédito e débito para categorização
 Campos de um cartão
 Campo        Tipo        Observação
 name        string        Nome do cartão (ex: Nubank)
+bank        string        Nome do banco emissor
 type        enum        'credit' ou 'debit'
 last_four        string(4)        Últimos 4 dígitos
+holder        string        Nome do titular impresso no cartão
+expiry        string        Validade no formato MM/YY
 credit_limit        decimal        Limite (apenas cartões de crédito)
 closing_day        int        Dia de fechamento da fatura
 due_day        int        Dia de vencimento da fatura
-color        string        Cor de identificação visual (hex)
+gradient_from        string        Cor primária do gradiente (hex) — coluna 'color' no banco
+gradient_to        string        Cor secundária do gradiente (hex)
+accent        string        Cor de destaque do cartão (hex)
+best_purchase_day        int        Virtual — calculado pelo backend, não persiste no banco
 
 
 
@@ -852,4 +865,4 @@ ________________
 
 
 
-FinApp — Documentação Técnica v1.2  ·  Atualizado em 14 mai 2026
+FinApp — Documentação Técnica v1.3  ·  Atualizado em 19 mai 2026
