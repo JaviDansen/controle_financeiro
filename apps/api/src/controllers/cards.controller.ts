@@ -80,6 +80,7 @@ export const listCards: RequestHandler = async (req, res) => {
         .where(
           and(
             eq(transactions.cardId, card.id),
+            eq(transactions.userId, userId),
             eq(transactions.type, 'expense'),
             gte(transactions.date, start),
             lt(transactions.date, nextStart)
