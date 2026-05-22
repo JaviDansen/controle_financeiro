@@ -361,6 +361,22 @@
             </svg>
           </div>
           <div class="task-body">
+            <div class="task-name">Testes TDD de Integração para /cards — RED</div>
+            <div class="task-desc">Arquivo <code>apps/api/tests/cards_integration_test.ts</code> criado com 15 cenários cobrindo <code>GET /cards</code> (autenticação, isolamento por usuário, campos calculados como <code>used</code>/<code>currentMonthTotal</code>/<code>bestPurchaseDay</code>, <code>openInstallmentsCount/Total = 0</code>, tipos crédito/débito, <code>gradientColors</code> como array) e <code>POST /cards</code> (validação Zod, criação de crédito/débito, <code>type</code> inválido, sem vazamento de <code>userId</code>). Escrito antes da implementação (TDD Red). <code>jest.config.js</code> atualizado com <code>maxWorkers: 1</code> para evitar conflitos de FK em banco de teste compartilhado.</div>
+            <div class="task-meta">
+              <span class="tag tag-api">api</span>
+              <span class="task-date">19 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
             <div class="task-name">Verificação de Conexão ao Banco na Inicialização</div>
             <div class="task-desc">Função <code>checkDatabase()</code> executada no startup da API que testa a conexão ao PostgreSQL com <code>SELECT 1</code>. Em caso de sucesso exibe <code>✔ Banco de dados conectado: host:porta/banco</code>; em caso de falha exibe o erro com host e encerra o processo com <code>exit(1)</code>. Roda dentro do callback de <code>app.listen()</code> em <code>apps/api/src/index.ts</code>.</div>
             <div class="task-meta">
@@ -442,6 +458,22 @@
           </div>
         </div>
 
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">Schema de Cartões Expandido — Migration 0003</div>
+            <div class="task-desc">Cinco novas colunas adicionadas à tabela <code>cards</code> em <code>packages/db/schema/cards.ts</code>: <code>bank</code> (varchar 100), <code>holder</code> (varchar 100), <code>expiry</code> (varchar 7, formato MM/YY), <code>gradientTo</code> (varchar 7) e <code>accent</code> (varchar 7). A coluna <code>color</code> existente foi mantida com alias TypeScript <code>gradientFrom</code> para evitar prompt interativo no Drizzle Kit. Migration <code>0003_mixed_nighthawk.sql</code> gerada e aplicada na VPS e no banco de teste.</div>
+            <div class="task-meta">
+              <span class="tag tag-db">banco</span>
+              <span class="task-date">19 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -478,6 +510,22 @@
             <div class="task-meta">
               <span class="tag tag-mobile">mobile</span>
               <span class="task-date">13 mai 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">
+            <svg viewBox="0 0 10 10" fill="none">
+              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-body">
+            <div class="task-name">Tela de Cartões Conectada à API — Service + Hook + Testes</div>
+            <div class="task-desc">Substituição completa dos mocks na tela de cartões por dados reais da API. Criados: <code>apps/mobile/services/cards.service.ts</code> (<code>getCards</code> e <code>createCard</code> via fetch autenticado), <code>apps/mobile/hooks/useCards.ts</code> (React Query com <code>enabled: !!token</code>), <code>apps/mobile/__tests__/cards.service.test.ts</code> (7 testes com mock de fetch). Interface <code>Card</code> em <code>src/types/finance.ts</code> atualizada para camelCase com nullability correta. Tela <code>app/cards.tsx</code> refatorada: loading via <code>ActivityIndicator</code>, empty state, campos nullable com operador <code>??</code> e botão "Novo" com Alert temporário.</div>
+            <div class="task-meta">
+              <span class="tag tag-mobile">mobile</span>
+              <span class="task-date">19 mai 2026</span>
             </div>
           </div>
         </div>
@@ -638,7 +686,7 @@
     </div>
 
     <footer>
-      FinApp · Fase 1 MVP · Atualizado em 13 mai 2026 (v8)
+      FinApp · Fase 1 MVP · Atualizado em 19 mai 2026 (v11)
     </footer>
 
   </div>
@@ -668,6 +716,14 @@
       '.claude/skills/atualizar-tasks/SKILL.md', '.claude/skills/fazer-commit/SKILL.md',
       'base_knowledge/tasks.html',
       '~/.claude/agents/commit-writer.md',
+      'packages/db/migrations/0003_mixed_nighthawk.sql',
+      'apps/api/tests/cards_integration_test.ts',
+      'apps/api/jest.config.js',
+      'apps/mobile/services/cards.service.ts',
+      'apps/mobile/hooks/useCards.ts',
+      'apps/mobile/__tests__/cards.service.test.ts',
+      'apps/mobile/app/cards.tsx',
+      'apps/mobile/src/types/finance.ts',
     ]
     document.getElementById('total-files').textContent = files.length
   </script>

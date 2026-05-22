@@ -5,6 +5,14 @@ type JwtPayload = {
   userId?: string
 }
 
+declare global {
+  namespace Express {
+    interface Request {
+      userId?: string
+    }
+  }
+}
+
 export type AuthenticatedRequest = Request & {
   userId: string
 }
@@ -31,7 +39,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
       return
     }
 
-    ;(req as AuthenticatedRequest).userId = payload.userId
+    req.userId = payload.userId
     next()
   } catch {
     res.status(401).json({ error: 'Token inválido' })

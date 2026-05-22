@@ -9,7 +9,7 @@ export const cards = pgTable('cards', {
   type: varchar('type', { length: 10 }).notNull(), // 'credit' | 'debit'
   lastFour: varchar('last_four', { length: 4 }),
   holder: varchar('holder', { length: 100 }),
-  expiry: varchar('expiry', { length: 10 }),
+  expiry: varchar('expiry', { length: 7 }), // MM/YY
   creditLimit: numeric('credit_limit', { precision: 12, scale: 2 }),
   closingDay: integer('closing_day'),
   dueDay: integer('due_day'),
