@@ -23,5 +23,9 @@
   },
   "engines": {
     "node": "24.15.0"
+  },
+  "dependencies": {
+    "expo": "^56.0.3",
+    "expo-router": "^56.2.5"
   }
 }

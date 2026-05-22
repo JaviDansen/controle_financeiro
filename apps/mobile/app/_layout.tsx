@@ -147,6 +147,10 @@ export default function RootLayout() {
   const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
+    if (!useAuthStore.persist) {
+      setHydrated(true)
+      return
+    }
     if (useAuthStore.persist.hasHydrated()) {
       setHydrated(true)
       return
