@@ -11,7 +11,10 @@ export interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
-  setUser: (user: User, token: string) => Promise<void>;
+  hasHydrated: boolean;
+  setUser: (user: User | null) => void;
+  setToken: (token: string | null) => Promise<void>;
+  hydrate: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -19,14 +22,33 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   token: null,
   isAuthenticated: false,
-  
-  setUser: async (user, token) => {
-    await SecureStore.setItemAsync('token', token);
-    set({ user, token, isAuthenticated: true });
+  hasHydrated: false,
+
+  setUser: (user) => {
+    set({ user });
   },
-  
+
+  setToken: async (token) => {
+    if (token) {
+      await SecureStore.setItemAsync('token', token);
+    } else {
+      await SecureStore.deleteItemAsync('token');
+    }
+
+    set({ token, isAuthenticated: !!token });
+  },
+
+  hydrate: async () => {
+    const token = await SecureStore.getItemAsync('token');
+    set({
+      token,
+      isAuthenticated: !!token,
+      hasHydrated: true,
+    });
+  },
+
   logout: async () => {
     await SecureStore.deleteItemAsync('token');
-    set({ user: null, token: null, isAuthenticated: false });
+    set({ user: null, token: null, isAuthenticated: false, hasHydrated: true });
   },
 }));

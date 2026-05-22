@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Icon } from '../src/components/ui/Icon';
-import { TxRow } from '../src/components/transactions/TxRow';
-import { TRANSACTIONS } from '../src/data/mocks/transactions';
-import { fmtBRLShort } from '../src/lib/currency';
-import { colors } from '../src/theme/colors';
-import { Transaction } from '../src/types/finance';
+import { Icon } from '../../src/components/ui/Icon';
+import { TxRow } from '../../src/components/transactions/TxRow';
+import { TRANSACTIONS } from '../../src/data/mocks/transactions';
+import { fmtBRLShort } from '../../src/lib/currency';
+import { colors } from '../../src/theme/colors';
+import { Transaction } from '../../src/types/finance';
 
 type TabKey = 'all' | 'income' | 'expense';
 
