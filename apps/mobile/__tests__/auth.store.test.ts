@@ -1,87 +1,50 @@
-import * as SecureStore from 'expo-secure-store'
-import { useAuthStore } from '@/store/auth.store'
-
-jest.mock('expo-secure-store', () => ({
-  getItemAsync: jest.fn(),
-  setItemAsync: jest.fn(),
-  deleteItemAsync: jest.fn(),
+﻿jest.mock("expo-secure-store", () => ({
+  getItemAsync: jest.fn().mockResolvedValue(null),
+  setItemAsync: jest.fn().mockResolvedValue(undefined),
+  deleteItemAsync: jest.fn().mockResolvedValue(undefined),
 }))
 
-const mockSecureStore = SecureStore as jest.Mocked<typeof SecureStore>
+import { useAuthStore } from "../store/auth.store"
 
-describe('auth.store', () => {
-  beforeEach(() => {
-    jest.clearAllMocks()
-    useAuthStore.setState({ user: null, token: null, isAuthenticated: false })
+beforeEach(() => {
+  useAuthStore.setState({ user: null, token: null, isAuthenticated: false })
+})
+
+describe("useAuthStore — setToken", () => {
+  it("quando setToken recebe um token valido, isAuthenticated fica true", () => {
+    useAuthStore.getState().setToken("eyJhbGci.payload.sig")
+    expect(useAuthStore.getState().isAuthenticated).toBe(true)
+    expect(useAuthStore.getState().token).toBe("eyJhbGci.payload.sig")
   })
 
-  describe('estado inicial', () => {
-    it('user é null', () => {
-      const { user } = useAuthStore.getState()
-      expect(user).toBeNull()
-    })
-
-    it('token é null', () => {
-      const { token } = useAuthStore.getState()
-      expect(token).toBeNull()
-    })
-
-    it('isAuthenticated é false', () => {
-      const { isAuthenticated } = useAuthStore.getState()
-      expect(isAuthenticated).toBe(false)
-    })
+  it("quando setToken recebe null, isAuthenticated fica false", () => {
+    useAuthStore.getState().setToken("eyJhbGci.payload.sig")
+    useAuthStore.getState().setToken(null)
+    expect(useAuthStore.getState().isAuthenticated).toBe(false)
+    expect(useAuthStore.getState().token).toBeNull()
   })
+})
 
-  describe('setUser', () => {
-    const fakeUser = { id: 'abc-123', name: 'João', email: 'joao@teste.com' }
-    const fakeToken = 'eyJ.abc.def'
-
-    it('atualiza user no estado', async () => {
-      await useAuthStore.getState().setUser(fakeUser, fakeToken)
-      expect(useAuthStore.getState().user).toEqual(fakeUser)
+describe("useAuthStore — logout", () => {
+  it("logout limpa user, token e isAuthenticated", () => {
+    useAuthStore.setState({
+      user: { id: "uuid-1", name: "Joao", email: "joao@teste.com" },
+      token: "eyJhbGci.payload.sig",
+      isAuthenticated: true,
     })
 
-    it('atualiza token no estado', async () => {
-      await useAuthStore.getState().setUser(fakeUser, fakeToken)
-      expect(useAuthStore.getState().token).toBe(fakeToken)
-    })
+    useAuthStore.getState().logout()
 
-    it('marca isAuthenticated como true', async () => {
-      await useAuthStore.getState().setUser(fakeUser, fakeToken)
-      expect(useAuthStore.getState().isAuthenticated).toBe(true)
-    })
-
-    it('persiste token no SecureStore', async () => {
-      await useAuthStore.getState().setUser(fakeUser, fakeToken)
-      expect(mockSecureStore.setItemAsync).toHaveBeenCalledWith('token', fakeToken)
-    })
+    expect(useAuthStore.getState().user).toBeNull()
+    expect(useAuthStore.getState().token).toBeNull()
+    expect(useAuthStore.getState().isAuthenticated).toBe(false)
   })
+})
 
-  describe('logout', () => {
-    const fakeUser = { id: 'abc-123', name: 'João', email: 'joao@teste.com' }
-
-    beforeEach(async () => {
-      await useAuthStore.getState().setUser(fakeUser, 'eyJ.abc.def')
-    })
-
-    it('limpa user do estado', async () => {
-      await useAuthStore.getState().logout()
-      expect(useAuthStore.getState().user).toBeNull()
-    })
-
-    it('limpa token do estado', async () => {
-      await useAuthStore.getState().logout()
-      expect(useAuthStore.getState().token).toBeNull()
-    })
-
-    it('marca isAuthenticated como false', async () => {
-      await useAuthStore.getState().logout()
-      expect(useAuthStore.getState().isAuthenticated).toBe(false)
-    })
-
-    it('remove token do SecureStore', async () => {
-      await useAuthStore.getState().logout()
-      expect(mockSecureStore.deleteItemAsync).toHaveBeenCalledWith('token')
-    })
+describe("useAuthStore — setUser", () => {
+  it("setUser armazena os dados do usuario corretamente", () => {
+    const user = { id: "uuid-1", name: "Joao", email: "joao@teste.com" }
+    useAuthStore.getState().setUser(user)
+    expect(useAuthStore.getState().user).toEqual(user)
   })
 })

@@ -14,7 +14,8 @@
       "WebFetch(domain:smithery.ai)",
       "mcp__trello__trello_update_label",
       "mcp__trello__trello_create_card",
-      "mcp__trello__trello_create_label"
+      "mcp__trello__trello_create_label",
+      "mcp__trello__trello_get_list_cards"
     ]
   },
   "enabledMcpjsonServers": [

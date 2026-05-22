@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { z } from 'zod';
+import * as authService from '../../services/auth.service';
+import { useAuthStore } from '../../store/auth.store';
 
 // Validação de Zod com base nas regras do seu projeto
 const loginSchema = z.object({
@@ -22,23 +24,17 @@ export default function LoginScreen() {
   const submit = async () => {
     try {
       setError('');
-      // Valida via Zod antes de qualquer ação
       loginSchema.parse({ email, password });
-      
       setLoading(true);
-      
-      // TODO: Implementar chamada React Query useMutation para POST /auth/login
-      // TODO: Salvar JWT no SecureStore e atualizar Zustand auth.store.ts
-      
-      setTimeout(() => {
-        setLoading(false);
-        // Placeholder de sucesso
-        // router.replace('/(tabs)/home'); 
-      }, 1000);
-      
+      const { token, user } = await authService.login(email, password);
+      useAuthStore.getState().setToken(token);
+      useAuthStore.getState().setUser(user);
+      router.replace('/(tabs)/home');
     } catch (err) {
       if (err instanceof z.ZodError) {
         setError(err.errors[0].message);
+      } else if (err instanceof Error) {
+        setError(err.message);
       } else {
         setError('Ocorreu um erro ao fazer login');
       }

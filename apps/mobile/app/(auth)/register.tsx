@@ -3,8 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvo
 import { useRouter, Link } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { z } from 'zod';
-// Importação do serviço para satisfazer o mock do teste
 import * as authService from '../../services/auth.service';
+import { useAuthStore } from '../../store/auth.store';
 
 // Validação Zod alinhada com os testes do TDD
 const registerSchema = z.object({
@@ -34,18 +34,13 @@ export default function RegisterScreen() {
   const submit = async () => {
     try {
       setError('');
-      
-      // Valida via Zod primeiro
       registerSchema.parse({ name, email, password, confirmPassword });
-      
       setLoading(true);
-      
-      // Chamada real ao serviço (que o Jest irá mockar no teste)
-      await authService.register({ name, email, password });
-      
-      setLoading(false);
-      router.replace('/(auth)/login');
-      
+      await authService.register(name, email, password);
+      const { token, user } = await authService.login(email, password);
+      useAuthStore.getState().setToken(token);
+      useAuthStore.getState().setUser(user);
+      router.replace('/(tabs)/home');
     } catch (err) {
       if (err instanceof z.ZodError) {
         setError(err.errors[0].message);

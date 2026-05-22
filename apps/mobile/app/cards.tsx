@@ -1,14 +1,14 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, ScrollView, Pressable, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
+import { View, Text, ScrollView, Pressable, NativeSyntheticEvent, NativeScrollEvent, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle as SvgCircle } from 'react-native-svg';
 import { Icon } from '../src/components/ui/Icon';
 import { TxRow } from '../src/components/transactions/TxRow';
-import { CARDS } from '../src/data/mocks/cards';
 import { TRANSACTIONS } from '../src/data/mocks/transactions';
 import { fmtBRLShort } from '../src/lib/currency';
 import { colors } from '../src/theme/colors';
 import { Card } from '../src/types/finance';
+import { useCards } from '../hooks/useCards';
 
 const CARD_WIDTH = 296;
 const CARD_GAP = 12;
@@ -38,13 +38,13 @@ function BigCard({ card, active }: { card: Card; active: boolean }) {
       <View style={{
         position: 'absolute', top: -40, right: -40,
         width: 160, height: 160, borderRadius: 80,
-        backgroundColor: card.accent, opacity: 0.22,
+        backgroundColor: card.accent ?? '#ffffff', opacity: 0.22,
       }} />
 
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <View>
           <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', fontWeight: '500', letterSpacing: 1.2, textTransform: 'uppercase' }}>
-            {card.bank}
+            {card.bank ?? ''}
           </Text>
           <Text style={{ fontSize: 18, color: '#fff', fontWeight: '500', marginTop: 2 }}>
             {card.name}
@@ -72,16 +72,16 @@ function BigCard({ card, active }: { card: Card; active: boolean }) {
 
       <View>
         <Text style={{ fontSize: 17, color: 'rgba(255,255,255,0.95)', letterSpacing: 3 }}>
-          •••• •••• •••• {card.last4}
+          •••• •••• •••• {card.last4 ?? '----'}
         </Text>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
           <View>
             <Text style={{ fontSize: 9, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: 0.8 }}>Titular</Text>
-            <Text style={{ fontSize: 11, color: '#fff', fontWeight: '500', letterSpacing: 0.8 }}>{card.holder}</Text>
+            <Text style={{ fontSize: 11, color: '#fff', fontWeight: '500', letterSpacing: 0.8 }}>{card.holder ?? ''}</Text>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={{ fontSize: 9, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: 0.8 }}>Validade</Text>
-            <Text style={{ fontSize: 11, color: '#fff', fontWeight: '500' }}>{card.expiry}</Text>
+            <Text style={{ fontSize: 11, color: '#fff', fontWeight: '500' }}>{card.expiry ?? '--/--'}</Text>
           </View>
         </View>
       </View>
@@ -140,15 +140,45 @@ function Stat({ label, value, sublabel }: { label: string; value: string; sublab
 /* ─── Cards Screen ───────────────────────────────────────── */
 export default function CardsScreen() {
   const [activeIdx, setActiveIdx] = useState(0);
+  const { data: cards = [], isLoading } = useCards();
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const idx = Math.round(e.nativeEvent.contentOffset.x / CARD_SNAP);
-    setActiveIdx(Math.max(0, Math.min(CARDS.length - 1, idx)));
+    setActiveIdx(Math.max(0, Math.min(cards.length - 1, idx)));
   };
 
-  const active = CARDS[activeIdx];
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }} edges={['top']}>
+        <ActivityIndicator size="large" color={colors.ink} />
+      </SafeAreaView>
+    );
+  }
+
+  if (cards.length === 0) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, paddingTop: 8, paddingBottom: 4 }}>
+          <Text style={{ fontSize: 28, fontWeight: '500', color: colors.ink, letterSpacing: -0.8 }}>Cartões</Text>
+          <Pressable
+            onPress={() => Alert.alert('Em breve', 'Adicionar cartão em breve.')}
+            style={{ height: 38, paddingHorizontal: 12, borderRadius: 999, backgroundColor: colors.ink, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Icon.Plus size={16} color="#FBFAF6" sw={2.2} />
+            <Text style={{ fontSize: 13, fontWeight: '500', color: '#FBFAF6' }}>Novo</Text>
+          </Pressable>
+        </View>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 80 }}>
+          <Text style={{ fontSize: 15, color: colors.muted, textAlign: 'center', paddingHorizontal: 40 }}>
+            Você ainda não tem cartões cadastrados.{'\n'}Toque em Novo para adicionar.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const active = cards[activeIdx] ?? cards[0];
   const cardTxs = TRANSACTIONS.filter(t => t.card === active.id);
-  const usage = active.limit ? (active.used ?? 0) / active.limit : 0;
+  const usage = active.limit ? active.used / active.limit : 0;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
@@ -166,22 +196,24 @@ export default function CardsScreen() {
           <Text style={{ fontSize: 28, fontWeight: '500', color: colors.ink, letterSpacing: -0.8 }}>
             Cartões
           </Text>
-          <Pressable style={{
-            height: 38,
-            paddingHorizontal: 12,
-            borderRadius: 999,
-            backgroundColor: colors.ink,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 6,
-          }}>
+          <Pressable
+            onPress={() => Alert.alert('Em breve', 'Modal de criação de cartão em breve.')}
+            style={{
+              height: 38,
+              paddingHorizontal: 12,
+              borderRadius: 999,
+              backgroundColor: colors.ink,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 6,
+            }}>
             <Icon.Plus size={16} color="#FBFAF6" sw={2.2} />
             <Text style={{ fontSize: 13, fontWeight: '500', color: '#FBFAF6' }}>Novo</Text>
           </Pressable>
         </View>
 
         <Text style={{ paddingHorizontal: 22, paddingBottom: 18, fontSize: 13, color: colors.muted }}>
-          {CARDS.length} cartões · {CARDS.filter(c => c.type === 'credit').length} de crédito
+          {cards.length} {cards.length === 1 ? 'cartão' : 'cartões'} · {cards.filter(c => c.type === 'credit').length} de crédito
         </Text>
 
         {/* Carrossel */}
@@ -194,14 +226,14 @@ export default function CardsScreen() {
           decelerationRate="fast"
           contentContainerStyle={{ paddingLeft: 28, paddingRight: 16, paddingBottom: 8 }}
         >
-          {CARDS.map((card, i) => (
+          {cards.map((card, i) => (
             <BigCard key={card.id} card={card} active={i === activeIdx} />
           ))}
         </ScrollView>
 
         {/* Dots paginadores */}
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6, paddingVertical: 14 }}>
-          {CARDS.map((_, i) => (
+          {cards.map((_, i) => (
             <View key={i} style={{
               width: i === activeIdx ? 18 : 6,
               height: 6,
@@ -230,7 +262,7 @@ export default function CardsScreen() {
                       Limite usado
                     </Text>
                     <Text style={{ fontSize: 22, fontWeight: '500', color: colors.ink, marginTop: 4, letterSpacing: -0.4 }}>
-                      R$ {fmtBRLShort(active.used ?? 0)}
+                      R$ {fmtBRLShort(active.used)}
                     </Text>
                     <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
                       de R$ {fmtBRLShort(active.limit ?? 0)}
@@ -244,46 +276,49 @@ export default function CardsScreen() {
                 <View style={{ flexDirection: 'row', gap: 16 }}>
                   <Stat
                     label="Fatura atual"
-                    value={`R$ ${fmtBRLShort(active.current_month_total)}`}
-                    sublabel={`Vence dia ${active.due_day}`}
+                    value={`R$ ${fmtBRLShort(active.currentMonthTotal)}`}
+                    sublabel={active.dueDay ? `Vence dia ${active.dueDay}` : undefined}
                   />
                   <View style={{ width: 1, backgroundColor: colors.hairline }} />
                   <Stat
                     label="Parcelas abertas"
-                    value={`${active.open_installments_count}`}
-                    sublabel={`R$ ${fmtBRLShort(active.open_installments_total)} restantes`}
+                    value={`${active.openInstallmentsCount}`}
+                    sublabel={`R$ ${fmtBRLShort(active.openInstallmentsTotal)} restantes`}
                   />
                 </View>
 
-                <View style={{ height: 1, backgroundColor: colors.hairline }} />
-
-                {/* Melhor dia de compra */}
-                <View style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 12,
-                  backgroundColor: colors.accentSoft,
-                  borderRadius: 14,
-                  padding: 14,
-                }}>
-                  <View style={{
-                    width: 36, height: 36, borderRadius: 10,
-                    backgroundColor: colors.accent,
-                    alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <Text style={{ fontSize: 14, fontWeight: '500', color: '#FBFAF6' }}>
-                      {active.best_purchase_day}
-                    </Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 13, fontWeight: '500', color: colors.accentInk }}>
-                      Melhor dia de compra
-                    </Text>
-                    <Text style={{ fontSize: 11, color: colors.accentInk, opacity: 0.75, marginTop: 1 }}>
-                      Fecha dia {active.closing_day} · próximo útil + 1
-                    </Text>
-                  </View>
-                </View>
+                {active.bestPurchaseDay && (
+                  <>
+                    <View style={{ height: 1, backgroundColor: colors.hairline }} />
+                    {/* Melhor dia de compra */}
+                    <View style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 12,
+                      backgroundColor: colors.accentSoft,
+                      borderRadius: 14,
+                      padding: 14,
+                    }}>
+                      <View style={{
+                        width: 36, height: 36, borderRadius: 10,
+                        backgroundColor: colors.accent,
+                        alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <Text style={{ fontSize: 14, fontWeight: '500', color: '#FBFAF6' }}>
+                          {active.bestPurchaseDay}
+                        </Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 13, fontWeight: '500', color: colors.accentInk }}>
+                          Melhor dia de compra
+                        </Text>
+                        <Text style={{ fontSize: 11, color: colors.accentInk, opacity: 0.75, marginTop: 1 }}>
+                          Fecha dia {active.closingDay} · próximo útil + 1
+                        </Text>
+                      </View>
+                    </View>
+                  </>
+                )}
               </>
             ) : (
               <View style={{ paddingVertical: 8 }}>

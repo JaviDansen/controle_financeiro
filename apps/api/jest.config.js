@@ -1,9 +1,8 @@
-import type { Config } from 'jest'
-
-const config: Config = {
+/** @type {import('jest').Config} */
+const config = {
   testEnvironment: 'node',
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', { tsconfig: './tsconfig.json' }],
+    '^.+\\.tsx?$': ['ts-jest', { tsconfig: './tsconfig.test.json' }],
   },
   rootDir: '.',
   testMatch: ['<rootDir>/tests/**/*_test.ts', '<rootDir>/tests/**/*.test.ts'],
@@ -14,6 +13,7 @@ const config: Config = {
   globalSetup: '<rootDir>/tests/helpers/global-setup.ts',
   globalTeardown: '<rootDir>/tests/helpers/global-teardown.ts',
   passWithNoTests: true,
+  maxWorkers: 1,
 }
 
-export default config
+module.exports = config

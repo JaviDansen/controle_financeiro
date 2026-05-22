@@ -22,21 +22,21 @@ export interface Transaction {
 export interface Card {
   id: string;
   name: string;
-  bank: string;
+  bank: string | null;
   type: 'credit' | 'debit';
-  last4: string;
-  holder: string;
-  expiry: string;
+  last4: string | null;
+  holder: string | null;
+  expiry: string | null;
   limit: number | null;
-  used: number | null;
-  closing_day: number | null;
-  best_purchase_day: number | null;
-  due_day: number | null;
-  open_installments_count: number;
-  open_installments_total: number;
-  current_month_total: number;
+  used: number;
+  closingDay: number | null;
+  bestPurchaseDay: number | null;
+  dueDay: number | null;
+  openInstallmentsCount: number;
+  openInstallmentsTotal: number;
+  currentMonthTotal: number;
   gradientColors: [string, string];
-  accent: string;
+  accent: string | null;
 }
 
 export interface Goal {
