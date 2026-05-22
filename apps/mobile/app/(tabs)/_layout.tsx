@@ -1,14 +1,17 @@
 import React from 'react';
 import { View, Text, Pressable, Alert } from 'react-native';
-import { Tabs, usePathname } from 'expo-router';
+import { Tabs, usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Icon } from '../../src/components/ui/Icon';
 import { colors } from '../../src/theme/colors';
 
-/* ─── Tab item individual ────────────────────────────────── */
 function TabItem({
-  route, index, state, descriptors, navigation,
+  route,
+  index,
+  state,
+  descriptors,
+  navigation,
 }: {
   route: BottomTabBarProps['state']['routes'][0];
   index: number;
@@ -38,39 +41,45 @@ function TabItem({
   );
 }
 
-/* ─── Tab bar customizado ────────────────────────────────── */
 function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
+  const router = useRouter();
 
   const showAddButton = pathname === '/transactions' || pathname === '/cards';
 
   const handleAdd = () => {
     if (pathname === '/transactions') {
-      Alert.alert('Nova transação'); // TODO: abrir modal
-    } else {
-      Alert.alert('Novo cartão');    // TODO: abrir modal
+      Alert.alert('Nova transacao');
+      return;
     }
+
+    if (pathname === '/cards') {
+      router.push('/(tabs)/add');
+      return;
+    }
+
+    Alert.alert('Novo cartao');
   };
 
-  // filtra o placeholder "add" da lista de tabs visíveis
-  const routes = state.routes.filter(r => r.name !== 'add');
+  const routes = state.routes.filter((r) => r.name !== 'add');
 
   return (
-    <View style={{
-      flexDirection: 'row',
-      backgroundColor: colors.surface,
-      borderTopWidth: 1,
-      borderTopColor: colors.hairline,
-      height: 58 + insets.bottom,
-      paddingBottom: insets.bottom,
-      alignItems: 'center',
-    }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        backgroundColor: colors.surface,
+        borderTopWidth: 1,
+        borderTopColor: colors.hairline,
+        height: 58 + insets.bottom,
+        paddingBottom: insets.bottom,
+        alignItems: 'center',
+      }}
+    >
       {showAddButton ? (
-        // 5 slots: Início | Transações | [+] | Cartões | Perfil
         <>
           {routes.slice(0, 2).map((route) => {
-            const originalIndex = state.routes.findIndex(r => r.key === route.key);
+            const originalIndex = state.routes.findIndex((r) => r.key === route.key);
             return (
               <TabItem
                 key={route.key}
@@ -87,25 +96,27 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             onPress={handleAdd}
             style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
           >
-            <View style={{
-              width: 48,
-              height: 48,
-              borderRadius: 24,
-              backgroundColor: colors.ink,
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: colors.ink,
-              shadowOpacity: 0.2,
-              shadowRadius: 8,
-              shadowOffset: { width: 0, height: 2 },
-              elevation: 5,
-            }}>
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                backgroundColor: colors.ink,
+                alignItems: 'center',
+                justifyContent: 'center',
+                shadowColor: colors.ink,
+                shadowOpacity: 0.2,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 2 },
+                elevation: 5,
+              }}
+            >
               <Icon.Plus color="#FBFAF6" size={20} sw={2.2} />
             </View>
           </Pressable>
 
           {routes.slice(2).map((route) => {
-            const originalIndex = state.routes.findIndex(r => r.key === route.key);
+            const originalIndex = state.routes.findIndex((r) => r.key === route.key);
             return (
               <TabItem
                 key={route.key}
@@ -119,9 +130,8 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           })}
         </>
       ) : (
-        // 4 slots: Início | Transações | Cartões | Perfil
         routes.map((route) => {
-          const originalIndex = state.routes.findIndex(r => r.key === route.key);
+          const originalIndex = state.routes.findIndex((r) => r.key === route.key);
           return (
             <TabItem
               key={route.key}
@@ -138,7 +148,6 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   );
 }
 
-/* ─── Root layout ────────────────────────────────────────── */
 export default function TabsLayout() {
   return (
     <Tabs
@@ -152,21 +161,21 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Início',
+          title: 'Inicio',
           tabBarIcon: ({ color, size }) => <Icon.Home color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="transactions"
         options={{
-          title: 'Transações',
+          title: 'Transacoes',
           tabBarIcon: ({ color, size }) => <Icon.Tx color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="cards"
         options={{
-          title: 'Cartões',
+          title: 'Cartoes',
           tabBarIcon: ({ color, size }) => <Icon.Card color={color} size={size} />,
         }}
       />
@@ -177,10 +186,7 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => <Icon.Profile color={color} size={size} />,
         }}
       />
-      <Tabs.Screen
-        name="add"
-        options={{ href: null, title: '' }}
-      />
+      <Tabs.Screen name="add" options={{ href: null, title: '' }} />
     </Tabs>
   );
 }
