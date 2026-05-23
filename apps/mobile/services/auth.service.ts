@@ -41,5 +41,19 @@ export async function forgotPassword(email: string): Promise<void> {
     body: JSON.stringify({ email }),
   })
   const json = await res.json()
-  if (!res.ok) throw new Error(json.error ?? 'Erro ao solicitar recuperação')
+  if (!res.ok) throw new Error(json.error ?? 'Erro ao solicitar recuperacao')
+}
+
+export async function validateStoredToken(token: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/cards`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    return res.ok
+  } catch {
+    return false
+  }
 }

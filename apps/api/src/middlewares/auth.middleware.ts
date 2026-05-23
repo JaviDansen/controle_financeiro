@@ -1,7 +1,10 @@
-import { Request, Response, NextFunction } from 'express'
+import { NextFunction, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 
-// Estendendo o tipo Request do Express para incluir o userId
+type JwtPayload = {
+  userId?: string
+}
+
 declare global {
   namespace Express {
     interface Request {
@@ -10,20 +13,35 @@ declare global {
   }
 }
 
-export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
-  const authHeader = req.headers.authorization
+export type AuthenticatedRequest = Request & {
+  userId: string
+}
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    res.status(401).json({ error: 'Token ausente ou mal formatado' })
+function getJwtSecret(): string {
+  return process.env.JWT_SECRET ?? 'test-secret'
+}
+
+export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
+  const authorization = req.header('authorization')
+
+  if (!authorization?.startsWith('Bearer ')) {
+    res.status(401).json({ error: 'Token não informado' })
     return
   }
 
-  const token = authHeader.split(' ')[1]
+  const token = authorization.slice('Bearer '.length)
+
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as { userId: string }
-    req.userId = decoded.userId
+    const payload = jwt.verify(token, getJwtSecret()) as JwtPayload
+
+    if (!payload.userId) {
+      res.status(401).json({ error: 'Token inválido' })
+      return
+    }
+
+    req.userId = payload.userId
     next()
-  } catch (error) {
-    res.status(401).json({ error: 'Token inválido ou expirado' })
+  } catch {
+    res.status(401).json({ error: 'Token inválido' })
   }
 }

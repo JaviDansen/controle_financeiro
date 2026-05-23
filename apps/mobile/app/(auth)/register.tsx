@@ -40,7 +40,7 @@ export default function RegisterScreen() {
       const { token, user } = await authService.login(email, password);
       useAuthStore.getState().setToken(token);
       useAuthStore.getState().setUser(user);
-      router.replace('/(tabs)/home');
+      router.replace('/(tabs)');
     } catch (err) {
       if (err instanceof z.ZodError) {
         setError(err.errors[0].message);

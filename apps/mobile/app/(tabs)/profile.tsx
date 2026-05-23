@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Icon } from '../src/components/ui/Icon';
-import { USER } from '../src/data/mocks/user';
-import { colors } from '../src/theme/colors';
+import { Icon } from '../../src/components/ui/Icon';
+import { USER } from '../../src/data/mocks/user';
+import { colors } from '../../src/theme/colors';
 
 interface ProfileRowProps {
   icon: React.ReactNode;

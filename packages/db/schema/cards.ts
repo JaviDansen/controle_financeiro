@@ -13,7 +13,7 @@ export const cards = pgTable('cards', {
   creditLimit: numeric('credit_limit', { precision: 12, scale: 2 }),
   closingDay: integer('closing_day'),
   dueDay: integer('due_day'),
-  gradientFrom: varchar('color', { length: 7 }),
+  color: varchar('color', { length: 7 }),
   gradientTo: varchar('gradient_to', { length: 7 }),
   accent: varchar('accent', { length: 7 }),
   createdAt: timestamp('created_at').notNull().defaultNow(),

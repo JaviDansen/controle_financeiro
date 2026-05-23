@@ -17,6 +17,22 @@ const registerSchema = z.object({
     .min(8, 'password deve ter no mínimo 8 caracteres'),
 })
 
+const loginSchema = z.object({
+  email: z.string({ required_error: 'email é obrigatório' }).email('email com formato inválido'),
+  password: z.string({ required_error: 'password é obrigatório' }),
+})
+
+const forgotPasswordSchema = z.object({
+  email: z.string({ required_error: 'email é obrigatório' }).email(),
+})
+
+const resetPasswordSchema = z.object({
+  token: z.string({ required_error: 'token é obrigatório' }),
+  newPassword: z
+    .string({ required_error: 'newPassword é obrigatório' })
+    .min(8, 'password deve ter no mínimo 8 caracteres'),
+})
+
 export async function register(req: Request, res: Response): Promise<void> {
   const parsed = registerSchema.safeParse(req.body)
   if (!parsed.success) {
@@ -38,19 +54,14 @@ export async function register(req: Request, res: Response): Promise<void> {
     .insert(users)
     .values({ name, email, passwordHash })
     .returning({
-      id:        users.id,
-      name:      users.name,
-      email:     users.email,
+      id: users.id,
+      name: users.name,
+      email: users.email,
       createdAt: users.createdAt,
     })
 
   res.status(201).json({ data: user })
 }
-
-const loginSchema = z.object({
-  email: z.string({ required_error: 'email é obrigatório' }).email('email com formato inválido'),
-  password: z.string({ required_error: 'password é obrigatório' }),
-})
 
 export async function login(req: Request, res: Response): Promise<void> {
   const parsed = loginSchema.safeParse(req.body)
@@ -93,25 +104,16 @@ export async function logout(req: Request, res: Response): Promise<void> {
   res.status(200).json({ data: { message: 'Logout realizado com sucesso' } })
 }
 
-const forgotPasswordSchema = z.object({
-  email: z.string({ required_error: 'email é obrigatório' }).email(),
-})
-
 export async function forgotPassword(req: Request, res: Response): Promise<void> {
   const parsed = forgotPasswordSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.errors[0].message })
     return
   }
-  
+
   // Resposta sempre 200 para evitar enumeramento de e-mails
   res.status(200).json({ data: { message: 'Se o e-mail existir, um link de recuperação foi enviado.' } })
 }
-
-const resetPasswordSchema = z.object({
-  token: z.string({ required_error: 'token é obrigatório' }),
-  newPassword: z.string({ required_error: 'newPassword é obrigatório' }).min(8, 'password deve ter no mínimo 8 caracteres'),
-})
 
 export async function resetPassword(req: Request, res: Response): Promise<void> {
   const parsed = resetPasswordSchema.safeParse(req.body)
@@ -119,9 +121,9 @@ export async function resetPassword(req: Request, res: Response): Promise<void> 
     res.status(400).json({ error: parsed.error.errors[0].message })
     return
   }
-  
+
   const { token, newPassword } = parsed.data
-  
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as { userId: string }
     const passwordHash = await bcrypt.hash(newPassword, 10)
