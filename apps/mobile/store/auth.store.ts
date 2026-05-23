@@ -30,13 +30,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   setToken: async (token) => {
+    set({ token, isAuthenticated: !!token });
+
     if (token) {
       await SecureStore.setItemAsync('token', token);
     } else {
       await SecureStore.deleteItemAsync('token');
     }
-
-    set({ token, isAuthenticated: !!token });
   },
 
   hydrate: async () => {
@@ -72,7 +72,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: async () => {
-    await SecureStore.deleteItemAsync('token');
     set({ user: null, token: null, isAuthenticated: false, hasHydrated: true });
+    await SecureStore.deleteItemAsync('token');
   },
 }));
