@@ -1,9 +1,10 @@
-import React from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '../../src/components/ui/Icon';
-import { USER } from '../../src/data/mocks/user';
 import { colors } from '../../src/theme/colors';
+import { useAuthStore } from '../../store/auth.store';
+import * as authService from '../../services/auth.service';
 
 interface ProfileRowProps {
   icon: React.ReactNode;
@@ -68,6 +69,54 @@ function SectionTitle({ children }: { children: string }) {
 }
 
 export default function ProfileScreen() {
+  const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
+  const logout = useAuthStore((state) => state.logout);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const profile = useMemo(() => {
+    const displayName = user?.name?.trim() || 'Usuário';
+    const initials = displayName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('') || 'U';
+
+    return {
+      name: displayName,
+      email: user?.email ?? 'Sem e-mail',
+      initials,
+    };
+  }, [user]);
+
+  const handleLogout = () => {
+    if (isLoggingOut) return;
+
+    Alert.alert('Sair da conta', 'Deseja realmente encerrar sua sessão?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Sair',
+        style: 'destructive',
+        onPress: async () => {
+          setIsLoggingOut(true);
+
+          try {
+            if (token) {
+              await authService.logout(token);
+            }
+          } catch (error) {
+            const message = error instanceof Error ? error.message : 'Erro ao sair da conta'
+            Alert.alert('Aviso', `${message}. A sessão local será encerrada mesmo assim.`)
+          } finally {
+            await logout();
+            setIsLoggingOut(false);
+          }
+        },
+      },
+    ]);
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -97,26 +146,14 @@ export default function ProfileScreen() {
             alignItems: 'center', justifyContent: 'center',
           }}>
             <Text style={{ fontSize: 22, fontWeight: '600', color: colors.surface, letterSpacing: 0.5 }}>
-              {USER.initials}
+              {profile.initials}
             </Text>
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 18, fontWeight: '500', color: colors.ink, letterSpacing: -0.3 }}>
-              {USER.name}
+              {profile.name}
             </Text>
-            <Text style={{ fontSize: 13, color: colors.muted, marginTop: 2 }}>{USER.email}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 }}>
-              <View style={{
-                paddingHorizontal: 8, paddingVertical: 2,
-                backgroundColor: colors.accentSoft,
-                borderRadius: 999,
-              }}>
-                <Text style={{ fontSize: 11, color: colors.accentInk, fontWeight: '500' }}>
-                  Desde {USER.joined}
-                </Text>
-              </View>
-              <Text style={{ fontSize: 12, color: colors.muted }}>{USER.city}</Text>
-            </View>
+            <Text style={{ fontSize: 13, color: colors.muted, marginTop: 2 }}>{profile.email}</Text>
           </View>
         </View>
 
@@ -132,7 +169,7 @@ export default function ProfileScreen() {
             <ProfileRow
               icon={<Icon.Mail size={16} color={colors.ink2} />}
               label="E-mail"
-              value={USER.email}
+              value={profile.email}
             />
             <View style={{ height: 1, backgroundColor: colors.hairline }} />
             <ProfileRow
@@ -174,7 +211,8 @@ export default function ProfileScreen() {
           }}>
             <ProfileRow
               icon={<Icon.ChevL size={16} color={colors.neg} />}
-              label="Sair da conta"
+              label={isLoggingOut ? 'Saindo...' : 'Sair da conta'}
+              onPress={handleLogout}
               destructive
             />
           </View>
