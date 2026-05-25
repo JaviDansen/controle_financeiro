@@ -2,7 +2,20 @@ import { buildConnectionString, getConnectionLabel } from '@finapp/db'
 
 describe('buildConnectionString()', () => {
   const saved: Record<string, string | undefined> = {}
-  const keys = ['DATABASE_URL', 'DATABASE_URL_TEST', 'DATABASE_HOST', 'DATABASE_PORT', 'DATABASE_USER', 'DATABASE_PASSWORD', 'DATABASE_NAME']
+  const keys = [
+    'DATABASE_URL',
+    'DATABASE_URL_TEST',
+    'DATABASE_HOST',
+    'DATABASE_PORT',
+    'DATABASE_USER',
+    'DATABASE_PASSWORD',
+    'DATABASE_NAME',
+    'DATABASE_TEST_HOST',
+    'DATABASE_TEST_PORT',
+    'DATABASE_TEST_USER',
+    'DATABASE_TEST_PASSWORD',
+    'DATABASE_TEST_NAME',
+  ]
 
   beforeEach(() => {
     keys.forEach(k => { saved[k] = process.env[k] })
@@ -24,6 +37,17 @@ describe('buildConnectionString()', () => {
     delete process.env.DATABASE_URL
     process.env.DATABASE_URL_TEST = 'postgres://test:test@host:5432/test-db'
     expect(buildConnectionString()).toBe('postgres://test:test@host:5432/test-db')
+  })
+
+  it('usa parâmetros individuais de teste quando DATABASE_URL_TEST não está definida', () => {
+    delete process.env.DATABASE_URL
+    delete process.env.DATABASE_URL_TEST
+    process.env.DATABASE_TEST_HOST = 'testhost'
+    process.env.DATABASE_TEST_PORT = '5372'
+    process.env.DATABASE_TEST_USER = 'testuser'
+    process.env.DATABASE_TEST_PASSWORD = 'testpass'
+    process.env.DATABASE_TEST_NAME = 'cf-test-db'
+    expect(buildConnectionString()).toBe('postgresql://testuser:testpass@testhost:5372/cf-test-db')
   })
 
   it('monta connection string a partir dos parâmetros individuais', () => {
@@ -78,7 +102,20 @@ describe('buildConnectionString()', () => {
 
 describe('getConnectionLabel()', () => {
   const saved: Record<string, string | undefined> = {}
-  const keys = ['DATABASE_URL', 'DATABASE_URL_TEST', 'DATABASE_HOST', 'DATABASE_PORT', 'DATABASE_NAME']
+  const keys = [
+    'DATABASE_URL',
+    'DATABASE_URL_TEST',
+    'DATABASE_HOST',
+    'DATABASE_PORT',
+    'DATABASE_USER',
+    'DATABASE_PASSWORD',
+    'DATABASE_NAME',
+    'DATABASE_TEST_HOST',
+    'DATABASE_TEST_PORT',
+    'DATABASE_TEST_USER',
+    'DATABASE_TEST_PASSWORD',
+    'DATABASE_TEST_NAME',
+  ]
 
   beforeEach(() => {
     keys.forEach(k => { saved[k] = process.env[k] })
@@ -99,6 +136,17 @@ describe('getConnectionLabel()', () => {
   it('usa DATABASE_URL_TEST no label quando DATABASE_URL não está definida', () => {
     delete process.env.DATABASE_URL
     process.env.DATABASE_URL_TEST = 'postgres://user:pass@testhost:5372/cf-test-db?sslmode=disable'
+    expect(getConnectionLabel()).toBe('testhost:5372/cf-test-db')
+  })
+
+  it('usa parâmetros individuais de teste no label quando DATABASE_URL_TEST não está definida', () => {
+    delete process.env.DATABASE_URL
+    delete process.env.DATABASE_URL_TEST
+    process.env.DATABASE_TEST_HOST = 'testhost'
+    process.env.DATABASE_TEST_PORT = '5372'
+    process.env.DATABASE_TEST_USER = 'testuser'
+    process.env.DATABASE_TEST_PASSWORD = 'testpass'
+    process.env.DATABASE_TEST_NAME = 'cf-test-db'
     expect(getConnectionLabel()).toBe('testhost:5372/cf-test-db')
   })
 

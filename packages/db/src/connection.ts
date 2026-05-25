@@ -3,6 +3,18 @@ import { resolve } from 'path'
 
 config({ path: resolve(__dirname, '../../../.env') })
 
+function buildConnectionStringFromParts(
+  host: string,
+  user: string,
+  password: string,
+  name: string,
+  port?: string
+): string {
+  const safePort = port || '5432'
+  const encodedPassword = encodeURIComponent(password)
+  return `postgresql://${user}:${encodedPassword}@${host}:${safePort}/${name}`
+}
+
 export function buildConnectionString(): string {
   if (process.env.DATABASE_URL) {
     return process.env.DATABASE_URL
@@ -11,17 +23,39 @@ export function buildConnectionString(): string {
   const { DATABASE_HOST, DATABASE_PORT, DATABASE_USER, DATABASE_PASSWORD, DATABASE_NAME } = process.env
 
   if (DATABASE_HOST && DATABASE_USER && DATABASE_PASSWORD && DATABASE_NAME) {
-    const port = DATABASE_PORT || '5432'
-    const encodedPassword = encodeURIComponent(DATABASE_PASSWORD)
-    return `postgresql://${DATABASE_USER}:${encodedPassword}@${DATABASE_HOST}:${port}/${DATABASE_NAME}`
+    return buildConnectionStringFromParts(
+      DATABASE_HOST,
+      DATABASE_USER,
+      DATABASE_PASSWORD,
+      DATABASE_NAME,
+      DATABASE_PORT
+    )
   }
 
   if (process.env.DATABASE_URL_TEST) {
     return process.env.DATABASE_URL_TEST
   }
 
+  const {
+    DATABASE_TEST_HOST,
+    DATABASE_TEST_PORT,
+    DATABASE_TEST_USER,
+    DATABASE_TEST_PASSWORD,
+    DATABASE_TEST_NAME,
+  } = process.env
+
+  if (DATABASE_TEST_HOST && DATABASE_TEST_USER && DATABASE_TEST_PASSWORD && DATABASE_TEST_NAME) {
+    return buildConnectionStringFromParts(
+      DATABASE_TEST_HOST,
+      DATABASE_TEST_USER,
+      DATABASE_TEST_PASSWORD,
+      DATABASE_TEST_NAME,
+      DATABASE_TEST_PORT
+    )
+  }
+
   throw new Error(
-    'Banco de dados não configurado. Defina DATABASE_URL, os parâmetros individuais DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD e DATABASE_NAME, ou DATABASE_URL_TEST no .env'
+    'Banco de dados não configurado. Defina DATABASE_URL, os parâmetros individuais de produção, DATABASE_URL_TEST ou os parâmetros individuais de teste no .env'
   )
 }
 
@@ -46,6 +80,15 @@ export function getConnectionLabel(): string {
     } catch {
       return 'connection string inválida'
     }
+  }
+
+  if (
+    process.env.DATABASE_TEST_HOST &&
+    process.env.DATABASE_TEST_USER &&
+    process.env.DATABASE_TEST_PASSWORD &&
+    process.env.DATABASE_TEST_NAME
+  ) {
+    return `${process.env.DATABASE_TEST_HOST}:${process.env.DATABASE_TEST_PORT ?? 5432}/${process.env.DATABASE_TEST_NAME}`
   }
 
   return 'connection string inválida'
