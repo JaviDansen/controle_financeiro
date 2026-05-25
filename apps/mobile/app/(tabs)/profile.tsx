@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Icon } from '../../src/components/ui/Icon';
 import { colors } from '../../src/theme/colors';
 import { useAuthStore } from '../../store/auth.store';
@@ -69,6 +70,7 @@ function SectionTitle({ children }: { children: string }) {
 }
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
   const logout = useAuthStore((state) => state.logout);
@@ -110,6 +112,7 @@ export default function ProfileScreen() {
             Alert.alert('Aviso', `${message}. A sessão local será encerrada mesmo assim.`)
           } finally {
             await logout();
+            router.replace('/(auth)/login');
             setIsLoggingOut(false);
           }
         },
