@@ -9,12 +9,14 @@ config({ path: resolve(__dirname, '../../../.env') })
 import { buildConnectionString, getConnectionLabel } from '@finapp/db'
 import authRoutes from './routes/auth.routes'
 import cardsRoutes from './routes/cards.routes'
+import { requestErrorHandler, requestLogger } from './middlewares/request-logger.middleware'
 
 export const app = express()
 const PORT = process.env.PORT || 3000
 
 app.use(cors())
 app.use(express.json())
+app.use(requestLogger)
 
 app.use('/auth', authRoutes)
 app.use('/cards', cardsRoutes)
@@ -26,6 +28,8 @@ app.get('/health', (_req, res) => {
 app.get('/hello', (_req, res) => {
   res.json({ message: 'Hello World', env: process.env.NODE_ENV ?? 'development' })
 })
+
+app.use(requestErrorHandler)
 
 async function checkDatabase(): Promise<void> {
   const pool = new Pool({ connectionString: buildConnectionString() })

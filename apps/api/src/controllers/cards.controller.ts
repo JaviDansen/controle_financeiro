@@ -3,6 +3,7 @@ import { and, eq, gte, lt, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { cards, db, transactions } from '@finapp/db'
 import { AuthenticatedRequest } from '../middlewares/auth.middleware'
+import { logRequestEvent } from '../middlewares/request-logger.middleware'
 
 const createCardSchema = z.object({
   name: z.string().min(1),
@@ -67,6 +68,7 @@ function currentMonthRange(): { start: string; nextStart: string } {
 
 export const listCards: RequestHandler = async (req, res) => {
   const userId = (req as AuthenticatedRequest).userId
+  logRequestEvent(req, 'cards.list.started', { userId })
   const userCards = await db.select().from(cards).where(eq(cards.userId, userId))
   const { start, nextStart } = currentMonthRange()
 
@@ -91,13 +93,16 @@ export const listCards: RequestHandler = async (req, res) => {
     })
   )
 
+  logRequestEvent(req, 'cards.list.success', { userId, cardsCount: data.length })
   res.json({ data })
 }
 
 export const createCard: RequestHandler = async (req, res) => {
   const userId = (req as AuthenticatedRequest).userId
+  logRequestEvent(req, 'cards.create.validation_started', { userId })
   const parsed = createCardSchema.safeParse(req.body)
   if (!parsed.success) {
+    logRequestEvent(req, 'cards.create.validation_failed', { userId, error: parsed.error.errors[0].message })
     res.status(400).json({ error: parsed.error.errors[0].message })
     return
   }
@@ -137,5 +142,6 @@ export const createCard: RequestHandler = async (req, res) => {
       createdAt: cards.createdAt,
     })
 
+  logRequestEvent(req, 'cards.create.success', { userId, cardId: card.id, cardName: card.name })
   res.status(201).json({ data: card })
 }

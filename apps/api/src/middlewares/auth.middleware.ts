@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
+import { logRequestEvent } from './request-logger.middleware'
 
 type JwtPayload = {
   userId?: string
@@ -25,6 +26,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
   const authorization = req.header('authorization')
 
   if (!authorization?.startsWith('Bearer ')) {
+    logRequestEvent(req, 'auth.token_missing')
     res.status(401).json({ error: 'Token não informado' })
     return
   }
@@ -35,13 +37,16 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
     const payload = jwt.verify(token, getJwtSecret()) as JwtPayload
 
     if (!payload.userId) {
+      logRequestEvent(req, 'auth.token_invalid_payload')
       res.status(401).json({ error: 'Token inválido' })
       return
     }
 
     req.userId = payload.userId
+    logRequestEvent(req, 'auth.token_verified', { userId: payload.userId })
     next()
   } catch {
+    logRequestEvent(req, 'auth.token_invalid')
     res.status(401).json({ error: 'Token inválido' })
   }
 }
