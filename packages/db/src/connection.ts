@@ -10,15 +10,19 @@ export function buildConnectionString(): string {
 
   const { DATABASE_HOST, DATABASE_PORT, DATABASE_USER, DATABASE_PASSWORD, DATABASE_NAME } = process.env
 
-  if (!DATABASE_HOST || !DATABASE_USER || !DATABASE_PASSWORD || !DATABASE_NAME) {
-    throw new Error(
-      'Banco de dados não configurado. Defina DATABASE_URL ou DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD e DATABASE_NAME no .env'
-    )
+  if (DATABASE_HOST && DATABASE_USER && DATABASE_PASSWORD && DATABASE_NAME) {
+    const port = DATABASE_PORT || '5432'
+    const encodedPassword = encodeURIComponent(DATABASE_PASSWORD)
+    return `postgresql://${DATABASE_USER}:${encodedPassword}@${DATABASE_HOST}:${port}/${DATABASE_NAME}`
   }
 
-  const port = DATABASE_PORT || '5432'
-  const encodedPassword = encodeURIComponent(DATABASE_PASSWORD)
-  return `postgresql://${DATABASE_USER}:${encodedPassword}@${DATABASE_HOST}:${port}/${DATABASE_NAME}`
+  if (process.env.DATABASE_URL_TEST) {
+    return process.env.DATABASE_URL_TEST
+  }
+
+  throw new Error(
+    'Banco de dados não configurado. Defina DATABASE_URL, os parâmetros individuais DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD e DATABASE_NAME, ou DATABASE_URL_TEST no .env'
+  )
 }
 
 export function getConnectionLabel(): string {
@@ -30,5 +34,19 @@ export function getConnectionLabel(): string {
       return 'connection string inválida'
     }
   }
-  return `${process.env.DATABASE_HOST}:${process.env.DATABASE_PORT ?? 5432}/${process.env.DATABASE_NAME}`
+
+  if (process.env.DATABASE_HOST && process.env.DATABASE_USER && process.env.DATABASE_PASSWORD && process.env.DATABASE_NAME) {
+    return `${process.env.DATABASE_HOST}:${process.env.DATABASE_PORT ?? 5432}/${process.env.DATABASE_NAME}`
+  }
+
+  if (process.env.DATABASE_URL_TEST) {
+    try {
+      const url = new URL(process.env.DATABASE_URL_TEST)
+      return `${url.hostname}:${url.port}${url.pathname}`
+    } catch {
+      return 'connection string inválida'
+    }
+  }
+
+  return 'connection string inválida'
 }

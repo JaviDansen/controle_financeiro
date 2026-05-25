@@ -520,13 +520,13 @@ Crie `.env` na raiz com base no `.env.example`. **Nunca commitar o `.env`.**
 
 | Variável | Obrigatória | Descrição |
 |---|---|---|
-| `DATABASE_URL` | Sim* | Connection string completa (tem prioridade) |
+| `DATABASE_URL` | Sim* | Connection string completa de produção (tem prioridade) |
 | `DATABASE_HOST` | Sim* | Host da VPS PostgreSQL |
 | `DATABASE_PORT` | Sim* | Porta (padrão: 5432) |
 | `DATABASE_USER` | Sim* | Usuário do banco |
 | `DATABASE_PASSWORD` | Sim* | Senha do banco |
 | `DATABASE_NAME` | Sim* | Nome do banco de produção |
-| `DATABASE_URL_TEST` | Não | Connection string do banco isolado para testes |
+| `DATABASE_URL_TEST` | Não | Connection string do banco isolado para testes; usada somente quando `DATABASE_URL` e os parâmetros individuais não existem |
 | `JWT_SECRET` | Sim | Chave secreta longa para assinar tokens |
 | `PORT` | Não | Porta da API (padrão: 3000) |
 | `API_URL` | Não | URL base da API usada pelo mobile |
@@ -534,7 +534,7 @@ Crie `.env` na raiz com base no `.env.example`. **Nunca commitar o `.env`.**
 | `TRELLO_TOKEN` | Não | Token de acesso do Trello (MCP) |
 | `GOOGLE_SERVICE_ACCOUNT_KEY` | Não | JSON da service account (minificado, uma linha) |
 
-> \* `DATABASE_URL` tem prioridade. Se não definida, os parâmetros individuais são usados como fallback.
+> \* Ordem de prioridade: `DATABASE_URL` -> parâmetros individuais (`DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_NAME`) -> `DATABASE_URL_TEST`.
 
 ---
 
