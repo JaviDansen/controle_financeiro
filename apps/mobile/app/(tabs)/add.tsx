@@ -147,32 +147,17 @@ export default function AddCardScreen() {
             paddingHorizontal: 16,
             borderBottomWidth: 1,
             borderBottomColor: colors.hairline,
-            flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            justifyContent: 'center',
           }}
         >
-          <Pressable onPress={() => router.back()}>
-            <Text style={{ fontSize: 18, color: colors.muted }}>Cancelar</Text>
-          </Pressable>
           <Text style={{ fontSize: 18, fontWeight: '600', color: colors.ink }}>Novo cartao</Text>
-          <Pressable onPress={handleSave} disabled={createCardMutation.isPending}>
-            <Text
-              style={{
-                fontSize: 18,
-                color: createCardMutation.isPending ? colors.muted : colors.ink,
-                fontWeight: '500',
-              }}
-            >
-              Salvar
-            </Text>
-          </Pressable>
         </View>
 
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 96 }}
+          contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 16 }}
         >
           <View
             style={{
@@ -262,6 +247,50 @@ export default function AddCardScreen() {
             </View>
           ) : null}
         </ScrollView>
+
+        <View
+          style={{
+            paddingHorizontal: 16,
+            paddingTop: 12,
+            paddingBottom: 20,
+            borderTopWidth: 1,
+            borderTopColor: colors.hairline,
+            backgroundColor: colors.bg,
+            flexDirection: 'row',
+            gap: 12,
+          }}
+        >
+          <Pressable
+            onPress={() => router.back()}
+            style={{
+              flex: 1,
+              height: 54,
+              borderRadius: 18,
+              borderWidth: 1,
+              borderColor: colors.hairline,
+              backgroundColor: colors.surface,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Text style={{ fontSize: 16, color: colors.muted, fontWeight: '500' }}>Cancelar</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={handleSave}
+            disabled={createCardMutation.isPending}
+            style={{
+              flex: 1,
+              height: 54,
+              borderRadius: 18,
+              backgroundColor: createCardMutation.isPending ? colors.hairline : colors.ink,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Text style={{ fontSize: 16, color: colors.surface, fontWeight: '600' }}>Salvar</Text>
+          </Pressable>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
