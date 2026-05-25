@@ -8,7 +8,13 @@ import { useAuthStore } from '../../store/auth.store';
 
 // Validação Zod alinhada com os testes do TDD
 const registerSchema = z.object({
-  name: z.string().min(1, 'Nome é obrigatório'),
+  name: z
+    .string()
+    .min(1, 'Nome é obrigatório')
+    .refine(
+      (value) => value.trim().split(/\s+/).filter(Boolean).length >= 2,
+      'Informe nome e sobrenome'
+    ),
   email: z.string().min(1, 'E-mail é obrigatório').email('E-mail inválido'),
   password: z.string().min(6, 'A senha deve ter no mínimo 6 caracteres'),
   confirmPassword: z.string(),

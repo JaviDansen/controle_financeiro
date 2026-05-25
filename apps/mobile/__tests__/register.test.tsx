@@ -28,11 +28,62 @@ beforeEach(() => {
   jest.clearAllMocks()
 })
 
-describe("RegisterScreen — validacao de senha", () => {
-  it("exibe erro quando confirmPassword nao bate com password", async () => {
+describe("RegisterScreen — validacao do formulario", () => {
+  it("exibe erro quando nome completo tem apenas um nome", async () => {
     const { getByPlaceholderText, getByText } = render(<RegisterScreen />)
 
     fireEvent.changeText(getByPlaceholderText("Nome"), "Joao")
+    fireEvent.changeText(getByPlaceholderText("seu@email.com"), "joao@teste.com")
+    fireEvent.changeText(getByPlaceholderText("Senha"), "senha123")
+    fireEvent.changeText(getByPlaceholderText("Confirmar senha"), "senha123")
+
+    await act(async () => {
+      fireEvent.press(getByText("Cadastrar"))
+    })
+
+    await waitFor(() => {
+      expect(getByText("Informe nome e sobrenome")).toBeTruthy()
+    })
+  })
+
+  it("exibe erro quando email e invalido", async () => {
+    const { getByPlaceholderText, getByText } = render(<RegisterScreen />)
+
+    fireEvent.changeText(getByPlaceholderText("Nome"), "Joao Silva")
+    fireEvent.changeText(getByPlaceholderText("seu@email.com"), "nao-e-email")
+    fireEvent.changeText(getByPlaceholderText("Senha"), "senha123")
+    fireEvent.changeText(getByPlaceholderText("Confirmar senha"), "senha123")
+
+    await act(async () => {
+      fireEvent.press(getByText("Cadastrar"))
+    })
+
+    await waitFor(() => {
+      expect(getByText("E-mail inválido")).toBeTruthy()
+    })
+  })
+
+  it("exibe erro quando senha tem menos de 6 caracteres", async () => {
+    const { getByPlaceholderText, getByText } = render(<RegisterScreen />)
+
+    fireEvent.changeText(getByPlaceholderText("Nome"), "Joao Silva")
+    fireEvent.changeText(getByPlaceholderText("seu@email.com"), "joao@teste.com")
+    fireEvent.changeText(getByPlaceholderText("Senha"), "123")
+    fireEvent.changeText(getByPlaceholderText("Confirmar senha"), "123")
+
+    await act(async () => {
+      fireEvent.press(getByText("Cadastrar"))
+    })
+
+    await waitFor(() => {
+      expect(getByText("A senha deve ter no mínimo 6 caracteres")).toBeTruthy()
+    })
+  })
+
+  it("exibe erro quando confirmPassword nao bate com password", async () => {
+    const { getByPlaceholderText, getByText } = render(<RegisterScreen />)
+
+    fireEvent.changeText(getByPlaceholderText("Nome"), "Joao Silva")
     fireEvent.changeText(getByPlaceholderText("seu@email.com"), "joao@teste.com")
     fireEvent.changeText(getByPlaceholderText("Senha"), "senha123")
     fireEvent.changeText(getByPlaceholderText("Confirmar senha"), "diferente")
@@ -55,7 +106,7 @@ describe("RegisterScreen — erro da API", () => {
 
     const { getByPlaceholderText, getByText } = render(<RegisterScreen />)
 
-    fireEvent.changeText(getByPlaceholderText("Nome"), "Joao")
+    fireEvent.changeText(getByPlaceholderText("Nome"), "Joao Silva")
     fireEvent.changeText(getByPlaceholderText("seu@email.com"), "joao@teste.com")
     fireEvent.changeText(getByPlaceholderText("Senha"), "senha123")
     fireEvent.changeText(getByPlaceholderText("Confirmar senha"), "senha123")
