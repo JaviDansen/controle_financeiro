@@ -16,7 +16,7 @@ const registerSchema = z.object({
       'Informe nome e sobrenome'
     ),
   email: z.string().min(1, 'E-mail é obrigatório').email('E-mail inválido'),
-  password: z.string().min(6, 'A senha deve ter no mínimo 6 caracteres'),
+  password: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres'),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'As senhas não coincidem',
