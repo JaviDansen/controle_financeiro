@@ -62,6 +62,12 @@ describe('POST /auth/register', () => {
     expect(res.body).toHaveProperty('error')
   })
 
+  it('400: name sem sobrenome', async () => {
+    const res = await registerUser({ name: 'João' })
+    expect(res.status).toBe(400)
+    expect(res.body).toHaveProperty('error')
+  })
+  
   it('400: email ausente', async () => {
     const res = await registerUser({ email: undefined })
     expect(res.status).toBe(400)

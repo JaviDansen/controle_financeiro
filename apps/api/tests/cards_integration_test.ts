@@ -72,7 +72,7 @@ describe('GET /cards', () => {
 
   it('retorna apenas cartões do usuário autenticado', async () => {
     const token1 = await registerAndLogin()
-    const token2 = await registerAndLogin({ name: 'Pedro', email: 'pedro@teste.com' })
+    const token2 = await registerAndLogin({ name: 'Pedro Silva', email: 'pedro@teste.com' })
 
     await api().post('/cards').set('Authorization', `Bearer ${token1}`).send(VALID_CREDIT_CARD)
     await api().post('/cards').set('Authorization', `Bearer ${token2}`).send(VALID_DEBIT_CARD)
