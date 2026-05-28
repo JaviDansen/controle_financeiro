@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -11,13 +11,34 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { colors } from '../../src/theme/colors';
-import { createCard, CreateCardPayload } from '../../services/cards.service';
+import {
+  createCard,
+  CreateCardPayload,
+  updateCard,
+  UpdateCardPayload,
+} from '../../services/cards.service';
 import { useAuthStore } from '../../store/auth.store';
+import { useCards } from '../../hooks/useCards';
 
 type CardType = 'credit' | 'debit';
+type FormErrors = Partial<Record<'name' | 'bank' | 'holder' | 'creditLimit' | 'closingDay' | 'dueDay', string>>;
+
+const DEFAULT_GRADIENT_FROM = '#15151A';
+const DEFAULT_GRADIENT_TO = '#0A0A0A';
+const DEFAULT_ACCENT = '#3D8B4E';
+
+function formatExpiry(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 4);
+
+  if (digits.length <= 2) {
+    return digits;
+  }
+
+  return `${digits.slice(0, 2)}/${digits.slice(2)}`.slice(0, 5);
+}
 
 function Field({
   label,
@@ -25,12 +46,16 @@ function Field({
   onChangeText,
   placeholder,
   keyboardType,
+  error,
+  maxLength,
 }: {
   label: string;
   value: string;
   onChangeText: (value: string) => void;
   placeholder: string;
   keyboardType?: 'default' | 'numeric';
+  error?: string;
+  maxLength?: number;
 }) {
   return (
     <View style={{ gap: 6 }}>
@@ -51,25 +76,31 @@ function Field({
         placeholder={placeholder}
         placeholderTextColor={colors.muted}
         keyboardType={keyboardType}
+        maxLength={maxLength}
         style={{
           height: 54,
           borderRadius: 18,
           backgroundColor: colors.surface,
           borderWidth: 1,
-          borderColor: colors.hairline,
+          borderColor: error ? '#C84B31' : colors.hairline,
           paddingHorizontal: 16,
           fontSize: 16,
           color: colors.ink2,
         }}
       />
+      {error ? <Text style={{ fontSize: 12, color: '#C84B31' }}>{error}</Text> : null}
     </View>
   );
 }
 
 export default function AddCardScreen() {
   const router = useRouter();
+  const { id } = useLocalSearchParams<{ id?: string }>();
   const queryClient = useQueryClient();
   const token = useAuthStore((s) => s.token);
+  const { data: cards = [], isLoading: isCardsLoading } = useCards();
+  const editingCard = typeof id === 'string' ? cards.find((card) => card.id === id) : undefined;
+  const isEditing = typeof id === 'string';
 
   const [type, setType] = useState<CardType>('credit');
   const [name, setName] = useState('');
@@ -80,6 +111,33 @@ export default function AddCardScreen() {
   const [creditLimit, setCreditLimit] = useState('');
   const [closingDay, setClosingDay] = useState('');
   const [dueDay, setDueDay] = useState('');
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  useEffect(() => {
+    if (!editingCard) {
+      return;
+    }
+
+    setType(editingCard.type);
+    setName(editingCard.name ?? '');
+    setBank(editingCard.bank ?? '');
+    setLastFour(editingCard.last4 ?? '');
+    setHolder(editingCard.holder ?? '');
+    setExpiry(editingCard.expiry ?? '');
+    setCreditLimit(editingCard.limit !== null ? String(editingCard.limit) : '');
+    setClosingDay(editingCard.closingDay !== null ? String(editingCard.closingDay) : '');
+    setDueDay(editingCard.dueDay !== null ? String(editingCard.dueDay) : '');
+    setErrors({});
+  }, [editingCard]);
+
+  useEffect(() => {
+    if (!isEditing || isCardsLoading || editingCard) {
+      return;
+    }
+
+    Alert.alert('Cartao nao encontrado', 'Nao foi possivel localizar o cartao selecionado.');
+    router.replace('/(tabs)/cards');
+  }, [editingCard, isCardsLoading, isEditing, router]);
 
   const createCardMutation = useMutation({
     mutationFn: async (payload: CreateCardPayload) => {
@@ -98,19 +156,56 @@ export default function AddCardScreen() {
     },
   });
 
-  const handleSave = () => {
+  const updateCardMutation = useMutation({
+    mutationFn: async (payload: UpdateCardPayload) => {
+      if (!token || !id || typeof id !== 'string') {
+        throw new Error('Sessao invalida. Faca login novamente.');
+      }
+
+      return updateCard(id, payload, token);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['cards'] });
+      router.replace('/(tabs)/cards');
+    },
+    onError: (error) => {
+      Alert.alert('Erro ao salvar', error instanceof Error ? error.message : 'Nao foi possivel atualizar o cartao.');
+    },
+  });
+
+  const validateForm = () => {
+    const nextErrors: FormErrors = {};
+
     if (!name.trim()) {
-      Alert.alert('Campo obrigatorio', 'Informe o nome do cartao.');
-      return;
+      nextErrors.name = 'Informe o nome do cartao.';
     }
 
     if (!bank.trim()) {
-      Alert.alert('Campo obrigatorio', 'Informe o banco.');
-      return;
+      nextErrors.bank = 'Informe o banco.';
     }
 
-    if (lastFour && lastFour.replace(/\D/g, '').length !== 4) {
-      Alert.alert('Final invalido', 'Os 4 ultimos digitos devem ter exatamente 4 numeros.');
+    if (!holder.trim()) {
+      nextErrors.holder = 'Informe o titular.';
+    }
+
+    if (type === 'credit' && !creditLimit.trim()) {
+      nextErrors.creditLimit = 'Informe o limite.';
+    }
+
+    if (type === 'credit' && !closingDay.trim()) {
+      nextErrors.closingDay = 'Informe o dia de fechamento.';
+    }
+
+    if (type === 'credit' && !dueDay.trim()) {
+      nextErrors.dueDay = 'Informe o dia de vencimento.';
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleSave = () => {
+    if (!validateForm()) {
       return;
     }
 
@@ -118,22 +213,39 @@ export default function AddCardScreen() {
       name: name.trim(),
       bank: bank.trim(),
       type,
-      lastFour: lastFour ? lastFour.replace(/\D/g, '').slice(0, 4) : undefined,
-      holder: holder.trim() || undefined,
+      lastFour: lastFour.replace(/\D/g, '').slice(0, 4) || '0000',
+      holder: holder.trim(),
       expiry: expiry.trim() || undefined,
-      gradientFrom: '#15151A',
-      gradientTo: '#0A0A0A',
-      accent: '#3D8B4E',
+      gradientFrom: DEFAULT_GRADIENT_FROM,
+      gradientTo: DEFAULT_GRADIENT_TO,
+      accent: DEFAULT_ACCENT,
     };
 
     if (type === 'credit') {
-      payload.creditLimit = creditLimit ? Number(creditLimit.replace(',', '.')) : undefined;
-      payload.closingDay = closingDay ? Number(closingDay) : undefined;
-      payload.dueDay = dueDay ? Number(dueDay) : undefined;
+      payload.creditLimit = Number(creditLimit.replace(',', '.'));
+      payload.closingDay = Number(closingDay);
+      payload.dueDay = Number(dueDay);
+    }
+
+    if (isEditing) {
+      updateCardMutation.mutate(payload);
+      return;
     }
 
     createCardMutation.mutate(payload);
   };
+
+  const isPending = createCardMutation.isPending || updateCardMutation.isPending;
+
+  if (isEditing && isCardsLoading && !editingCard) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator color={colors.ink} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -151,7 +263,9 @@ export default function AddCardScreen() {
             justifyContent: 'center',
           }}
         >
-          <Text style={{ fontSize: 18, fontWeight: '600', color: colors.ink }}>Novo cartao</Text>
+          <Text style={{ fontSize: 18, fontWeight: '600', color: colors.ink }}>
+            {isEditing ? 'Editar cartao' : 'Novo cartao'}
+          </Text>
         </View>
 
         <ScrollView
@@ -173,7 +287,15 @@ export default function AddCardScreen() {
               return (
                 <Pressable
                   key={option}
-                  onPress={() => setType(option)}
+                  onPress={() => {
+                    setType(option);
+                    setErrors((current) => ({
+                      ...current,
+                      creditLimit: undefined,
+                      closingDay: undefined,
+                      dueDay: undefined,
+                    }));
+                  }}
                   style={{
                     flex: 1,
                     height: 56,
@@ -197,51 +319,102 @@ export default function AddCardScreen() {
             })}
           </View>
 
-          <Field label="Nome" value={name} onChangeText={setName} placeholder="Novo Cartão" />
-          <Field label="Banco" value={bank} onChangeText={setBank} placeholder="Nubank" />
+          <Field
+            label="Nome"
+            value={name}
+            onChangeText={(value) => {
+              setName(value);
+              setErrors((current) => ({ ...current, name: undefined }));
+            }}
+            placeholder="Novo cartao"
+            error={errors.name}
+          />
+          <Field
+            label="Banco"
+            value={bank}
+            onChangeText={(value) => {
+              setBank(value);
+              setErrors((current) => ({ ...current, bank: undefined }));
+            }}
+            placeholder="Nubank"
+            error={errors.bank}
+          />
           <Field
             label="Final"
             value={lastFour}
-            onChangeText={(value) => setLastFour(value.replace(/\D/g, '').slice(0, 4))}
+            onChangeText={(value) => {
+              setLastFour(value.replace(/\D/g, '').slice(0, 4));
+            }}
             placeholder="1234"
             keyboardType="numeric"
+            maxLength={4}
           />
-          <Field label="Titular" value={holder} onChangeText={setHolder} placeholder="Seu nome" />
-          <Field label="Validade" value={expiry} onChangeText={setExpiry} placeholder="12/30" />
+          <Field
+            label="Titular"
+            value={holder}
+            onChangeText={(value) => {
+              setHolder(value);
+              setErrors((current) => ({ ...current, holder: undefined }));
+            }}
+            placeholder="Seu nome"
+            error={errors.holder}
+          />
+          <Field
+            label="Validade"
+            value={expiry}
+            onChangeText={(value) => setExpiry(formatExpiry(value))}
+            placeholder="12/30"
+            keyboardType="numeric"
+            maxLength={5}
+          />
 
           {type === 'credit' ? (
             <>
               <Field
                 label="Limite"
                 value={creditLimit}
-                onChangeText={setCreditLimit}
+                onChangeText={(value) => {
+                  setCreditLimit(value.replace(/[^0-9,.-]/g, ''));
+                  setErrors((current) => ({ ...current, creditLimit: undefined }));
+                }}
                 placeholder="5000"
                 keyboardType="numeric"
+                error={errors.creditLimit}
               />
               <View style={{ flexDirection: 'row', gap: 12 }}>
                 <View style={{ flex: 1 }}>
                   <Field
                     label="Fechamento"
                     value={closingDay}
-                    onChangeText={(value) => setClosingDay(value.replace(/\D/g, '').slice(0, 2))}
+                    onChangeText={(value) => {
+                      setClosingDay(value.replace(/\D/g, '').slice(0, 2));
+                      setErrors((current) => ({ ...current, closingDay: undefined }));
+                    }}
                     placeholder="10"
                     keyboardType="numeric"
+                    error={errors.closingDay}
+                    maxLength={2}
                   />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Field
                     label="Vencimento"
                     value={dueDay}
-                    onChangeText={(value) => setDueDay(value.replace(/\D/g, '').slice(0, 2))}
+                    onChangeText={(value) => {
+                      setDueDay(value.replace(/\D/g, '').slice(0, 2));
+                      setErrors((current) => ({ ...current, dueDay: undefined }));
+                    }}
                     placeholder="17"
                     keyboardType="numeric"
+                    error={errors.dueDay}
+                    maxLength={2}
                   />
                 </View>
               </View>
             </>
           ) : null}
 
-          {createCardMutation.isPending ? (
+          {isPending ? (
             <View style={{ paddingVertical: 8, alignItems: 'center' }}>
               <ActivityIndicator color={colors.ink} />
             </View>
@@ -278,17 +451,19 @@ export default function AddCardScreen() {
 
           <Pressable
             onPress={handleSave}
-            disabled={createCardMutation.isPending}
+            disabled={isPending}
             style={{
               flex: 1,
               height: 54,
               borderRadius: 18,
-              backgroundColor: createCardMutation.isPending ? colors.hairline : colors.ink,
+              backgroundColor: isPending ? colors.hairline : colors.ink,
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Text style={{ fontSize: 16, color: colors.surface, fontWeight: '600' }}>Salvar</Text>
+            <Text style={{ fontSize: 16, color: colors.surface, fontWeight: '600' }}>
+              {isEditing ? 'Atualizar' : 'Salvar'}
+            </Text>
           </Pressable>
         </View>
       </KeyboardAvoidingView>
