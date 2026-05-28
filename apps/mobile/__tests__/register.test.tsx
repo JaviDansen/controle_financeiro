@@ -63,7 +63,7 @@ describe("RegisterScreen — validacao do formulario", () => {
     })
   })
 
-  it("exibe erro quando senha tem menos de 6 caracteres", async () => {
+  it("exibe erro quando senha tem menos de 8 caracteres", async () => {
     const { getByPlaceholderText, getByText } = render(<RegisterScreen />)
 
     fireEvent.changeText(getByPlaceholderText("Nome"), "Joao Silva")
@@ -76,7 +76,7 @@ describe("RegisterScreen — validacao do formulario", () => {
     })
 
     await waitFor(() => {
-      expect(getByText("A senha deve ter no mínimo 6 caracteres")).toBeTruthy()
+      expect(getByText("A senha deve ter no mínimo 8 caracteres")).toBeTruthy()
     })
   })
 
