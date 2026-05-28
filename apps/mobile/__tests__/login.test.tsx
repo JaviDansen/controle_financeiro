@@ -1,4 +1,4 @@
-﻿import React from "react"
+﻿﻿import React from "react"
 import { render, fireEvent, waitFor, act } from "@testing-library/react-native"
 
 jest.mock("expo-router", () => ({
@@ -54,15 +54,15 @@ describe("LoginScreen — validacao Zod", () => {
     })
   })
 
-  it("exibe erro quando senha tem menos de 6 caracteres", async () => {
+  it("exibe erro quando senha tem menos de 8 caracteres", async () => {
     const { getByPlaceholderText, getByText } = render(<LoginScreen />)
 
     fireEvent.changeText(getByPlaceholderText("seu@email.com"), "joao@teste.com")
-    fireEvent.changeText(getByPlaceholderText("••••••••"), "123")
+    fireEvent.changeText(getByPlaceholderText("••••••••"), "123456")
     fireEvent.press(getByText("Entrar"))
 
     await waitFor(() => {
-      expect(getByText("A senha deve ter no mínimo 6 caracteres")).toBeTruthy()
+      expect(getByText("A senha deve ter no mínimo 8 caracteres")).toBeTruthy()
     })
   })
 })
