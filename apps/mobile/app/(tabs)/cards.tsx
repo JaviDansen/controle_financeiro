@@ -211,36 +211,45 @@ export default function CardsScreen() {
             <Text style={{ fontSize: 18, fontWeight: '600', color: colors.ink }}>
               {activeCard.name}
             </Text>
-            <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
               <Pressable
                 onPress={() => router.push({ pathname: '/(tabs)/add', params: { id: activeCard.id } })}
                 style={{
                   flex: 1,
-                  height: 46,
-                  borderRadius: 16,
-                  backgroundColor: colors.bg,
+                  height: 38,
+                  borderRadius: 999,
+                  backgroundColor: 'rgba(21,21,26,0.035)',
                   borderWidth: 1,
-                  borderColor: colors.hairline,
+                  borderColor: 'rgba(21,21,26,0.08)',
+                  flexDirection: 'row',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  gap: 6,
                 }}
               >
-                <Text style={{ fontSize: 15, fontWeight: '500', color: colors.ink }}>Editar</Text>
+                <Icon.Edit size={14} color={colors.ink} sw={1.7} />
+                <Text style={{ fontSize: 13, fontWeight: '500', color: colors.ink }}>Editar cartao</Text>
               </Pressable>
               <Pressable
                 onPress={handleDelete}
                 disabled={deleteCardMutation.isPending}
                 style={{
                   flex: 1,
-                  height: 46,
-                  borderRadius: 16,
-                  backgroundColor: deleteCardMutation.isPending ? '#E8B4AA' : '#C84B31',
+                  height: 38,
+                  borderRadius: 999,
+                  backgroundColor: deleteCardMutation.isPending ? 'rgba(164,62,44,0.08)' : 'rgba(164,62,44,0.06)',
+                  borderWidth: 1,
+                  borderColor: 'rgba(164,62,44,0.12)',
+                  flexDirection: 'row',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  gap: 6,
+                  opacity: deleteCardMutation.isPending ? 0.7 : 1,
                 }}
               >
-                <Text style={{ fontSize: 15, fontWeight: '600', color: '#FBFAF6' }}>
-                  {deleteCardMutation.isPending ? 'Excluindo...' : 'Excluir'}
+                <Icon.Trash size={14} color="#A43E2C" sw={1.7} />
+                <Text style={{ fontSize: 13, fontWeight: '500', color: '#A43E2C' }}>
+                  {deleteCardMutation.isPending ? 'Removendo...' : 'Remover cartao'}
                 </Text>
               </Pressable>
             </View>
