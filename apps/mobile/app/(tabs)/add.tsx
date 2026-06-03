@@ -78,6 +78,7 @@ function Field({
   keyboardType,
   error,
   maxLength,
+  autoCapitalize = 'sentences',
 }: {
   label: string;
   value: string;
@@ -86,6 +87,7 @@ function Field({
   keyboardType?: 'default' | 'numeric';
   error?: string;
   maxLength?: number;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
 }) {
   return (
     <View style={{ gap: 6 }}>
@@ -107,6 +109,7 @@ function Field({
         placeholderTextColor={colors.muted}
         keyboardType={keyboardType}
         maxLength={maxLength}
+        autoCapitalize={autoCapitalize}
         style={{
           height: 54,
           borderRadius: 18,
@@ -366,6 +369,7 @@ export default function AddCardScreen() {
             }}
             placeholder="Novo cartao"
             error={errors.name}
+            autoCapitalize="words"
           />
           <Field
             label="Banco"
@@ -376,6 +380,7 @@ export default function AddCardScreen() {
             }}
             placeholder="Nubank"
             error={errors.bank}
+            autoCapitalize="words"
           />
           <Field
             label="Final"
@@ -386,6 +391,7 @@ export default function AddCardScreen() {
             placeholder="1234"
             keyboardType="numeric"
             maxLength={4}
+            autoCapitalize="none"
           />
           <Field
             label="Titular"
@@ -396,6 +402,7 @@ export default function AddCardScreen() {
             }}
             placeholder="Seu nome"
             error={errors.holder}
+            autoCapitalize="words"
           />
           <Field
             label="Validade"
@@ -408,6 +415,7 @@ export default function AddCardScreen() {
             keyboardType="numeric"
             maxLength={5}
             error={errors.expiry}
+            autoCapitalize="none"
           />
 
           {type === 'credit' ? (
@@ -422,6 +430,7 @@ export default function AddCardScreen() {
                 placeholder="5000"
                 keyboardType="numeric"
                 error={errors.creditLimit}
+                autoCapitalize="none"
               />
               <View style={{ flexDirection: 'row', gap: 12 }}>
                 <View style={{ flex: 1 }}>
@@ -436,6 +445,7 @@ export default function AddCardScreen() {
                     keyboardType="numeric"
                     error={errors.closingDay}
                     maxLength={2}
+                    autoCapitalize="none"
                   />
                 </View>
                 <View style={{ flex: 1 }}>
@@ -450,6 +460,7 @@ export default function AddCardScreen() {
                     keyboardType="numeric"
                     error={errors.dueDay}
                     maxLength={2}
+                    autoCapitalize="none"
                   />
                 </View>
               </View>

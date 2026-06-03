@@ -272,7 +272,7 @@ export default function CardsScreen() {
             </View>
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'uppercase' }}>Melhor dia de compra</Text>
+                <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'uppercase' }}>Compre apos</Text>
                 <Text style={{ fontSize: 16, fontWeight: '500', color: colors.ink, marginTop: 4 }}>
                   {formatShortDate(activeCard.bestPurchaseDate)}
                 </Text>

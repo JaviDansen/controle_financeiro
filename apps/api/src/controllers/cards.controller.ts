@@ -59,18 +59,66 @@ function toNumber(value: string | number | null): number | null {
 
 export function calculateBestPurchaseDate(closingDay: number | null): string | null {
   if (closingDay === null) return null
+
   const now = new Date()
   const year = now.getFullYear()
   const month = now.getMonth()
+  const previousClosingDate = getBusinessClosingDate(year, month - 1, closingDay)
+  const previousBestPurchaseDate = addBusinessDays(previousClosingDate, 2)
+
+  if (
+    previousBestPurchaseDate.getFullYear() === year &&
+    previousBestPurchaseDate.getMonth() === month
+  ) {
+    return formatLocalDate(previousBestPurchaseDate)
+  }
+
+  const currentClosingDate = getBusinessClosingDate(year, month, closingDay)
+  return formatLocalDate(addBusinessDays(currentClosingDate, 2))
+}
+
+function getBusinessClosingDate(year: number, month: number, closingDay: number): Date {
   const lastDayOfMonth = new Date(year, month + 1, 0).getDate()
   const clampedClosingDay = Math.min(closingDay, lastDayOfMonth)
   const closingDate = new Date(year, month, clampedClosingDay)
 
-  closingDate.setDate(closingDate.getDate() + 3)
+  return moveToNextBusinessDay(closingDate)
+}
 
-  const resultYear = closingDate.getFullYear()
-  const resultMonth = String(closingDate.getMonth() + 1).padStart(2, '0')
-  const resultDay = String(closingDate.getDate()).padStart(2, '0')
+function moveToNextBusinessDay(date: Date): Date {
+  const result = new Date(date)
+
+  while (isWeekend(result)) {
+    result.setDate(result.getDate() + 1)
+  }
+
+  return result
+}
+
+function addBusinessDays(date: Date, days: number): Date {
+  const result = new Date(date)
+  let remainingDays = days
+
+  while (remainingDays > 0) {
+    result.setDate(result.getDate() + 1)
+
+    if (!isWeekend(result)) {
+      remainingDays -= 1
+    }
+  }
+
+  return result
+}
+
+function isWeekend(date: Date): boolean {
+  const day = date.getDay()
+  return day === 0 || day === 6
+}
+
+function formatLocalDate(date: Date): string {
+  const resultYear = date.getFullYear()
+  const resultMonth = String(date.getMonth() + 1).padStart(2, '0')
+  const resultDay = String(date.getDate()).padStart(2, '0')
 
   return `${resultYear}-${resultMonth}-${resultDay}`
 }
