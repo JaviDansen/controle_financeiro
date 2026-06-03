@@ -179,6 +179,7 @@ export default function AddCardScreen() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['cards'] });
+      Alert.alert('Cartao atualizado', 'As alteracoes foram salvas com sucesso.');
       router.replace('/(tabs)/cards');
     },
     onError: (error) => {

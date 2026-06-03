@@ -35,6 +35,7 @@ export default function CardsScreen() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['cards'] });
       setActiveIdx(0);
+      Alert.alert('Cartao removido', 'O cartao foi removido com sucesso.');
     },
     onError: (error) => {
       Alert.alert('Erro ao excluir', error instanceof Error ? error.message : 'Nao foi possivel excluir o cartao.');
