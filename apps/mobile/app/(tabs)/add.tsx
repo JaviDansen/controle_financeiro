@@ -24,7 +24,7 @@ import { useAuthStore } from '../../store/auth.store';
 import { useCards } from '../../hooks/useCards';
 
 type CardType = 'credit' | 'debit';
-type FormErrors = Partial<Record<'name' | 'bank' | 'holder' | 'creditLimit' | 'closingDay' | 'dueDay', string>>;
+type FormErrors = Partial<Record<'name' | 'bank' | 'holder' | 'expiry' | 'creditLimit' | 'closingDay' | 'dueDay', string>>;
 
 const DEFAULT_GRADIENT_FROM = '#15151A';
 const DEFAULT_GRADIENT_TO = '#0A0A0A';
@@ -38,6 +38,36 @@ function formatExpiry(value: string) {
   }
 
   return `${digits.slice(0, 2)}/${digits.slice(2)}`.slice(0, 5);
+}
+
+function getExpiryError(value: string) {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return undefined;
+  }
+
+  if (!/^\d{2}\/\d{2}$/.test(trimmed)) {
+    return 'Informe a validade no formato MM/AA.';
+  }
+
+  const [monthText, yearText] = trimmed.split('/');
+  const month = Number(monthText);
+  const year = 2000 + Number(yearText);
+
+  if (month < 1 || month > 12) {
+    return 'Informe um mes entre 01 e 12.';
+  }
+
+  const now = new Date();
+  const currentMonthIndex = now.getFullYear() * 12 + now.getMonth();
+  const expiryMonthIndex = year * 12 + (month - 1);
+
+  if (expiryMonthIndex < currentMonthIndex) {
+    return 'Informe uma validade atual ou futura.';
+  }
+
+  return undefined;
 }
 
 function Field({
@@ -175,6 +205,7 @@ export default function AddCardScreen() {
 
   const validateForm = () => {
     const nextErrors: FormErrors = {};
+    const expiryError = getExpiryError(expiry);
 
     if (!name.trim()) {
       nextErrors.name = 'Informe o nome do cartao.';
@@ -186,6 +217,10 @@ export default function AddCardScreen() {
 
     if (!holder.trim()) {
       nextErrors.holder = 'Informe o titular.';
+    }
+
+    if (expiryError) {
+      nextErrors.expiry = expiryError;
     }
 
     if (type === 'credit' && !creditLimit.trim()) {
@@ -362,10 +397,14 @@ export default function AddCardScreen() {
           <Field
             label="Validade"
             value={expiry}
-            onChangeText={(value) => setExpiry(formatExpiry(value))}
+            onChangeText={(value) => {
+              setExpiry(formatExpiry(value));
+              setErrors((current) => ({ ...current, expiry: undefined }));
+            }}
             placeholder="12/30"
             keyboardType="numeric"
             maxLength={5}
+            error={errors.expiry}
           />
 
           {type === 'credit' ? (
