@@ -1,4 +1,4 @@
-﻿import React from "react"
+﻿﻿import React from "react"
 import { render, fireEvent, waitFor, act } from "@testing-library/react-native"
 
 jest.mock("expo-router", () => ({
@@ -68,8 +68,8 @@ describe("RegisterScreen — validacao do formulario", () => {
 
     fireEvent.changeText(getByPlaceholderText("Nome"), "Joao Silva")
     fireEvent.changeText(getByPlaceholderText("seu@email.com"), "joao@teste.com")
-    fireEvent.changeText(getByPlaceholderText("Senha"), "123")
-    fireEvent.changeText(getByPlaceholderText("Confirmar senha"), "123")
+    fireEvent.changeText(getByPlaceholderText("Senha"), "123456")
+    fireEvent.changeText(getByPlaceholderText("Confirmar senha"), "123456")
 
     await act(async () => {
       fireEvent.press(getByText("Cadastrar"))
