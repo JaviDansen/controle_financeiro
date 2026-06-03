@@ -11,7 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { colors } from '../../src/theme/colors';
 import {
@@ -125,6 +125,7 @@ function Field({
 
 export default function AddCardScreen() {
   const router = useRouter();
+  const pathname = usePathname();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const queryClient = useQueryClient();
   const token = useAuthStore((s) => s.token);
@@ -161,13 +162,13 @@ export default function AddCardScreen() {
   }, [editingCard]);
 
   useEffect(() => {
-    if (!isEditing || isCardsLoading || editingCard) {
+    if (pathname !== '/add' || !isEditing || isCardsLoading || editingCard) {
       return;
     }
 
-    Alert.alert('Cartao nao encontrado', 'Nao foi possivel localizar o cartao selecionado.');
+    Alert.alert('Cartão não encontrado', 'Não foi possível localizar o cartão selecionado.');
     router.replace('/(tabs)/cards');
-  }, [editingCard, isCardsLoading, isEditing, router]);
+  }, [editingCard, isCardsLoading, isEditing, pathname, router]);
 
   const createCardMutation = useMutation({
     mutationFn: async (payload: CreateCardPayload) => {
@@ -179,7 +180,7 @@ export default function AddCardScreen() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['cards'] });
-      Alert.alert('Cartao atualizado', 'As alteracoes foram salvas com sucesso.');
+      Alert.alert('Cartao adicionado', 'O cartao foi cadastrado com sucesso.');
       router.replace('/(tabs)/cards');
     },
     onError: (error) => {
@@ -197,6 +198,7 @@ export default function AddCardScreen() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['cards'] });
+      Alert.alert('Cartao atualizado', 'As alteracoes foram salvas com sucesso.');
       router.replace('/(tabs)/cards');
     },
     onError: (error) => {
