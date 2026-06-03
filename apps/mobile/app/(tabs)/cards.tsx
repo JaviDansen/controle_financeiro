@@ -1,16 +1,60 @@
-import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Icon } from '../../src/components/ui/Icon';
 import { colors } from '../../src/theme/colors';
 import { fmtBRLShort } from '../../src/lib/currency';
 import { useCards } from '../../hooks/useCards';
+import { deleteCard } from '../../services/cards.service';
+import { useAuthStore } from '../../store/auth.store';
+
+function formatShortDate(value: string | null) {
+  if (!value) {
+    return '--';
+  }
+
+  const [year, month, day] = value.split('-');
+
+  if (!year || !month || !day) {
+    return '--';
+  }
+
+  return `${day}/${month}`;
+}
 
 export default function CardsScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const token = useAuthStore((s) => s.token);
   const { data: cards = [], isLoading } = useCards();
   const [activeIdx, setActiveIdx] = useState(0);
+  const [isActionsOpen, setIsActionsOpen] = useState(false);
+
+  useEffect(() => {
+    if (activeIdx > cards.length - 1) {
+      setActiveIdx(0);
+    }
+  }, [activeIdx, cards.length]);
+
+  const deleteCardMutation = useMutation({
+    mutationFn: async (cardId: string) => {
+      if (!token) {
+        throw new Error('Sessao invalida. Faca login novamente.');
+      }
+
+      return deleteCard(cardId, token);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['cards'] });
+      setActiveIdx(0);
+      Alert.alert('Cartao removido', 'O cartao foi removido com sucesso.');
+    },
+    onError: (error) => {
+      Alert.alert('Erro ao excluir', error instanceof Error ? error.message : 'Nao foi possivel excluir o cartao.');
+    },
+  });
 
   if (isLoading) {
     return (
@@ -67,6 +111,32 @@ export default function CardsScreen() {
 
   const activeCard = cards[activeIdx] ?? cards[0];
 
+  const handleDelete = () => {
+    Alert.alert('Excluir cartao', 'Deseja realmente excluir este cartao?', [
+      {
+        text: 'Cancelar',
+        style: 'cancel',
+      },
+      {
+        text: 'Excluir',
+        style: 'destructive',
+        onPress: () => {
+          deleteCardMutation.mutate(activeCard.id);
+        },
+      },
+    ]);
+  };
+
+  const handleEdit = () => {
+    setIsActionsOpen(false);
+    router.push({ pathname: '/(tabs)/add', params: { id: activeCard.id } });
+  };
+
+  const handleRemoveAction = () => {
+    setIsActionsOpen(false);
+    handleDelete();
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -101,7 +171,7 @@ export default function CardsScreen() {
         </View>
 
         <Text style={{ paddingHorizontal: 22, paddingBottom: 18, fontSize: 13, color: colors.muted }}>
-          {cards.length} {cards.length === 1 ? 'cartao' : 'cartoes'} · {cards.filter((c) => c.type === 'credit').length} de credito
+          {cards.length} {cards.length === 1 ? 'cartao' : 'cartoes'} - {cards.filter((c) => c.type === 'credit').length} de credito
         </Text>
 
         <ScrollView
@@ -142,9 +212,7 @@ export default function CardsScreen() {
                 </View>
 
                 <View>
-                  <Text style={{ fontSize: 18, color: '#fff', letterSpacing: 3 }}>
-                    •••• •••• •••• {card.last4 ?? '----'}
-                  </Text>
+                  <Text style={{ fontSize: 18, color: '#fff', letterSpacing: 3 }}>**** **** **** {card.last4 ?? '----'}</Text>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
                     <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>{card.holder ?? 'Sem titular'}</Text>
                     <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>{card.expiry ?? '--/--'}</Text>
@@ -166,9 +234,28 @@ export default function CardsScreen() {
               gap: 14,
             }}
           >
-            <Text style={{ fontSize: 18, fontWeight: '600', color: colors.ink }}>
-              {activeCard.name}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+              <View style={{ flex: 1, gap: 4 }}>
+                <Text style={{ fontSize: 18, fontWeight: '600', color: colors.ink }}>
+                  {activeCard.name}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => setIsActionsOpen(true)}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 999,
+                  backgroundColor: 'rgba(21,21,26,0.035)',
+                  borderWidth: 1,
+                  borderColor: 'rgba(21,21,26,0.08)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Icon.More size={18} color={colors.ink} />
+              </Pressable>
+            </View>
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'uppercase' }}>Fatura atual</Text>
@@ -185,6 +272,12 @@ export default function CardsScreen() {
             </View>
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'uppercase' }}>Compre apos</Text>
+                <Text style={{ fontSize: 16, fontWeight: '500', color: colors.ink, marginTop: 4 }}>
+                  {formatShortDate(activeCard.bestPurchaseDate)}
+                </Text>
+              </View>
+              <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'uppercase' }}>Fechamento</Text>
                 <Text style={{ fontSize: 16, fontWeight: '500', color: colors.ink, marginTop: 4 }}>
                   {activeCard.closingDay ?? '--'}
@@ -196,18 +289,101 @@ export default function CardsScreen() {
                   {activeCard.dueDay ?? '--'}
                 </Text>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'uppercase' }}>Melhor dia</Text>
-                <Text style={{ fontSize: 16, fontWeight: '500', color: colors.ink, marginTop: 4 }}>
-                  {activeCard.bestPurchaseDay ?? '--'}
-                </Text>
-              </View>
             </View>
           </View>
         </View>
 
         <View style={{ height: 32 }} />
       </ScrollView>
+
+      <Modal
+        visible={isActionsOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsActionsOpen(false)}
+      >
+        <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+          <Pressable
+            onPress={() => setIsActionsOpen(false)}
+            style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              bottom: 0,
+              left: 0,
+              backgroundColor: 'rgba(21,21,26,0.28)',
+            }}
+          />
+          <View
+            style={{
+              margin: 12,
+              marginBottom: 24,
+              borderRadius: 28,
+              backgroundColor: colors.surface,
+              borderWidth: 1,
+              borderColor: colors.hairline,
+              padding: 8,
+              gap: 4,
+            }}
+          >
+            <View style={{ width: 36, height: 4, borderRadius: 999, backgroundColor: colors.hairline, alignSelf: 'center', marginVertical: 8 }} />
+            <Pressable
+              onPress={handleEdit}
+              style={{
+                height: 52,
+                borderRadius: 18,
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingHorizontal: 14,
+                gap: 12,
+              }}
+            >
+              <View
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 999,
+                  backgroundColor: 'rgba(21,21,26,0.045)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Icon.Edit size={15} color={colors.ink} sw={1.7} />
+              </View>
+              <Text style={{ flex: 1, fontSize: 15, fontWeight: '500', color: colors.ink }}>Editar cartao</Text>
+            </Pressable>
+            <Pressable
+              onPress={handleRemoveAction}
+              disabled={deleteCardMutation.isPending}
+              style={{
+                height: 52,
+                borderRadius: 18,
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingHorizontal: 14,
+                gap: 12,
+                opacity: deleteCardMutation.isPending ? 0.65 : 1,
+              }}
+            >
+              <View
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 999,
+                  backgroundColor: 'rgba(164,62,44,0.075)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Icon.Trash size={15} color="#A43E2C" sw={1.7} />
+              </View>
+              <Text style={{ flex: 1, fontSize: 15, fontWeight: '500', color: '#A43E2C' }}>
+                {deleteCardMutation.isPending ? 'Removendo...' : 'Remover cartao'}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
