@@ -30,7 +30,7 @@ export interface Card {
   limit: number | null;
   used: number;
   closingDay: number | null;
-  bestPurchaseDay: number | null;
+  bestPurchaseDate: string | null;
   dueDay: number | null;
   openInstallmentsCount: number;
   openInstallmentsTotal: number;

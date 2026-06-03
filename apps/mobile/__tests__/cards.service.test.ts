@@ -13,7 +13,7 @@ const MOCK_CARD = {
   limit: 8500,
   closingDay: 16,
   dueDay: 23,
-  bestPurchaseDay: 19,
+  bestPurchaseDate: "2026-06-19",
   used: 1240,
   currentMonthTotal: 1240,
   openInstallmentsCount: 0,

@@ -57,10 +57,22 @@ function toNumber(value: string | number | null): number | null {
   return typeof value === 'number' ? value : parseFloat(value)
 }
 
-function bestPurchaseDay(closingDay: number | null): number | null {
+export function calculateBestPurchaseDate(closingDay: number | null): string | null {
   if (closingDay === null) return null
-  const day = closingDay + 3
-  return day > 28 ? day - 28 : day
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth()
+  const lastDayOfMonth = new Date(year, month + 1, 0).getDate()
+  const clampedClosingDay = Math.min(closingDay, lastDayOfMonth)
+  const closingDate = new Date(year, month, clampedClosingDay)
+
+  closingDate.setDate(closingDate.getDate() + 3)
+
+  const resultYear = closingDate.getFullYear()
+  const resultMonth = String(closingDate.getMonth() + 1).padStart(2, '0')
+  const resultDay = String(closingDate.getDate()).padStart(2, '0')
+
+  return `${resultYear}-${resultMonth}-${resultDay}`
 }
 
 function toCardDto(card: CardRow, currentMonthTotal: number) {
@@ -75,7 +87,7 @@ function toCardDto(card: CardRow, currentMonthTotal: number) {
     limit: toNumber(card.creditLimit),
     closingDay: card.closingDay,
     dueDay: card.dueDay,
-    bestPurchaseDay: bestPurchaseDay(card.closingDay),
+    bestPurchaseDate: calculateBestPurchaseDate(card.closingDay),
     used: currentMonthTotal,
     currentMonthTotal,
     openInstallmentsCount: 0,

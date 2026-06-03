@@ -10,6 +10,20 @@ import { useCards } from '../../hooks/useCards';
 import { deleteCard } from '../../services/cards.service';
 import { useAuthStore } from '../../store/auth.store';
 
+function formatShortDate(value: string | null) {
+  if (!value) {
+    return '--';
+  }
+
+  const [year, month, day] = value.split('-');
+
+  if (!year || !month || !day) {
+    return '--';
+  }
+
+  return `${day}/${month}`;
+}
+
 export default function CardsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -260,7 +274,7 @@ export default function CardsScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'uppercase' }}>Melhor dia de compra</Text>
                 <Text style={{ fontSize: 16, fontWeight: '500', color: colors.ink, marginTop: 4 }}>
-                  {activeCard.bestPurchaseDay ?? '--'}
+                  {formatShortDate(activeCard.bestPurchaseDate)}
                 </Text>
               </View>
               <View style={{ flex: 1 }}>
