@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -6,7 +6,6 @@ import { z } from 'zod';
 import * as authService from '../../services/auth.service';
 import { useAuthStore } from '../../store/auth.store';
 
-// Validação de Zod com base nas regras do seu projeto
 const loginSchema = z.object({
   email: z.string().email('E-mail inválido'),
   password: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres'),
@@ -112,7 +111,7 @@ export default function LoginScreen() {
               </View>
               <Text className="text-[13px] text-[#3B3B43]">Manter conectado</Text>
             </TouchableOpacity>
-            
+
             <Link href="/(auth)/forgot-password" asChild>
               <TouchableOpacity>
                 <Text className="text-[13px] text-[#15151A] font-medium underline">Esqueci a senha</Text>
@@ -120,7 +119,7 @@ export default function LoginScreen() {
             </Link>
           </View>
 
-          {/* Botão Entrar com Feedback Tátil (scale activeOpacity) */}
+          {/* Botão Entrar */}
           <TouchableOpacity
             onPress={submit}
             disabled={loading}
@@ -135,21 +134,6 @@ export default function LoginScreen() {
                 <Feather name="chevron-right" size={16} color="#fff" />
               </>
             )}
-          </TouchableOpacity>
-
-          {/* Divisor */}
-          <View className="flex-row items-center gap-3 my-6">
-            <View className="flex-1 h-[1px] bg-[#1515151A]" />
-            <Text className="text-xs text-[#8B8B92]">ou</Text>
-            <View className="flex-1 h-[1px] bg-[#1515151A]" />
-          </View>
-
-          {/* Continuar com Google */}
-          <TouchableOpacity activeOpacity={0.7} className="h-[52px] rounded-xl border border-[#1515151A] bg-transparent flex-row items-center justify-center gap-2.5">
-            <View className="w-[18px] h-[18px] rounded bg-[#15151A] items-center justify-center">
-              <Text className="text-white text-[11px] font-bold">G</Text>
-            </View>
-            <Text className="text-[15px] font-medium text-[#15151A]">Continuar com Google</Text>
           </TouchableOpacity>
 
           {/* Footer - Criar conta */}

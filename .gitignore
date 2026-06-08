@@ -61,4 +61,7 @@ base_knowledge/*
 
 .gpt
 
+# Credenciais e segredos
+secrets/
+
 base_knowledge/html_tabs_example/streamings-489921-7ea5d1613ae3.json

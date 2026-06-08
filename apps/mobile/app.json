@@ -8,7 +8,9 @@
     "ios": {
       "supportsTablet": false
     },
-    "android": {},
+    "android": {
+      "package": "com.finapp.controlefinanceiro"
+    },
     "plugins": [
       "expo-router",
       "expo-asset",
@@ -19,6 +21,12 @@
     "web": {
       "output": "static",
       "bundler": "metro"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "202d559c-72ec-46be-b7f6-3e1a68a722cd"
+      }
     }
   }
 }

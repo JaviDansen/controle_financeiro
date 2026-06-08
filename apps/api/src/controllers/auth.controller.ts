@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { db, users } from '@finapp/db'
 import { logRequestEvent } from '../middlewares/request-logger.middleware'
+import { sendPasswordResetEmail } from '../services/google/gmail.service'
 
 const registerSchema = z.object({
   name: z
@@ -95,6 +96,12 @@ export async function login(req: Request, res: Response): Promise<void> {
     return
   }
 
+  if (!user.passwordHash) {
+    logRequestEvent(req, 'auth.login.no_password_hash', { userId: user.id, email: user.email })
+    res.status(401).json({ error: 'Credenciais inválidas' })
+    return
+  }
+
   const isPasswordValid = await bcrypt.compare(password, user.passwordHash)
   if (!isPasswordValid) {
     logRequestEvent(req, 'auth.login.invalid_password', { userId: user.id, email: user.email })
@@ -131,9 +138,73 @@ export async function forgotPassword(req: Request, res: Response): Promise<void>
     return
   }
 
-  logRequestEvent(req, 'auth.forgot_password.accepted', { email: parsed.data.email })
-  // Resposta sempre 200 para evitar enumeramento de e-mails
+  const { email } = parsed.data
+  logRequestEvent(req, 'auth.forgot_password.lookup_user', { email })
+
+  const existing = await db.select().from(users).where(eq(users.email, email)).limit(1)
+  const user = existing[0]
+
+  // Responde sempre 200 para não revelar se o e-mail existe
+  if (user) {
+    const resetToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET || 'secret', { expiresIn: '15m' })
+    const resetLink = `${process.env.API_URL}/auth/reset-password?token=${resetToken}`
+
+    try {
+      await sendPasswordResetEmail(email, resetLink)
+      logRequestEvent(req, 'auth.forgot_password.email_sent', { userId: user.id, email })
+    } catch (err) {
+      logRequestEvent(req, 'auth.forgot_password.email_error', { userId: user.id, email, error: String(err) })
+    }
+  }
+
   res.status(200).json({ data: { message: 'Se o e-mail existir, um link de recuperação foi enviado.' } })
+}
+
+export async function redirectResetPassword(req: Request, res: Response): Promise<void> {
+  const token = req.query.token as string
+  if (!token) {
+    res.status(400).send('Token ausente.')
+    return
+  }
+
+  const baseDeepLink = process.env.APP_DEEP_LINK ?? 'finapp://'
+  // APP_DEEP_LINK em dev: exp://IP:8081/-- | em prod: finapp://
+  const deepLink = `${baseDeepLink}reset-password?token=${encodeURIComponent(token)}`
+
+  res.setHeader('Content-Type', 'text/html; charset=UTF-8')
+  res.send(`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Redefinir senha — FinApp</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #ECE7DC; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+    .card { background: #FBFAF6; border-radius: 24px; padding: 40px 32px; max-width: 400px; width: 100%; text-align: center; }
+    .brand { font-size: 28px; font-weight: 600; letter-spacing: -0.5px; color: #15151A; margin-bottom: 24px; }
+    .dot { display: inline-block; width: 8px; height: 8px; background: #10b981; border-radius: 50%; margin: 0 3px 2px; vertical-align: middle; }
+    h1 { font-size: 20px; font-weight: 600; color: #15151A; margin-bottom: 8px; }
+    p { font-size: 14px; color: #3B3B43; margin-bottom: 32px; line-height: 1.5; }
+    a.btn { display: block; background: #15151A; color: #fff; text-decoration: none; padding: 16px; border-radius: 16px; font-size: 16px; font-weight: 500; }
+    .hint { font-size: 12px; color: #8B8B92; margin-top: 16px; }
+  </style>
+  <script>
+    window.onload = function() {
+      window.location.href = "${deepLink}";
+    };
+  </script>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">fin<span class="dot"></span>app</div>
+    <h1>Redefinir sua senha</h1>
+    <p>Toque no botão abaixo para abrir o aplicativo e criar uma nova senha.</p>
+    <a href="${deepLink}" class="btn">Abrir no FinApp</a>
+    <p class="hint">Se o app não abrir, certifique-se de que o FinApp está instalado.</p>
+  </div>
+</body>
+</html>`)
 }
 
 export async function resetPassword(req: Request, res: Response): Promise<void> {
