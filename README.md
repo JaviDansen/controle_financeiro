@@ -66,11 +66,11 @@ O FinApp é um aplicativo mobile de controle financeiro pessoal construído em f
 | Schema de cartões expandido — Migration 0003 | ✅ Concluído |
 | Testes TDD da API para `/cards` (15 cenários) | ✅ Concluído |
 | Mobile — service, hook e tela de cartões conectada | ✅ Concluído |
-| `POST /auth/login` | 🔲 Planejado |
-| `POST /auth/forgot-password` | 🔲 Planejado |
-| Telas mobile de autenticação | 🔲 Planejado |
+| `POST /auth/login` e `/logout` | ✅ Concluído |
+| `POST /auth/forgot-password` e `/reset` | ✅ Concluído |
+| Telas mobile de autenticação | ✅ Concluído |
 | Módulo de Transações | 🔲 Planejado |
-| Módulo de Cartões — implementação da API | 🔧 Testes prontos, aguardando controller |
+| Módulo de Cartões — implementação da API | ✅ Concluído |
 | Módulo de Metas | 🔲 Planejado |
 | Dashboard Home | 🔲 Planejado |
 
@@ -169,10 +169,10 @@ Ponto de entrada do aplicativo. Gerencia o ciclo completo de autenticação.
 | Método | Rota | Descrição | Status |
 |---|---|---|---|
 | POST | `/auth/register` | Cria novo usuário | ✅ Implementado |
-| POST | `/auth/login` | Autentica e retorna JWT | 🔲 Planejado |
-| POST | `/auth/logout` | Invalida sessão | 🔲 Planejado |
-| POST | `/auth/forgot-password` | Envia e-mail de recuperação | 🔲 Planejado |
-| POST | `/auth/reset-password` | Redefine senha com token | 🔲 Planejado |
+| POST | `/auth/login` | Autentica e retorna JWT | ✅ Implementado |
+| POST | `/auth/logout` | Invalida sessão | ✅ Implementado |
+| POST | `/auth/forgot-password` | Envia e-mail de recuperação | ✅ Implementado |
+| POST | `/auth/reset-password` | Redefine senha com token | ✅ Implementado |
 
 ---
 
@@ -411,9 +411,9 @@ apps/api/
 | Schema Drizzle | 11/11 | ✅ Passando |
 | Connection string | 9/9 | ✅ Passando |
 | Migrations | 6/6 | ✅ Passando |
-| `GET /cards` + `POST /cards` | 15/15 | ✅ Escritos (⏳ Red — implementação pendente) |
-| `POST /auth/login` | 0/9 | ⏳ Red (não implementado) |
-| `POST /auth/forgot-password` | 0/4 | ⏳ Red (não implementado) |
+| `GET /cards` + `POST` + `PATCH` + `DELETE` | 15/15 | ✅ Passando |
+| `POST /auth/login` e `/logout` | 9/9 | ✅ Passando |
+| `POST /auth/forgot-password` e `/reset` | 4/4 | ✅ Passando |
 
 ### 6.2 Mobile — jest-expo + Testing Library
 
@@ -443,7 +443,7 @@ apps/mobile/
 
 **Estado atual dos testes do mobile:**
 - `cards.service.test.ts` — 7/7 ✅ Passando
-- Demais 33 testes — ⏳ Red — aguardando implementação das telas, store e services de autenticação
+- Testes de autenticação e infra — ✅ Passando (Fluxo de auth implementado)
 
 ### 6.3 Arquivos `.http` (REST Client)
 
