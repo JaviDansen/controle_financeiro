@@ -45,6 +45,20 @@ export const Icon = {
     </Svg>
   ),
 
+  Edit: ({ size = 16, color = '#15151A', sw = 1.6 }: IconProps) => (
+    <Svg viewBox="0 0 20 20" width={size} height={size} fill="none">
+      <Path d="M4 14.5V16h1.5L15 6.5 13.5 5 4 14.5Z" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M12.5 6l1.5 1.5" stroke={color} strokeWidth={sw} strokeLinecap="round" />
+    </Svg>
+  ),
+
+  Trash: ({ size = 16, color = '#15151A', sw = 1.6 }: IconProps) => (
+    <Svg viewBox="0 0 20 20" width={size} height={size} fill="none">
+      <Path d="M4 6h12M8 6V4.5h4V6M6 8l.6 8h6.8L14 8" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M8.5 10v4M11.5 10v4" stroke={color} strokeWidth={sw} strokeLinecap="round" />
+    </Svg>
+  ),
+
   ChevR: ({ size = 14, color = '#15151A', sw = 1.8 }: IconProps) => (
     <Svg viewBox="0 0 20 20" width={size} height={size} fill="none">
       <Path d="M7 4l6 6-6 6" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" />

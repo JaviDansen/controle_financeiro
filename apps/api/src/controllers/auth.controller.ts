@@ -9,7 +9,11 @@ import { logRequestEvent } from '../middlewares/request-logger.middleware'
 const registerSchema = z.object({
   name: z
     .string({ required_error: 'name é obrigatório' })
-    .min(1, 'name é obrigatório'),
+    .trim()
+    .min(1, 'name é obrigatório')
+    .refine((name) => name.split(/\s+/).length > 1, {
+      message: 'Insira seu nome e sobrenome',
+    }),
   email: z
     .string({ required_error: 'email é obrigatório' })
     .email('email com formato inválido'),

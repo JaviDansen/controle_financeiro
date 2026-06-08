@@ -17,6 +17,8 @@ export interface CreateCardPayload {
   accent?: string
 }
 
+export type UpdateCardPayload = CreateCardPayload
+
 export interface CreatedCard {
   id: string
   name: string
@@ -41,7 +43,7 @@ export async function getCards(token: string): Promise<Card[]> {
     },
   })
   const json = await res.json()
-  if (!res.ok) throw new Error(json.error ?? 'Erro ao buscar cartões')
+  if (!res.ok) throw new Error(json.error ?? 'Erro ao buscar cartoes')
   return json.data
 }
 
@@ -55,6 +57,34 @@ export async function createCard(payload: CreateCardPayload, token: string): Pro
     body: JSON.stringify(payload),
   })
   const json = await res.json()
-  if (!res.ok) throw new Error(json.error ?? 'Erro ao criar cartão')
+  if (!res.ok) throw new Error(json.error ?? 'Erro ao criar cartao')
   return json.data
+}
+
+export async function updateCard(id: string, payload: UpdateCardPayload, token: string): Promise<CreatedCard> {
+  const res = await fetch(`${API_URL}/cards/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  })
+  const json = await res.json()
+  if (!res.ok) throw new Error(json.error ?? 'Erro ao atualizar cartao')
+  return json.data
+}
+
+export async function deleteCard(id: string, token: string): Promise<void> {
+  const res = await fetch(`${API_URL}/cards/${id}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!res.ok) {
+    const json = await res.json()
+    throw new Error(json.error ?? 'Erro ao excluir cartao')
+  }
 }

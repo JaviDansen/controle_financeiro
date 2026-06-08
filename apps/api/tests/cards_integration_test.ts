@@ -93,7 +93,7 @@ describe('GET /cards', () => {
 
   it('retorna apenas cartões do usuário autenticado', async () => {
     const token1 = await registerAndLogin()
-    const token2 = await registerAndLogin({ name: 'Pedro', email: 'pedro@teste.com' })
+    const token2 = await registerAndLogin({ name: 'Pedro Silva', email: 'pedro@teste.com' })
 
     await api().post('/cards').set('Authorization', `Bearer ${token1}`).send(VALID_CREDIT_CARD)
     await api().post('/cards').set('Authorization', `Bearer ${token2}`).send(VALID_DEBIT_CARD)
@@ -104,7 +104,7 @@ describe('GET /cards', () => {
     expect(res.body.data[0].name).toBe(VALID_CREDIT_CARD.name)
   })
 
-  it('campos calculados presentes: used, currentMonthTotal, bestPurchaseDay', async () => {
+  it('campos calculados presentes: used, currentMonthTotal, bestPurchaseDate', async () => {
     const token = await registerAndLogin()
     await api().post('/cards').set('Authorization', `Bearer ${token}`).send(VALID_CREDIT_CARD)
 
@@ -113,7 +113,7 @@ describe('GET /cards', () => {
     const card = res.body.data[0]
     expect(card).toHaveProperty('used')
     expect(card).toHaveProperty('currentMonthTotal')
-    expect(card).toHaveProperty('bestPurchaseDay')
+    expect(card).toHaveProperty('bestPurchaseDate')
   })
 
   it('openInstallmentsCount e openInstallmentsTotal são zero', async () => {

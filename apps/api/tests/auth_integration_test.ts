@@ -62,6 +62,12 @@ describe('POST /auth/register', () => {
     expect(res.body).toHaveProperty('error')
   })
 
+  it('400: name sem sobrenome', async () => {
+    const res = await registerUser({ name: 'João' })
+    expect(res.status).toBe(400)
+    expect(res.body).toHaveProperty('error')
+  })
+  
   it('400: email ausente', async () => {
     const res = await registerUser({ email: undefined })
     expect(res.status).toBe(400)
@@ -80,8 +86,8 @@ describe('POST /auth/register', () => {
     expect(res.body).toHaveProperty('error')
   })
 
-  it('400: password com menos de 6 caracteres', async () => {
-    const res = await registerUser({ password: '123' })
+  it('400: password com menos de 8 caracteres', async () => {
+    const res = await registerUser({ password: '1234567' })
     expect(res.status).toBe(400)
     expect(res.body).toHaveProperty('error')
   })
