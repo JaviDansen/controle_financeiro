@@ -12,6 +12,7 @@
       "package": "com.finapp.controlefinanceiro"
     },
     "plugins": [
+      "expo-dev-client",
       "expo-router",
       "expo-asset",
       "expo-font",
