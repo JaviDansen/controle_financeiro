@@ -1,11 +1,12 @@
 import { Request, Response } from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { eq } from 'drizzle-orm'
+import { eq, or } from 'drizzle-orm'
 import { z } from 'zod'
 import { db, users } from '@finapp/db'
 import { logRequestEvent } from '../middlewares/request-logger.middleware'
 import { sendPasswordResetEmail } from '../services/google/gmail.service'
+import { verifyGoogleToken } from '../services/google/oauth.service'
 
 const registerSchema = z.object({
   name: z
@@ -205,6 +206,70 @@ export async function redirectResetPassword(req: Request, res: Response): Promis
   </div>
 </body>
 </html>`)
+}
+
+const googleLoginSchema = z.object({
+  idToken: z.string({ required_error: 'idToken é obrigatório' }),
+})
+
+export async function googleLogin(req: Request, res: Response): Promise<void> {
+  logRequestEvent(req, 'auth.google_login.validation_started')
+  const parsed = googleLoginSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.errors[0].message })
+    return
+  }
+
+  const { idToken } = parsed.data
+
+  let payload: { googleId: string; email: string; name: string }
+  try {
+    payload = await verifyGoogleToken(idToken)
+  } catch {
+    logRequestEvent(req, 'auth.google_login.invalid_token')
+    res.status(401).json({ error: 'Token Google inválido' })
+    return
+  }
+
+  const { googleId, email, name } = payload
+
+  logRequestEvent(req, 'auth.google_login.schema_check', { googleIdField: String(users.googleId?.name) })
+
+  const existing = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      googleId: users.googleId,
+      passwordHash: users.passwordHash,
+    })
+    .from(users)
+    .where(or(eq(users.googleId, googleId), eq(users.email, email)))
+    .limit(1)
+
+  let user = existing[0]
+
+  if (!user) {
+    const [created] = await db
+      .insert(users)
+      .values({ name, email, googleId })
+      .returning({ id: users.id, name: users.name, email: users.email })
+    user = created as typeof user
+    logRequestEvent(req, 'auth.google_login.user_created', { userId: user.id, email })
+  } else if (!user.googleId) {
+    await db.update(users).set({ googleId }).where(eq(users.id, user.id))
+    logRequestEvent(req, 'auth.google_login.google_id_linked', { userId: user.id, email })
+  }
+
+  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' })
+  logRequestEvent(req, 'auth.google_login.success', { userId: user.id, email })
+
+  res.status(200).json({
+    data: {
+      token,
+      user: { id: user.id, name: user.name, email: user.email },
+    },
+  })
 }
 
 export async function resetPassword(req: Request, res: Response): Promise<void> {

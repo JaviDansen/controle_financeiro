@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@finapp/db": "*",
+    "@react-native-google-signin/google-signin": "^16.1.2",
     "@tanstack/react-query": "^5.40.0",
     "dotenv-expand": "^11.0.7",
     "expo": "~54.0.0",

@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { z } from 'zod';
 import * as authService from '../../services/auth.service';
 import { useAuthStore } from '../../store/auth.store';
+import { configureGoogleSignin, signInWithGoogle, isGoogleSignInCancelledError } from '../../services/google/google-auth.service';
 
 const loginSchema = z.object({
   email: z.string().email('E-mail inválido'),
@@ -18,7 +19,12 @@ export default function LoginScreen() {
   const [showPwd, setShowPwd] = useState(false);
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    configureGoogleSignin();
+  }, []);
 
   const submit = async () => {
     try {
@@ -38,6 +44,22 @@ export default function LoginScreen() {
         setError('Ocorreu um erro ao fazer login');
       }
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setError('');
+      setGoogleLoading(true);
+      const { token, user } = await signInWithGoogle();
+      useAuthStore.getState().setToken(token);
+      useAuthStore.getState().setUser(user);
+      router.replace('/(tabs)');
+    } catch (err) {
+      if (!isGoogleSignInCancelledError(err)) {
+        setError(err instanceof Error ? err.message : 'Erro ao entrar com Google');
+      }
+      setGoogleLoading(false);
     }
   };
 
@@ -122,7 +144,7 @@ export default function LoginScreen() {
           {/* Botão Entrar */}
           <TouchableOpacity
             onPress={submit}
-            disabled={loading}
+            disabled={loading || googleLoading}
             activeOpacity={0.8}
             className={`h-14 rounded-2xl bg-[#15151A] flex-row items-center justify-center gap-2 mt-2 ${loading ? 'opacity-70' : 'opacity-100'}`}
           >
@@ -132,6 +154,32 @@ export default function LoginScreen() {
               <>
                 <Text className="text-white text-base font-medium">Entrar</Text>
                 <Feather name="chevron-right" size={16} color="#fff" />
+              </>
+            )}
+          </TouchableOpacity>
+
+          {/* Divisor */}
+          <View className="flex-row items-center gap-3 my-5">
+            <View className="flex-1 h-px bg-[#1515151A]" />
+            <Text className="text-[12px] text-[#8B8B92]">ou</Text>
+            <View className="flex-1 h-px bg-[#1515151A]" />
+          </View>
+
+          {/* Botão Google */}
+          <TouchableOpacity
+            onPress={handleGoogleLogin}
+            disabled={loading || googleLoading}
+            activeOpacity={0.8}
+            className={`h-14 rounded-2xl border border-[#1515151A] flex-row items-center justify-center gap-3 ${googleLoading ? 'opacity-70' : 'opacity-100'}`}
+          >
+            {googleLoading ? (
+              <ActivityIndicator color="#15151A" />
+            ) : (
+              <>
+                <View className="w-[18px] h-[18px] rounded-full bg-white border border-[#dadce0] items-center justify-center">
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#4285F4', lineHeight: 14 }}>G</Text>
+                </View>
+                <Text className="text-[#15151A] text-base font-medium">Continuar com Google</Text>
               </>
             )}
           </TouchableOpacity>
