@@ -13,6 +13,22 @@ import { getCategoryIcon } from '../../src/lib/categoryIcons';
 
 type TabKey = 'all' | 'income' | 'expense';
 
+const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
+  confirmed: { label: 'Confirmada', color: '#1E5229', bg: '#DDF0E4' },
+  pending:   { label: 'Pendente',   color: '#5A4A10', bg: '#F5F0DC' },
+  cancelled: { label: 'Cancelada',  color: '#7A2F10', bg: '#F7E8E0' },
+};
+
+const PAYMENT_LABELS: Record<string, string> = {
+  pix: 'Pix', transfer: 'Transferência', boleto: 'Boleto',
+};
+
+function formatDateBR(iso: string) {
+  const [y, m, d] = iso.split('-');
+  const months = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  return `${parseInt(d)} de ${months[parseInt(m) - 1]} de ${y}`;
+}
+
 /* ─── TabPill ─────────────────────────────────────────────── */
 function TabPill({ active, onPress, children, count }: {
   active: boolean; onPress: () => void;
@@ -46,12 +62,26 @@ function TabPill({ active, onPress, children, count }: {
 /* ─── Skeleton ────────────────────────────────────────────── */
 function SkeletonRow() {
   return (
-    <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.hairline }}>
-      <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: colors.hairline }} />
-      <View style={{ gap: 6, flex: 1 }}>
+    <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.hairline }}>
+      <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: colors.hairline, flexShrink: 0 }} />
+      <View style={{ gap: 5, flex: 1 }}>
         <View style={{ height: 14, borderRadius: 6, backgroundColor: colors.hairline, width: '55%' }} />
         <View style={{ height: 11, borderRadius: 6, backgroundColor: colors.hairline, width: '35%' }} />
       </View>
+    </View>
+  );
+}
+
+/* ─── DetailRow (modal de detalhes) ──────────────────────── */
+function DetailRow({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
+  return (
+    <View style={{
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      paddingVertical: 11,
+      borderBottomWidth: 1, borderBottomColor: colors.hairline,
+    }}>
+      <Text style={{ fontSize: 13, color: colors.muted }}>{label}</Text>
+      <Text style={{ fontSize: 13, fontWeight: '500', color: valueColor ?? colors.ink }}>{value}</Text>
     </View>
   );
 }
@@ -60,7 +90,8 @@ function SkeletonRow() {
 export default function TransactionsScreen() {
   const router = useRouter();
   const [tab, setTab] = useState<TabKey>('all');
-  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+  const [detailTx, setDetailTx] = useState<Transaction | null>(null);
+  const [actionTx, setActionTx] = useState<Transaction | null>(null);
 
   const monthParam = getCurrentMonthParam();
   const currentMonth = getCurrentMonth();
@@ -82,37 +113,37 @@ export default function TransactionsScreen() {
   }, {});
   const dateKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
 
-  function handleEdit() {
-    if (!selectedTx) return;
-    setSelectedTx(null);
+  function handleEdit(tx: Transaction) {
+    setActionTx(null);
+    setDetailTx(null);
     router.push({
       pathname: '/(tabs)/new-transaction',
       params: {
-        txId: selectedTx.id,
-        type: selectedTx.type,
-        amount: selectedTx.amount.toString(),
-        title: selectedTx.title,
-        date: selectedTx.date,
-        categoryId: selectedTx.categoryId,
-        categoryName: selectedTx.categoryName,
-        categoryColor: selectedTx.categoryColor,
-        categoryIcon: selectedTx.categoryIcon ?? '',
-        cardId: selectedTx.cardId ?? '',
-        notes: selectedTx.notes ?? '',
-        isRecurring: selectedTx.isRecurring ? '1' : '0',
-        status: selectedTx.status,
+        txId: tx.id,
+        type: tx.type,
+        amount: tx.amount.toString(),
+        title: tx.title,
+        date: tx.date,
+        categoryId: tx.categoryId,
+        categoryName: tx.categoryName,
+        categoryColor: tx.categoryColor,
+        categoryIcon: tx.categoryIcon ?? '',
+        cardId: tx.cardId ?? '',
+        notes: tx.notes ?? '',
+        isRecurring: tx.isRecurring ? '1' : '0',
+        status: tx.status,
       },
     });
   }
 
-  function handleDelete() {
-    if (!selectedTx) return;
-    const tx = selectedTx;
-    setSelectedTx(null);
+  function handleDelete(tx: Transaction) {
+    setActionTx(null);
     deleteMutation.mutate(tx.id);
   }
 
-  const CatIcon = selectedTx ? getCategoryIcon(selectedTx.categoryIcon) : null;
+  const detailIcon = detailTx ? getCategoryIcon(detailTx.categoryIcon) : null;
+  const actionIcon = actionTx ? getCategoryIcon(actionTx.categoryIcon) : null;
+  const detailStatus = detailTx ? (STATUS_LABELS[detailTx.status] ?? STATUS_LABELS.confirmed) : null;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
@@ -229,7 +260,8 @@ export default function TransactionsScreen() {
                         key={tx.id}
                         tx={tx}
                         last={i === dayTxs.length - 1}
-                        onPress={() => setSelectedTx(tx)}
+                        onPress={() => setDetailTx(tx)}
+                        onMorePress={() => setActionTx(tx)}
                       />
                     ))}
                   </View>
@@ -242,17 +274,155 @@ export default function TransactionsScreen() {
         <View style={{ height: 32 }} />
       </ScrollView>
 
-      {/* Action Sheet */}
+      {/* ── Modal de detalhes ──────────────────────────────────── */}
       <Modal
-        visible={!!selectedTx}
+        visible={!!detailTx}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDetailTx(null)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(21,21,26,0.5)', justifyContent: 'center', paddingHorizontal: 20 }}
+          onPress={() => setDetailTx(null)}
+        >
+          {/* Pressable interno para não fechar ao clicar dentro do card */}
+          <Pressable onPress={() => {}}>
+            <View style={{
+              backgroundColor: colors.surface,
+              borderRadius: 24,
+              overflow: 'hidden',
+            }}>
+              {/* Hero */}
+              {detailTx && detailIcon && (() => {
+                const isPos = detailTx.type === 'income';
+                const typeColor = isPos ? colors.pos : colors.neg;
+                const CatIcon = detailIcon;
+                const statusInfo = detailStatus!;
+                return (
+                  <>
+                    {/* Cabeçalho com X */}
+                    <View style={{
+                      flexDirection: 'row', alignItems: 'center',
+                      paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16,
+                    }}>
+                      <View style={{
+                        width: 40, height: 40, borderRadius: 12,
+                        backgroundColor: detailTx.categoryColor,
+                        alignItems: 'center', justifyContent: 'center',
+                        marginRight: 12, flexShrink: 0,
+                      }}>
+                        <CatIcon size={18} color="#fff" strokeWidth={2} />
+                      </View>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text numberOfLines={1} style={{ fontSize: 16, fontWeight: '600', color: colors.ink }}>
+                          {detailTx.title}
+                        </Text>
+                        <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
+                          {detailTx.categoryName}
+                        </Text>
+                      </View>
+                      <Pressable
+                        onPress={() => setDetailTx(null)}
+                        style={{
+                          width: 30, height: 30, borderRadius: 15,
+                          backgroundColor: colors.hairline,
+                          alignItems: 'center', justifyContent: 'center',
+                          marginLeft: 8, flexShrink: 0,
+                        }}
+                      >
+                        <Text style={{ fontSize: 16, color: colors.muted, lineHeight: 20 }}>×</Text>
+                      </Pressable>
+                    </View>
+
+                    {/* Valor destacado */}
+                    <View style={{
+                      marginHorizontal: 20, marginBottom: 16,
+                      backgroundColor: colors.bg, borderRadius: 14, padding: 16,
+                      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                    }}>
+                      <View>
+                        <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: '500' }}>
+                          {isPos ? 'Receita' : 'Despesa'}
+                        </Text>
+                        <Text style={{ fontSize: 26, fontWeight: '500', color: isPos ? colors.pos : colors.ink, letterSpacing: -0.8, marginTop: 2 }}>
+                          {isPos ? '+' : '−'} R${fmtBRLShort(detailTx.amount)}
+                        </Text>
+                      </View>
+                      <View style={{
+                        paddingHorizontal: 10, paddingVertical: 5,
+                        backgroundColor: statusInfo.bg, borderRadius: 999,
+                      }}>
+                        <Text style={{ fontSize: 12, fontWeight: '500', color: statusInfo.color }}>
+                          {statusInfo.label}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Detalhes */}
+                    <View style={{ paddingHorizontal: 20, paddingBottom: 8 }}>
+                      <DetailRow label="Data" value={formatDateBR(detailTx.date)} />
+                      <DetailRow label="Categoria" value={detailTx.categoryName} />
+                      {detailTx.cardId ? (
+                        <DetailRow label="Pagamento" value="Cartão vinculado" />
+                      ) : (
+                        <DetailRow label="Pagamento" value="Sem vínculo" />
+                      )}
+                      <DetailRow label="Recorrente" value={detailTx.isRecurring ? 'Sim' : 'Não'} />
+                      {detailTx.notes && (
+                        <DetailRow label="Notas" value={detailTx.notes} />
+                      )}
+                    </View>
+
+                    {/* Ações rápidas */}
+                    <View style={{
+                      flexDirection: 'row', gap: 8,
+                      paddingHorizontal: 20, paddingVertical: 16,
+                      borderTopWidth: 1, borderTopColor: colors.hairline,
+                    }}>
+                      <Pressable
+                        onPress={() => { setDetailTx(null); handleEdit(detailTx); }}
+                        style={({ pressed }) => ({
+                          flex: 1, paddingVertical: 12, borderRadius: 12,
+                          backgroundColor: colors.ink,
+                          alignItems: 'center', justifyContent: 'center',
+                          flexDirection: 'row', gap: 6,
+                          opacity: pressed ? 0.7 : 1,
+                        })}
+                      >
+                        <Icon.Edit size={14} color="#FBFAF6" sw={2} />
+                        <Text style={{ fontSize: 13, fontWeight: '500', color: '#FBFAF6' }}>Editar</Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => { setDetailTx(null); handleDelete(detailTx); }}
+                        style={({ pressed }) => ({
+                          paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12,
+                          backgroundColor: colors.negSoft,
+                          alignItems: 'center', justifyContent: 'center',
+                          opacity: pressed ? 0.7 : 1,
+                        })}
+                      >
+                        <Icon.Trash size={15} color={colors.neg} sw={1.8} />
+                      </Pressable>
+                    </View>
+                  </>
+                );
+              })()}
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* ── Action sheet (···) ─────────────────────────────────── */}
+      <Modal
+        visible={!!actionTx}
         transparent
         animationType="slide"
-        onRequestClose={() => setSelectedTx(null)}
+        onRequestClose={() => setActionTx(null)}
       >
         <View style={{ flex: 1, justifyContent: 'flex-end' }}>
           <Pressable
             style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(21,21,26,0.4)' }}
-            onPress={() => setSelectedTx(null)}
+            onPress={() => setActionTx(null)}
           />
           <View style={{
             backgroundColor: colors.surface,
@@ -260,55 +430,42 @@ export default function TransactionsScreen() {
             paddingBottom: 36, paddingTop: 12,
             paddingHorizontal: 16,
           }}>
-            {/* Handle */}
             <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.hairline, alignSelf: 'center', marginBottom: 16 }} />
 
-            {/* Preview — mesma gramática do TxRow */}
-            {selectedTx && CatIcon && (
-              <View style={{
-                flexDirection: 'row', alignItems: 'center',
-                backgroundColor: colors.hairline,
-                borderRadius: 14, padding: 12,
-                marginBottom: 8,
-              }}>
+            {/* Preview */}
+            {actionTx && actionIcon && (() => {
+              const AIcon = actionIcon;
+              return (
                 <View style={{
-                  width: 32, height: 32, borderRadius: 9,
-                  backgroundColor: selectedTx.categoryColor,
-                  alignItems: 'center', justifyContent: 'center',
-                  marginRight: 12, flexShrink: 0,
+                  flexDirection: 'row', alignItems: 'center',
+                  backgroundColor: colors.hairline,
+                  borderRadius: 14, padding: 12, marginBottom: 8,
                 }}>
-                  <CatIcon size={15} color="#fff" strokeWidth={2} />
-                </View>
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '500', color: colors.ink }}>
-                    {selectedTx.title}
+                  <View style={{
+                    width: 32, height: 32, borderRadius: 9,
+                    backgroundColor: actionTx.categoryColor,
+                    alignItems: 'center', justifyContent: 'center',
+                    marginRight: 12, flexShrink: 0,
+                  }}>
+                    <AIcon size={15} color="#fff" strokeWidth={2} />
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '500', color: colors.ink }}>{actionTx.title}</Text>
+                    <Text numberOfLines={1} style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>{actionTx.categoryName} · {actionTx.date}</Text>
+                  </View>
+                  <Text style={{ fontSize: 14, fontWeight: '500', flexShrink: 0, marginLeft: 8, color: actionTx.type === 'income' ? colors.pos : colors.ink, letterSpacing: -0.2 }}>
+                    {actionTx.type === 'income' ? '+' : '−'} R${fmtBRLShort(actionTx.amount)}
                   </Text>
-                  <Text numberOfLines={1} style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>
-                    {selectedTx.categoryName} · {selectedTx.date}
-                  </Text>
                 </View>
-                <Text style={{
-                  fontSize: 14, fontWeight: '500', flexShrink: 0, marginLeft: 8,
-                  color: selectedTx.type === 'income' ? colors.pos : colors.ink,
-                  letterSpacing: -0.2,
-                }}>
-                  {selectedTx.type === 'income' ? '+' : '−'} R${fmtBRLShort(selectedTx.amount)}
-                </Text>
-              </View>
-            )}
+              );
+            })()}
 
-            {/* Separador sutil */}
             <View style={{ height: 1, backgroundColor: colors.hairline, marginBottom: 4 }} />
 
-            {/* Editar — gramática ProfileRow */}
-            <Pressable onPress={handleEdit} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+            {/* Editar */}
+            <Pressable onPress={() => actionTx && handleEdit(actionTx)} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
               <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12 }}>
-                <View style={{
-                  width: 32, height: 32, borderRadius: 9,
-                  backgroundColor: colors.hairline,
-                  alignItems: 'center', justifyContent: 'center',
-                  marginRight: 12,
-                }}>
+                <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: colors.hairline, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
                   <Icon.Edit size={15} color={colors.ink} sw={1.8} />
                 </View>
                 <View style={{ flex: 1 }}>
@@ -319,31 +476,23 @@ export default function TransactionsScreen() {
               </View>
             </Pressable>
 
-            {/* Separador */}
             <View style={{ height: 1, backgroundColor: colors.hairline }} />
 
-            {/* Excluir — variante destrutiva do ProfileRow */}
+            {/* Excluir */}
             <Pressable
-              onPress={handleDelete}
+              onPress={() => actionTx && handleDelete(actionTx)}
               disabled={deleteMutation.isPending}
               style={({ pressed }) => ({ opacity: pressed || deleteMutation.isPending ? 0.6 : 1 })}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12 }}>
-                <View style={{
-                  width: 32, height: 32, borderRadius: 9,
-                  backgroundColor: colors.negSoft,
-                  alignItems: 'center', justifyContent: 'center',
-                  marginRight: 12,
-                }}>
+                <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: colors.negSoft, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
                   <Icon.Trash size={15} color={colors.neg} sw={1.8} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 14, fontWeight: '500', color: colors.neg }}>
                     {deleteMutation.isPending ? 'Excluindo...' : 'Excluir transação'}
                   </Text>
-                  <Text style={{ fontSize: 12, color: colors.neg, opacity: 0.6, marginTop: 1 }}>
-                    Esta ação não pode ser desfeita
-                  </Text>
+                  <Text style={{ fontSize: 12, color: colors.neg, opacity: 0.6, marginTop: 1 }}>Esta ação não pode ser desfeita</Text>
                 </View>
               </View>
             </Pressable>

@@ -17,9 +17,10 @@ interface TxRowProps {
   };
   last?: boolean;
   onPress?: () => void;
+  onMorePress?: () => void;
 }
 
-export function TxRow({ tx, last = false, onPress }: TxRowProps) {
+export function TxRow({ tx, last = false, onPress, onMorePress }: TxRowProps) {
   const isPos = tx.type === 'income';
   const catColor = tx.categoryColor || '#8B8B92';
   const LucideIcon = getCategoryIcon(tx.categoryIcon);
@@ -51,7 +52,7 @@ export function TxRow({ tx, last = false, onPress }: TxRowProps) {
           <LucideIcon size={15} color="#fff" strokeWidth={2} />
         </View>
 
-        {/* Título e data */}
+        {/* Título e categoria */}
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text
             numberOfLines={1}
@@ -69,7 +70,7 @@ export function TxRow({ tx, last = false, onPress }: TxRowProps) {
           </Text>
         </View>
 
-        {/* Valor ancorado à direita */}
+        {/* Valor */}
         <Text style={{
           fontSize: 14,
           fontWeight: '500',
@@ -80,6 +81,24 @@ export function TxRow({ tx, last = false, onPress }: TxRowProps) {
         }}>
           {isPos ? '+' : '−'} R${fmtBRLShort(tx.amount)}
         </Text>
+
+        {/* Botão ··· */}
+        <Pressable
+          onPress={onMorePress}
+          hitSlop={{ top: 8, bottom: 8, left: 4, right: 0 }}
+          style={({ pressed }) => ({
+            marginLeft: 8,
+            width: 28,
+            height: 28,
+            borderRadius: 8,
+            backgroundColor: pressed ? colors.hairline : 'transparent',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          })}
+        >
+          <Text style={{ fontSize: 14, color: colors.muted, letterSpacing: 1, lineHeight: 16 }}>···</Text>
+        </Pressable>
       </View>
     </Pressable>
   );
