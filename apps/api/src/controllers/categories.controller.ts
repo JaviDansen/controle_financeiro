@@ -40,6 +40,7 @@ export const createCategory: RequestHandler = async (req, res, next) => {
   const { userId } = req as AuthenticatedRequest
   try {
     logRequestEvent(req, 'categories.create.validation_started', { userId })
+    logRequestEvent(req, 'categories.create.body', { userId, body: req.body })
     const parsed = createCategorySchema.safeParse(req.body)
     if (!parsed.success) {
       logRequestEvent(req, 'categories.create.validation_failed', { userId, error: parsed.error.issues[0].message })
@@ -47,10 +48,23 @@ export const createCategory: RequestHandler = async (req, res, next) => {
       return
     }
     const { name, color, icon } = parsed.data
-    const [cat] = await db
-      .insert(categories)
-      .values({ userId, name, color, icon })
-      .returning()
+    let cat: typeof categories.$inferSelect
+    try {
+      const result = await db
+        .insert(categories)
+        .values({ userId, name, color, icon })
+        .returning()
+      cat = result[0]
+    } catch (rawErr: any) {
+      logRequestEvent(req, 'categories.create.db_error', {
+        userId,
+        code: rawErr?.code,
+        detail: rawErr?.detail,
+        constraint: rawErr?.constraint,
+        message: rawErr?.message,
+      })
+      throw rawErr
+    }
     logRequestEvent(req, 'categories.create.success', { userId, categoryId: cat.id })
     res.status(201).json({ data: toCategoryDto(cat) })
   } catch (err) {
