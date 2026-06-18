@@ -129,16 +129,14 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
     return originalJson(body)
   }) as Response['json']
 
+  const isWrite = ['POST', 'PUT', 'PATCH'].includes(req.method)
   writeLog('INFO', 'request.started', {
     requestId,
     source,
     method: req.method,
     path: req.originalUrl || req.url,
-    ip: req.ip,
-    userAgent: req.get('user-agent'),
-    params: sanitizeForLog(req.params),
-    query: sanitizeForLog(req.query),
-    body: sanitizeForLog(req.body),
+    ...(Object.keys(req.query).length > 0 && { query: sanitizeForLog(req.query) }),
+    ...(isWrite && req.body && Object.keys(req.body).length > 0 && { body: sanitizeForLog(req.body) }),
   })
 
   res.on('finish', () => {

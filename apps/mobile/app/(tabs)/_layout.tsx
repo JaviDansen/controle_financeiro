@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, Alert } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { Tabs, usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
@@ -33,7 +33,7 @@ function TabItem({
   return (
     <Pressable
       onPress={onPress}
-      style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 }}
+      style={{ flex: 1, alignItems: 'center', gap: 3 }}
     >
       {options.tabBarIcon?.({ focused: isFocused, color, size: 22 })}
       <Text style={{ fontSize: 10, fontWeight: '500', color }}>{options.title}</Text>
@@ -50,7 +50,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
   const handleAdd = () => {
     if (pathname === '/transactions') {
-      Alert.alert('Nova transacao');
+      router.push('/(tabs)/new-transaction');
       return;
     }
 
@@ -58,11 +58,10 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
       router.push('/(tabs)/add');
       return;
     }
-
-    Alert.alert('Novo cartao');
   };
 
-  const routes = state.routes.filter((r) => r.name !== 'add');
+  const hiddenRoutes = new Set(['add', 'new-transaction', 'new-transaction-step2', 'new-transaction-step3']);
+  const routes = state.routes.filter((r) => !hiddenRoutes.has(r.name));
 
   return (
     <View
@@ -71,9 +70,10 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
         backgroundColor: colors.surface,
         borderTopWidth: 1,
         borderTopColor: colors.hairline,
-        height: 58 + insets.bottom,
-        paddingBottom: insets.bottom,
-        alignItems: 'center',
+        paddingTop: 6,
+        paddingBottom: Math.max(insets.bottom, 8),
+        minHeight: 58 + insets.bottom,
+        alignItems: 'flex-start',
       }}
     >
       {showAddButton ? (
@@ -94,7 +94,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
           <Pressable
             onPress={handleAdd}
-            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+            style={{ flex: 1, alignItems: 'center' }}
           >
             <View
               style={{
@@ -187,6 +187,9 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen name="add" options={{ href: null, title: '' }} />
+      <Tabs.Screen name="new-transaction" options={{ href: null, title: '' }} />
+      <Tabs.Screen name="new-transaction-step2" options={{ href: null, title: '' }} />
+      <Tabs.Screen name="new-transaction-step3" options={{ href: null, title: '' }} />
     </Tabs>
   );
 }

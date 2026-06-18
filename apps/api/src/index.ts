@@ -9,6 +9,8 @@ config({ path: resolve(__dirname, '../../../.env') })
 import { buildConnectionString, getConnectionLabel } from '@finapp/db'
 import authRoutes from './routes/auth.routes'
 import cardsRoutes from './routes/cards.routes'
+import transactionsRoutes from './routes/transactions.routes'
+import categoriesRoutes from './routes/categories.routes'
 import { requestErrorHandler, requestLogger } from './middlewares/request-logger.middleware'
 
 export const app = express()
@@ -20,6 +22,8 @@ app.use(requestLogger)
 
 app.use('/auth', authRoutes)
 app.use('/cards', cardsRoutes)
+app.use('/transactions', transactionsRoutes)
+app.use('/categories', categoriesRoutes)
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' })

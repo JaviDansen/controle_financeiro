@@ -36,6 +36,13 @@
       "when": 1780947967733,
       "tag": "0004_organic_valkyrie",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1781754832828,
+      "tag": "0005_medical_madame_masque",
+      "breakpoints": true
     }
   ]
 }

@@ -13,6 +13,7 @@ export const transactions = pgTable('transactions', {
   type: varchar('type', { length: 10 }).notNull(), // 'income' | 'expense'
   date: date('date').notNull(),
   notes: text('notes'),
+  status: varchar('status', { length: 20 }).notNull().default('confirmed'), // 'pending' | 'confirmed' | 'cancelled'
   isRecurring: boolean('is_recurring').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
