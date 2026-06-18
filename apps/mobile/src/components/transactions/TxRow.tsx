@@ -41,7 +41,7 @@ export function TxRow({ tx, last = false, onPress }: TxRowProps) {
         width: 36, height: 36, borderRadius: 18,
         backgroundColor: catColor,
         alignItems: 'center', justifyContent: 'center',
-        opacity: 0.9,
+        flexShrink: 0,
       }}>
         <LucideIcon size={16} color="#fff" strokeWidth={2} />
       </View>
@@ -53,7 +53,7 @@ export function TxRow({ tx, last = false, onPress }: TxRowProps) {
         >
           {tx.title}
         </Text>
-        <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
+        <Text numberOfLines={1} style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
           {tx.categoryName} · {tx.date}
         </Text>
       </View>
@@ -63,8 +63,9 @@ export function TxRow({ tx, last = false, onPress }: TxRowProps) {
         fontWeight: '500',
         color: isPos ? colors.pos : colors.ink,
         letterSpacing: -0.3,
+        flexShrink: 0,
       }}>
-        {isPos ? '+' : '−'} {fmtBRLShort(tx.amount)}
+        {isPos ? '+' : '−'} R${fmtBRLShort(tx.amount)}
       </Text>
     </Pressable>
   );

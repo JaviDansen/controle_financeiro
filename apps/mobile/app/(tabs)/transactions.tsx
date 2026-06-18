@@ -299,47 +299,59 @@ export default function TransactionsScreen() {
             <Pressable
               onPress={handleEdit}
               style={({ pressed }) => ({
-                height: 52, flexDirection: 'row', alignItems: 'center',
-                paddingHorizontal: 20, gap: 14,
+                flexDirection: 'row', alignItems: 'center',
+                paddingHorizontal: 20, paddingVertical: 14, gap: 14,
                 opacity: pressed ? 0.6 : 1,
               })}
             >
               <View style={{
-                width: 36, height: 36, borderRadius: 11,
+                width: 40, height: 40, borderRadius: 12,
                 backgroundColor: colors.hairline,
                 alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
               }}>
-                <Icon.Tx size={16} color={colors.ink} sw={1.8} />
+                <Icon.Edit size={18} color={colors.ink} sw={1.8} />
               </View>
-              <Text style={{ flex: 1, fontSize: 15, fontWeight: '500', color: colors.ink }}>
-                Editar transação
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 15, fontWeight: '500', color: colors.ink }}>
+                  Editar transação
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>
+                  Alterar dados, categoria ou valor
+                </Text>
+              </View>
               <Icon.ChevR size={14} color={colors.muted} sw={1.8} />
             </Pressable>
 
             {/* Separador */}
-            <View style={{ height: 1, backgroundColor: colors.hairline, marginHorizontal: 20, marginVertical: 4 }} />
+            <View style={{ height: 1, backgroundColor: colors.hairline, marginHorizontal: 20 }} />
 
             {/* Excluir */}
             <Pressable
               onPress={handleDelete}
               disabled={deleteMutation.isPending}
               style={({ pressed }) => ({
-                height: 52, flexDirection: 'row', alignItems: 'center',
-                paddingHorizontal: 20, gap: 14,
+                flexDirection: 'row', alignItems: 'center',
+                paddingHorizontal: 20, paddingVertical: 14, gap: 14,
                 opacity: pressed || deleteMutation.isPending ? 0.6 : 1,
               })}
             >
               <View style={{
-                width: 36, height: 36, borderRadius: 11,
+                width: 40, height: 40, borderRadius: 12,
                 backgroundColor: '#FDECEA',
                 alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
               }}>
-                <Icon.Filter size={16} color={colors.neg} sw={1.8} />
+                <Icon.Trash size={18} color={colors.neg} sw={1.8} />
               </View>
-              <Text style={{ flex: 1, fontSize: 15, fontWeight: '500', color: colors.neg }}>
-                {deleteMutation.isPending ? 'Removendo...' : 'Excluir transação'}
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 15, fontWeight: '500', color: colors.neg }}>
+                  {deleteMutation.isPending ? 'Excluindo...' : 'Excluir transação'}
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.neg, opacity: 0.6, marginTop: 1 }}>
+                  Esta ação não pode ser desfeita
+                </Text>
+              </View>
             </Pressable>
           </View>
         </View>
