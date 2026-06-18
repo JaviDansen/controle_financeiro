@@ -373,35 +373,33 @@ export default function TransactionsScreen() {
                       )}
                     </View>
 
-                    {/* Ações rápidas */}
-                    <View style={{
-                      flexDirection: 'row', gap: 8,
-                      paddingHorizontal: 20, paddingVertical: 16,
-                      borderTopWidth: 1, borderTopColor: colors.hairline,
-                    }}>
-                      <Pressable
-                        onPress={() => { setDetailTx(null); handleEdit(detailTx); }}
-                        style={({ pressed }) => ({
-                          flex: 1, paddingVertical: 12, borderRadius: 12,
-                          backgroundColor: colors.ink,
-                          alignItems: 'center', justifyContent: 'center',
-                          flexDirection: 'row', gap: 6,
-                          opacity: pressed ? 0.7 : 1,
-                        })}
-                      >
-                        <Icon.Edit size={14} color="#FBFAF6" sw={2} />
-                        <Text style={{ fontSize: 13, fontWeight: '500', color: '#FBFAF6' }}>Editar</Text>
+                    {/* Ações */}
+                    <View style={{ paddingHorizontal: 20, paddingBottom: 20, borderTopWidth: 1, borderTopColor: colors.hairline }}>
+                      <Pressable onPress={() => { setDetailTx(null); handleEdit(detailTx); }} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }}>
+                          <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: colors.hairline, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                            <Icon.Edit size={15} color={colors.ink} sw={1.8} />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: 14, fontWeight: '500', color: colors.ink }}>Editar transação</Text>
+                            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>Alterar dados, categoria ou valor</Text>
+                          </View>
+                          <Icon.ChevR size={13} color={colors.muted} sw={1.8} />
+                        </View>
                       </Pressable>
-                      <Pressable
-                        onPress={() => { setDetailTx(null); handleDelete(detailTx); }}
-                        style={({ pressed }) => ({
-                          paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12,
-                          backgroundColor: colors.negSoft,
-                          alignItems: 'center', justifyContent: 'center',
-                          opacity: pressed ? 0.7 : 1,
-                        })}
-                      >
-                        <Icon.Trash size={15} color={colors.neg} sw={1.8} />
+
+                      <View style={{ height: 1, backgroundColor: colors.hairline }} />
+
+                      <Pressable onPress={() => { setDetailTx(null); handleDelete(detailTx); }} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }}>
+                          <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: colors.negSoft, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                            <Icon.Trash size={15} color={colors.neg} sw={1.8} />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: 14, fontWeight: '500', color: colors.neg }}>Excluir transação</Text>
+                            <Text style={{ fontSize: 12, color: colors.neg, opacity: 0.6, marginTop: 1 }}>Esta ação não pode ser desfeita</Text>
+                          </View>
+                        </View>
                       </Pressable>
                     </View>
                   </>

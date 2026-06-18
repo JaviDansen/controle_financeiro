@@ -34,22 +34,22 @@ export function TxRow({ tx, last = false, onPress, onMorePress }: TxRowProps) {
         borderBottomColor: colors.hairline,
       })}
     >
-      {/* View interna com o layout — evita NativeWind sobrescrever flexDirection no Pressable */}
+      {/* View interna — evita NativeWind sobrescrever flexDirection no Pressable */}
       <View style={{
         flexDirection: 'row',
         alignItems: 'center',
-        minHeight: 56,
-        paddingVertical: 12,
+        minHeight: 72,
+        paddingVertical: 14,
       }}>
-        {/* Ícone fixo à esquerda */}
+        {/* Ícone */}
         <View style={{
-          width: 32, height: 32, borderRadius: 9,
+          width: 42, height: 42, borderRadius: 12,
           backgroundColor: catColor,
           alignItems: 'center', justifyContent: 'center',
-          marginRight: 12,
+          marginRight: 14,
           flexShrink: 0,
         }}>
-          <LucideIcon size={15} color="#fff" strokeWidth={2} />
+          <LucideIcon size={20} color="#fff" strokeWidth={2} />
         </View>
 
         {/* Título e categoria */}
@@ -57,14 +57,14 @@ export function TxRow({ tx, last = false, onPress, onMorePress }: TxRowProps) {
           <Text
             numberOfLines={1}
             ellipsizeMode="tail"
-            style={{ fontSize: 14, fontWeight: '500', color: colors.ink, lineHeight: 20 }}
+            style={{ fontSize: 16, fontWeight: '500', color: colors.ink, lineHeight: 22 }}
           >
             {tx.title}
           </Text>
           <Text
             numberOfLines={1}
             ellipsizeMode="tail"
-            style={{ fontSize: 12, color: colors.muted, lineHeight: 18 }}
+            style={{ fontSize: 13, color: colors.muted, lineHeight: 20, marginTop: 1 }}
           >
             {tx.categoryName} · {tx.date}
           </Text>
@@ -72,33 +72,37 @@ export function TxRow({ tx, last = false, onPress, onMorePress }: TxRowProps) {
 
         {/* Valor */}
         <Text style={{
-          fontSize: 14,
-          fontWeight: '500',
+          fontSize: 16,
+          fontWeight: '600',
           color: isPos ? colors.pos : colors.ink,
-          letterSpacing: -0.2,
+          letterSpacing: -0.3,
           flexShrink: 0,
-          marginLeft: 12,
+          marginLeft: 14,
         }}>
           {isPos ? '+' : '−'} R${fmtBRLShort(tx.amount)}
         </Text>
 
-        {/* Botão ··· */}
-        <Pressable
-          onPress={onMorePress}
-          hitSlop={{ top: 8, bottom: 8, left: 4, right: 0 }}
-          style={({ pressed }) => ({
-            marginLeft: 8,
-            width: 28,
-            height: 28,
-            borderRadius: 8,
-            backgroundColor: pressed ? colors.hairline : 'transparent',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          })}
-        >
-          <Text style={{ fontSize: 14, color: colors.muted, letterSpacing: 1, lineHeight: 16 }}>···</Text>
-        </Pressable>
+        {/* Wrapper com marginLeft fixo — Pressable com style fn ignora margin no NativeWind */}
+        <View style={{ marginLeft: 20, flexShrink: 0 }}>
+          <Pressable
+            onPress={onMorePress}
+            hitSlop={{ top: 10, bottom: 10, left: 8, right: 4 }}
+            style={({ pressed }) => ({
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              backgroundColor: pressed ? colors.hairline : 'transparent',
+              alignItems: 'center',
+              justifyContent: 'center',
+            })}
+          >
+            <View style={{ alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+              <View style={{ width: 20, height: 2, borderRadius: 1.5, backgroundColor: colors.muted }} />
+              <View style={{ width: 14, height: 2, borderRadius: 1.5, backgroundColor: colors.muted }} />
+              <View style={{ width: 20, height: 2, borderRadius: 1.5, backgroundColor: colors.muted }} />
+            </View>
+          </Pressable>
+        </View>
       </View>
     </Pressable>
   );
