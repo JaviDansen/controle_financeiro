@@ -1,6 +1,6 @@
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000"
 
-import * as cardsService from "../services/cards.service"
+import * as cardsService from "../../services/cards.service"
 
 const MOCK_CARD = {
   id: "card-uuid-1",

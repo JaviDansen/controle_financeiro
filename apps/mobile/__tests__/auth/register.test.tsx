@@ -16,13 +16,13 @@ jest.mock("expo-secure-store", () => ({
   deleteItemAsync: jest.fn().mockResolvedValue(undefined),
 }))
 
-jest.mock("../services/auth.service", () => ({
+jest.mock("../../services/auth.service", () => ({
   register: jest.fn(),
   login: jest.fn(),
 }))
 
-import RegisterScreen from "../app/(auth)/register"
-import * as authService from "../services/auth.service"
+import RegisterScreen from "../../app/(auth)/register"
+import * as authService from "../../services/auth.service"
 
 beforeEach(() => {
   jest.clearAllMocks()

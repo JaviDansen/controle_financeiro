@@ -16,13 +16,18 @@ jest.mock("expo-secure-store", () => ({
   deleteItemAsync: jest.fn().mockResolvedValue(undefined),
 }))
 
-jest.mock("../services/auth.service", () => ({
+jest.mock("../../services/auth.service", () => ({
   login: jest.fn(),
 }))
 
-import LoginScreen from "../app/(auth)/login"
-import * as authService from "../services/auth.service"
-import { useAuthStore } from "../store/auth.store"
+jest.mock("@react-native-google-signin/google-signin", () => ({
+  GoogleSignin: { configure: jest.fn(), hasPlayServices: jest.fn(), signIn: jest.fn() },
+  statusCodes: {},
+}))
+
+import LoginScreen from "../../app/(auth)/login"
+import * as authService from "../../services/auth.service"
+import { useAuthStore } from "../../store/auth.store"
 
 beforeEach(() => {
   jest.clearAllMocks()

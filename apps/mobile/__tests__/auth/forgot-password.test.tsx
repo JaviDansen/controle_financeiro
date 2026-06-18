@@ -1,6 +1,6 @@
 import React from 'react'
 import { fireEvent, waitFor } from '@testing-library/react-native'
-import { renderWithProviders } from './helpers/render'
+import { renderWithProviders } from '../helpers/render'
 import ForgotPasswordScreen from '@/app/(auth)/forgot-password'
 
 jest.mock('expo-router', () => ({

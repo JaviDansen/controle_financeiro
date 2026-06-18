@@ -1,6 +1,6 @@
 ﻿const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000"
 
-import * as authService from "../services/auth.service"
+import * as authService from "../../services/auth.service"
 
 beforeEach(() => {
   global.fetch = jest.fn()

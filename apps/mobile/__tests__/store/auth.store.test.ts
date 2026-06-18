@@ -4,7 +4,7 @@
   deleteItemAsync: jest.fn().mockResolvedValue(undefined),
 }))
 
-import { useAuthStore } from "../store/auth.store"
+import { useAuthStore } from "../../store/auth.store"
 
 beforeEach(() => {
   useAuthStore.setState({ user: null, token: null, isAuthenticated: false })
