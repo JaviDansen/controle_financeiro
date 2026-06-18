@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { fmtBRLShort } from '../../lib/currency';
 import { colors } from '../../theme/colors';
 import { getCategoryIcon } from '../../lib/categoryIcons';
@@ -16,22 +16,27 @@ interface TxRowProps {
     date: string;
   };
   last?: boolean;
+  onPress?: () => void;
 }
 
-export function TxRow({ tx, last = false }: TxRowProps) {
+export function TxRow({ tx, last = false, onPress }: TxRowProps) {
   const isPos = tx.type === 'income';
   const catColor = tx.categoryColor || '#8B8B92';
   const LucideIcon = getCategoryIcon(tx.categoryIcon);
 
   return (
-    <View style={{
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-      paddingVertical: 14,
-      borderBottomWidth: last ? 0 : 1,
-      borderBottomColor: colors.hairline,
-    }}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        paddingVertical: 14,
+        borderBottomWidth: last ? 0 : 1,
+        borderBottomColor: colors.hairline,
+        opacity: pressed && onPress ? 0.65 : 1,
+      })}
+    >
       <View style={{
         width: 36, height: 36, borderRadius: 18,
         backgroundColor: catColor,
@@ -61,6 +66,6 @@ export function TxRow({ tx, last = false }: TxRowProps) {
       }}>
         {isPos ? '+' : '−'} {fmtBRLShort(tx.amount)}
       </Text>
-    </View>
+    </Pressable>
   );
 }
