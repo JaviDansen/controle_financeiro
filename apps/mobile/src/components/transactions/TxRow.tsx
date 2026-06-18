@@ -28,49 +28,59 @@ export function TxRow({ tx, last = false, onPress }: TxRowProps) {
     <Pressable
       onPress={onPress}
       style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 12,
+        opacity: pressed && onPress ? 0.6 : 1,
         borderBottomWidth: last ? 0 : 1,
         borderBottomColor: colors.hairline,
-        opacity: pressed && onPress ? 0.6 : 1,
       })}
     >
-      {/* Ícone — mesma área fixa 32x32 do ProfileRow */}
+      {/* View interna com o layout — evita NativeWind sobrescrever flexDirection no Pressable */}
       <View style={{
-        width: 32, height: 32, borderRadius: 9,
-        backgroundColor: catColor,
-        alignItems: 'center', justifyContent: 'center',
-        marginRight: 12,
-        flexShrink: 0,
+        flexDirection: 'row',
+        alignItems: 'center',
+        minHeight: 56,
+        paddingVertical: 12,
       }}>
-        <LucideIcon size={15} color="#fff" strokeWidth={2} />
-      </View>
+        {/* Ícone fixo à esquerda */}
+        <View style={{
+          width: 32, height: 32, borderRadius: 9,
+          backgroundColor: catColor,
+          alignItems: 'center', justifyContent: 'center',
+          marginRight: 12,
+          flexShrink: 0,
+        }}>
+          <LucideIcon size={15} color="#fff" strokeWidth={2} />
+        </View>
 
-      {/* Bloco de texto com controle de largura */}
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <Text
-          numberOfLines={1}
-          style={{ fontSize: 14, fontWeight: '500', color: colors.ink }}
-        >
-          {tx.title}
-        </Text>
-        <Text numberOfLines={1} style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>
-          {tx.categoryName} · {tx.date}
+        {/* Título e data */}
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            style={{ fontSize: 14, fontWeight: '500', color: colors.ink, lineHeight: 20 }}
+          >
+            {tx.title}
+          </Text>
+          <Text
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            style={{ fontSize: 12, color: colors.muted, lineHeight: 18 }}
+          >
+            {tx.categoryName} · {tx.date}
+          </Text>
+        </View>
+
+        {/* Valor ancorado à direita */}
+        <Text style={{
+          fontSize: 14,
+          fontWeight: '500',
+          color: isPos ? colors.pos : colors.ink,
+          letterSpacing: -0.2,
+          flexShrink: 0,
+          marginLeft: 12,
+        }}>
+          {isPos ? '+' : '−'} R${fmtBRLShort(tx.amount)}
         </Text>
       </View>
-
-      {/* Valor — nunca encolhe */}
-      <Text style={{
-        fontSize: 14,
-        fontWeight: '500',
-        color: isPos ? colors.pos : colors.ink,
-        letterSpacing: -0.2,
-        flexShrink: 0,
-        marginLeft: 8,
-      }}>
-        {isPos ? '+' : '−'} R${fmtBRLShort(tx.amount)}
-      </Text>
     </Pressable>
   );
 }
