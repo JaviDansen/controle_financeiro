@@ -199,7 +199,7 @@ export default function TransactionsScreen() {
         {/* Lista */}
         <View style={{ paddingTop: 16 }}>
           {isLoading ? (
-            <View style={{ marginHorizontal: 16, backgroundColor: colors.surface, borderRadius: 18, paddingHorizontal: 16, paddingTop: 4, borderWidth: 1, borderColor: colors.hairline }}>
+            <View style={{ marginHorizontal: 16, backgroundColor: colors.surface, borderRadius: 16, paddingHorizontal: 16, borderWidth: 1, borderColor: colors.hairline }}>
               {[1, 2, 3, 4, 5].map(i => <SkeletonRow key={i} />)}
             </View>
           ) : dateKeys.length === 0 ? (
@@ -223,7 +223,7 @@ export default function TransactionsScreen() {
                       {net >= 0 ? '+' : '−'} R$ {fmtBRLShort(Math.abs(net))}
                     </Text>
                   </View>
-                  <View style={{ marginHorizontal: 16, backgroundColor: colors.surface, borderRadius: 18, paddingHorizontal: 16, paddingTop: 4, borderWidth: 1, borderColor: colors.hairline }}>
+                  <View style={{ marginHorizontal: 16, backgroundColor: colors.surface, borderRadius: 16, paddingHorizontal: 16, borderWidth: 1, borderColor: colors.hairline }}>
                     {dayTxs.map((tx, i) => (
                       <TxRow
                         key={tx.id}
@@ -258,99 +258,93 @@ export default function TransactionsScreen() {
             backgroundColor: colors.surface,
             borderTopLeftRadius: 28, borderTopRightRadius: 28,
             paddingBottom: 36, paddingTop: 12,
+            paddingHorizontal: 16,
           }}>
+            {/* Handle */}
             <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.hairline, alignSelf: 'center', marginBottom: 16 }} />
 
-            {/* Preview da transação */}
-            {selectedTx && (
+            {/* Preview — mesma gramática do TxRow */}
+            {selectedTx && CatIcon && (
               <View style={{
-                marginHorizontal: 16, marginBottom: 12,
-                backgroundColor: colors.bg, borderRadius: 16,
-                padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12,
+                flexDirection: 'row', alignItems: 'center',
+                backgroundColor: colors.hairline,
+                borderRadius: 14, padding: 12,
+                marginBottom: 8,
               }}>
-                {CatIcon && (
-                  <View style={{
-                    width: 40, height: 40, borderRadius: 20,
-                    backgroundColor: selectedTx.categoryColor,
-                    alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <CatIcon size={18} color="#fff" strokeWidth={2} />
-                  </View>
-                )}
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 15, fontWeight: '500', color: colors.ink }} numberOfLines={1}>
+                <View style={{
+                  width: 32, height: 32, borderRadius: 9,
+                  backgroundColor: selectedTx.categoryColor,
+                  alignItems: 'center', justifyContent: 'center',
+                  marginRight: 12, flexShrink: 0,
+                }}>
+                  <CatIcon size={15} color="#fff" strokeWidth={2} />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '500', color: colors.ink }}>
                     {selectedTx.title}
                   </Text>
-                  <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
+                  <Text numberOfLines={1} style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>
                     {selectedTx.categoryName} · {selectedTx.date}
                   </Text>
                 </View>
                 <Text style={{
-                  fontSize: 16, fontWeight: '500',
+                  fontSize: 14, fontWeight: '500', flexShrink: 0, marginLeft: 8,
                   color: selectedTx.type === 'income' ? colors.pos : colors.ink,
-                  letterSpacing: -0.4,
+                  letterSpacing: -0.2,
                 }}>
-                  {selectedTx.type === 'income' ? '+' : '−'} R$ {fmtBRLShort(selectedTx.amount)}
+                  {selectedTx.type === 'income' ? '+' : '−'} R${fmtBRLShort(selectedTx.amount)}
                 </Text>
               </View>
             )}
 
-            {/* Editar */}
-            <Pressable
-              onPress={handleEdit}
-              style={({ pressed }) => ({
-                flexDirection: 'row', alignItems: 'center',
-                paddingHorizontal: 20, paddingVertical: 14, gap: 14,
-                opacity: pressed ? 0.6 : 1,
-              })}
-            >
-              <View style={{
-                width: 40, height: 40, borderRadius: 12,
-                backgroundColor: colors.hairline,
-                alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0,
-              }}>
-                <Icon.Edit size={18} color={colors.ink} sw={1.8} />
+            {/* Separador sutil */}
+            <View style={{ height: 1, backgroundColor: colors.hairline, marginBottom: 4 }} />
+
+            {/* Editar — gramática ProfileRow */}
+            <Pressable onPress={handleEdit} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12 }}>
+                <View style={{
+                  width: 32, height: 32, borderRadius: 9,
+                  backgroundColor: colors.hairline,
+                  alignItems: 'center', justifyContent: 'center',
+                  marginRight: 12,
+                }}>
+                  <Icon.Edit size={15} color={colors.ink} sw={1.8} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '500', color: colors.ink }}>Editar transação</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>Alterar dados, categoria ou valor</Text>
+                </View>
+                <Icon.ChevR size={13} color={colors.muted} sw={1.8} />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 15, fontWeight: '500', color: colors.ink }}>
-                  Editar transação
-                </Text>
-                <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>
-                  Alterar dados, categoria ou valor
-                </Text>
-              </View>
-              <Icon.ChevR size={14} color={colors.muted} sw={1.8} />
             </Pressable>
 
             {/* Separador */}
-            <View style={{ height: 1, backgroundColor: colors.hairline, marginHorizontal: 20 }} />
+            <View style={{ height: 1, backgroundColor: colors.hairline }} />
 
-            {/* Excluir */}
+            {/* Excluir — variante destrutiva do ProfileRow */}
             <Pressable
               onPress={handleDelete}
               disabled={deleteMutation.isPending}
-              style={({ pressed }) => ({
-                flexDirection: 'row', alignItems: 'center',
-                paddingHorizontal: 20, paddingVertical: 14, gap: 14,
-                opacity: pressed || deleteMutation.isPending ? 0.6 : 1,
-              })}
+              style={({ pressed }) => ({ opacity: pressed || deleteMutation.isPending ? 0.6 : 1 })}
             >
-              <View style={{
-                width: 40, height: 40, borderRadius: 12,
-                backgroundColor: '#FDECEA',
-                alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0,
-              }}>
-                <Icon.Trash size={18} color={colors.neg} sw={1.8} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 15, fontWeight: '500', color: colors.neg }}>
-                  {deleteMutation.isPending ? 'Excluindo...' : 'Excluir transação'}
-                </Text>
-                <Text style={{ fontSize: 12, color: colors.neg, opacity: 0.6, marginTop: 1 }}>
-                  Esta ação não pode ser desfeita
-                </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12 }}>
+                <View style={{
+                  width: 32, height: 32, borderRadius: 9,
+                  backgroundColor: colors.negSoft,
+                  alignItems: 'center', justifyContent: 'center',
+                  marginRight: 12,
+                }}>
+                  <Icon.Trash size={15} color={colors.neg} sw={1.8} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '500', color: colors.neg }}>
+                    {deleteMutation.isPending ? 'Excluindo...' : 'Excluir transação'}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: colors.neg, opacity: 0.6, marginTop: 1 }}>
+                    Esta ação não pode ser desfeita
+                  </Text>
+                </View>
               </View>
             </Pressable>
           </View>
