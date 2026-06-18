@@ -133,7 +133,7 @@ export default function NewTransactionStep2() {
     const name = newCatName.trim();
     if (!name) return;
     createCategoryMutation.mutate(
-      { name, color: selectedColor, icon: selectedIconKey } as any,
+      { name, color: selectedColor, icon: selectedIconKey },
       {
         onSuccess: (created) => {
           setSelectedCat(created);
