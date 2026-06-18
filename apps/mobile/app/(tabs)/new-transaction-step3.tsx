@@ -12,7 +12,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Icon } from '../../src/components/ui/Icon';
 import { colors } from '../../src/theme/colors';
 import { useAuthStore } from '../../store/auth.store';
-import { createTransaction, TransactionStatus } from '../../services/transactions.service';
+import { createTransaction, updateTransaction, TransactionStatus } from '../../services/transactions.service';
 import { getCategoryIcon } from '../../src/lib/categoryIcons';
 
 type Status = TransactionStatus;
@@ -87,9 +87,12 @@ export default function NewTransactionStep3() {
     categoryId: string; categoryName: string; categoryColor: string; categoryIcon: string;
     cardId: string; paymentType: string;
     notes: string; isRecurring: string;
+    txId?: string; status?: string;
   }>();
 
-  const [status, setStatus] = useState<Status>('confirmed');
+  const isEditing = !!params.txId;
+
+  const [status, setStatus] = useState<Status>((params.status as Status) ?? 'confirmed');
   const [saved, setSaved] = useState(false);
 
   const typeColor = params.type === 'income' ? colors.pos : colors.neg;
@@ -106,17 +109,22 @@ export default function NewTransactionStep3() {
   const month = params.date?.slice(0, 7);
 
   const mutation = useMutation({
-    mutationFn: () => createTransaction({
-      title: params.title,
-      amount,
-      type: params.type as 'income' | 'expense',
-      categoryId: params.categoryId,
-      cardId: params.cardId || null,
-      date: params.date,
-      notes: params.notes || undefined,
-      isRecurring: params.isRecurring === '1',
-      status,
-    }, token!),
+    mutationFn: () => {
+      const payload = {
+        title: params.title,
+        amount,
+        type: params.type as 'income' | 'expense',
+        categoryId: params.categoryId,
+        cardId: params.cardId || null,
+        date: params.date,
+        notes: params.notes || undefined,
+        isRecurring: params.isRecurring === '1',
+        status,
+      };
+      return isEditing
+        ? updateTransaction(params.txId!, payload, token!)
+        : createTransaction(payload, token!);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions', month] });
       setSaved(true);
@@ -148,10 +156,10 @@ export default function NewTransactionStep3() {
           </Pressable>
           <View style={{ alignItems: 'center' }}>
             <Text style={{ fontSize: 17, fontWeight: '500', color: colors.ink, letterSpacing: -0.3 }}>
-              Revisar
+              {isEditing ? 'Confirmar edição' : 'Revisar'}
             </Text>
             <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>
-              Confirme antes de salvar
+              {isEditing ? 'Revise as alterações' : 'Confirme antes de salvar'}
             </Text>
           </View>
           <View style={{ backgroundColor: colors.pos, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 }}>
@@ -312,7 +320,9 @@ export default function NewTransactionStep3() {
               flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
             }}>
               <Icon.Check size={16} color="#fff" sw={2.5} />
-              <Text style={{ fontSize: 15, fontWeight: '500', color: '#fff' }}>Transação salva!</Text>
+              <Text style={{ fontSize: 15, fontWeight: '500', color: '#fff' }}>
+                {isEditing ? 'Transação atualizada!' : 'Transação salva!'}
+              </Text>
             </View>
           ) : (
             <Pressable
@@ -331,7 +341,9 @@ export default function NewTransactionStep3() {
                 <Icon.Check size={16} color="#FBFAF6" sw={2.5} />
               )}
               <Text style={{ fontSize: 15, fontWeight: '500', color: colors.surface }}>
-                {mutation.isPending ? 'Salvando...' : 'Salvar transação'}
+                {mutation.isPending
+                  ? (isEditing ? 'Atualizando...' : 'Salvando...')
+                  : (isEditing ? 'Atualizar transação' : 'Salvar transação')}
               </Text>
             </Pressable>
           )}

@@ -107,7 +107,13 @@ export default function NewTransactionStep2() {
   const statusBarHeight = StatusBar.currentHeight ?? 0;
   const params = useLocalSearchParams<{
     type: string; amount: string; title: string; date: string;
+    // edição
+    txId?: string;
+    categoryId?: string; categoryName?: string; categoryColor?: string; categoryIcon?: string;
+    cardId?: string; notes?: string; isRecurring?: string; status?: string;
   }>();
+
+  const isEditing = !!params.txId;
 
   const { data: cards = [] } = useCards();
   const creditCards = cards.filter(c => c.type === 'credit' || c.type === 'debit');
@@ -115,10 +121,16 @@ export default function NewTransactionStep2() {
   const { data: apiCategories = [], isLoading: catsLoading } = useCategories();
   const createCategoryMutation = useCreateCategory();
 
-  const [selectedCat, setSelectedCat] = useState<Category | null>(null);
-  const [selectedPayment, setSelectedPayment] = useState<PaymentId>('none');
-  const [notes, setNotes] = useState('');
-  const [isRecurring, setIsRecurring] = useState(false);
+  const [selectedCat, setSelectedCat] = useState<Category | null>(
+    isEditing && params.categoryId
+      ? { id: params.categoryId, name: params.categoryName ?? '', color: params.categoryColor ?? null, icon: params.categoryIcon || null }
+      : null
+  );
+  const [selectedPayment, setSelectedPayment] = useState<PaymentId>(
+    isEditing && params.cardId ? `c-${params.cardId}` : 'none'
+  );
+  const [notes, setNotes] = useState(params.notes ?? '');
+  const [isRecurring, setIsRecurring] = useState(params.isRecurring === '1');
 
   // Modal nova categoria
   const [modalOpen, setModalOpen] = useState(false);
@@ -150,7 +162,11 @@ export default function NewTransactionStep2() {
     router.push({
       pathname: '/(tabs)/new-transaction-step3',
       params: {
-        ...params,
+        type: params.type,
+        amount: params.amount,
+        title: params.title,
+        date: params.date,
+        ...(isEditing && { txId: params.txId, status: params.status }),
         categoryId: selectedCat.id,
         categoryName: selectedCat.name,
         categoryColor: selectedCat.color ?? FALLBACK_COLOR,

@@ -9,15 +9,14 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Icon } from '../../src/components/ui/Icon';
 import { colors } from '../../src/theme/colors';
 
 type TxType = 'income' | 'expense';
 
 function todayISO() {
-  const d = new Date();
-  return d.toISOString().slice(0, 10);
+  return new Date().toISOString().slice(0, 10);
 }
 
 function formatDateLabel(iso: string) {
@@ -41,17 +40,41 @@ function formatAmount(raw: string): string {
   return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function amountToRaw(amount: number): string {
+  return Math.round(amount * 100).toString();
+}
+
 export default function NewTransactionStep1() {
   const router = useRouter();
   const statusBarHeight = StatusBar.currentHeight ?? 0;
 
-  const [type, setType] = useState<TxType>('expense');
-  const [amountRaw, setAmountRaw] = useState('');
-  const [title, setTitle] = useState('');
-  const [date, setDate] = useState(todayISO());
+  // Params opcionais — presentes quando vem do fluxo de edição
+  const params = useLocalSearchParams<{
+    txId?: string;
+    type?: string;
+    amount?: string;
+    title?: string;
+    date?: string;
+    categoryId?: string;
+    categoryName?: string;
+    categoryColor?: string;
+    categoryIcon?: string;
+    cardId?: string;
+    notes?: string;
+    isRecurring?: string;
+    status?: string;
+  }>();
+
+  const isEditing = !!params.txId;
+
+  const [type, setType] = useState<TxType>((params.type as TxType) ?? 'expense');
+  const [amountRaw, setAmountRaw] = useState(
+    params.amount ? amountToRaw(parseFloat(params.amount)) : ''
+  );
+  const [title, setTitle] = useState(params.title ?? '');
+  const [date, setDate] = useState(params.date ?? todayISO());
 
   const glowColor = type === 'income' ? '#3D8B4E' : '#B85732';
-  const typeActiveColor = type === 'income' ? colors.pos : colors.neg;
 
   function handleAmountChange(text: string) {
     const digits = text.replace(/\D/g, '');
@@ -59,18 +82,29 @@ export default function NewTransactionStep1() {
   }
 
   function handleNext() {
-    if (!amountRaw || parseAmount(amountRaw) === 0) {
-      return;
-    }
+    if (!amountRaw || parseAmount(amountRaw) === 0) return;
     if (!title.trim()) return;
 
     router.push({
       pathname: '/(tabs)/new-transaction-step2',
       params: {
+        // dados do step1
         type,
         amount: parseAmount(amountRaw).toString(),
         title: title.trim(),
         date,
+        // propaga txId e dados existentes para edição (step2 e step3 ignoram se não tiver)
+        ...(isEditing && {
+          txId: params.txId,
+          categoryId: params.categoryId,
+          categoryName: params.categoryName,
+          categoryColor: params.categoryColor,
+          categoryIcon: params.categoryIcon,
+          cardId: params.cardId,
+          notes: params.notes,
+          isRecurring: params.isRecurring,
+          status: params.status,
+        }),
       },
     });
   }
@@ -90,12 +124,8 @@ export default function NewTransactionStep1() {
         >
           {/* Header */}
           <View style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingHorizontal: 22,
-            paddingTop: 8,
-            paddingBottom: 16,
+            flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+            paddingHorizontal: 22, paddingTop: 8, paddingBottom: 16,
           }}>
             <Pressable
               onPress={() => router.back()}
@@ -109,13 +139,9 @@ export default function NewTransactionStep1() {
               <Icon.ChevL size={16} color={colors.ink} sw={2.5} />
             </Pressable>
             <Text style={{ fontSize: 17, fontWeight: '500', color: colors.ink, letterSpacing: -0.3 }}>
-              Nova transação
+              {isEditing ? 'Editar transação' : 'Nova transação'}
             </Text>
-            <View style={{
-              backgroundColor: colors.ink,
-              paddingHorizontal: 10, paddingVertical: 4,
-              borderRadius: 999,
-            }}>
+            <View style={{ backgroundColor: colors.ink, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 }}>
               <Text style={{ fontSize: 11, fontWeight: '600', color: colors.surface, letterSpacing: 0.5 }}>
                 1 de 3
               </Text>
@@ -124,14 +150,10 @@ export default function NewTransactionStep1() {
 
           {/* Toggle Receita / Despesa */}
           <View style={{
-            marginHorizontal: 16,
-            marginBottom: 20,
-            backgroundColor: colors.surface,
-            borderRadius: 16,
+            marginHorizontal: 16, marginBottom: 20,
+            backgroundColor: colors.surface, borderRadius: 16,
             borderWidth: 1, borderColor: colors.hairline,
-            padding: 4,
-            flexDirection: 'row',
-            gap: 4,
+            padding: 4, flexDirection: 'row', gap: 4,
           }}>
             {(['expense', 'income'] as TxType[]).map(t => {
               const active = type === t;
@@ -141,24 +163,13 @@ export default function NewTransactionStep1() {
                   key={t}
                   onPress={() => setType(t)}
                   style={{
-                    flex: 1,
-                    paddingVertical: 11,
-                    borderRadius: 12,
+                    flex: 1, paddingVertical: 11, borderRadius: 12,
                     backgroundColor: active ? activeColor : 'transparent',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
+                    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
                   }}
                 >
-                  <View style={{
-                    width: 7, height: 7, borderRadius: 4,
-                    backgroundColor: active ? 'rgba(255,255,255,0.8)' : activeColor,
-                  }} />
-                  <Text style={{
-                    fontSize: 13, fontWeight: '500',
-                    color: active ? '#fff' : colors.muted,
-                  }}>
+                  <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: active ? 'rgba(255,255,255,0.8)' : activeColor }} />
+                  <Text style={{ fontSize: 13, fontWeight: '500', color: active ? '#fff' : colors.muted }}>
                     {t === 'income' ? 'Receita' : 'Despesa'}
                   </Text>
                 </Pressable>
@@ -168,29 +179,18 @@ export default function NewTransactionStep1() {
 
           {/* Card de valor */}
           <View style={{
-            marginHorizontal: 16,
-            marginBottom: 20,
-            backgroundColor: colors.ink,
-            borderRadius: 22,
-            padding: 24,
-            overflow: 'hidden',
+            marginHorizontal: 16, marginBottom: 20,
+            backgroundColor: colors.ink, borderRadius: 22,
+            padding: 24, overflow: 'hidden',
           }}>
-            {/* glow */}
             <View style={{
               position: 'absolute', top: -40, right: -40,
               width: 120, height: 120, borderRadius: 60,
-              backgroundColor: glowColor,
-              opacity: 0.15,
+              backgroundColor: glowColor, opacity: 0.15,
             }} />
-
-            <Text style={{
-              fontSize: 11, color: 'rgba(251,250,246,0.6)',
-              fontWeight: '500', letterSpacing: 0.8, textTransform: 'uppercase',
-              marginBottom: 8,
-            }}>
+            <Text style={{ fontSize: 11, color: 'rgba(251,250,246,0.6)', fontWeight: '500', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>
               Valor
             </Text>
-
             <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
               <Text style={{ fontSize: 18, color: 'rgba(251,250,246,0.5)' }}>R$</Text>
               <TextInput
@@ -199,14 +199,9 @@ export default function NewTransactionStep1() {
                 keyboardType="numeric"
                 placeholder="0,00"
                 placeholderTextColor="rgba(251,250,246,0.25)"
-                style={{
-                  fontSize: 40, fontWeight: '500',
-                  color: '#FBFAF6', letterSpacing: -1.6,
-                  minWidth: 80, flex: 1,
-                }}
+                style={{ fontSize: 40, fontWeight: '500', color: '#FBFAF6', letterSpacing: -1.6, minWidth: 80, flex: 1 }}
               />
             </View>
-
             <Text style={{ marginTop: 12, fontSize: 11, color: 'rgba(251,250,246,0.4)' }}>
               Digite o valor da transação
             </Text>
@@ -214,11 +209,7 @@ export default function NewTransactionStep1() {
 
           {/* Descrição */}
           <View style={{ marginHorizontal: 16, marginBottom: 16 }}>
-            <Text style={{
-              fontSize: 11, fontWeight: '500', color: colors.muted,
-              textTransform: 'uppercase', letterSpacing: 0.8,
-              marginBottom: 6, paddingLeft: 4,
-            }}>
+            <Text style={{ fontSize: 11, fontWeight: '500', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6, paddingLeft: 4 }}>
               Descrição
             </Text>
             <TextInput
@@ -240,22 +231,15 @@ export default function NewTransactionStep1() {
 
           {/* Data */}
           <View style={{ marginHorizontal: 16, marginBottom: 24 }}>
-            <Text style={{
-              fontSize: 11, fontWeight: '500', color: colors.muted,
-              textTransform: 'uppercase', letterSpacing: 0.8,
-              marginBottom: 6, paddingLeft: 4,
-            }}>
+            <Text style={{ fontSize: 11, fontWeight: '500', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6, paddingLeft: 4 }}>
               Data
             </Text>
-            <Pressable
-              style={{
-                backgroundColor: colors.surface,
-                borderWidth: 1.5, borderColor: colors.hairline,
-                borderRadius: 14,
-                paddingHorizontal: 16, paddingVertical: 14,
-                flexDirection: 'row', alignItems: 'center', gap: 10,
-              }}
-            >
+            <Pressable style={{
+              backgroundColor: colors.surface,
+              borderWidth: 1.5, borderColor: colors.hairline,
+              borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14,
+              flexDirection: 'row', alignItems: 'center', gap: 10,
+            }}>
               <Icon.Calendar size={16} color={colors.muted} sw={1.8} />
               <Text style={{ fontSize: 15, fontWeight: '500', color: colors.ink }}>
                 {formatDateLabel(date)}
@@ -270,19 +254,12 @@ export default function NewTransactionStep1() {
             style={{
               marginHorizontal: 16,
               backgroundColor: canNext ? colors.ink : colors.hairline,
-              borderRadius: 18,
-              paddingVertical: 16,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
+              borderRadius: 18, paddingVertical: 16,
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
             }}
           >
-            <Text style={{
-              fontSize: 15, fontWeight: '500',
-              color: canNext ? colors.surface : colors.muted,
-            }}>
-              Próximo — Categoria
+            <Text style={{ fontSize: 15, fontWeight: '500', color: canNext ? colors.surface : colors.muted }}>
+              {isEditing ? 'Próximo — Revisar' : 'Próximo — Categoria'}
             </Text>
             <Icon.ChevR size={16} color={canNext ? colors.surface : colors.muted} sw={2.5} />
           </Pressable>
