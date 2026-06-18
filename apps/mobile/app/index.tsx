@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Icon } from '../src/components/ui/Icon';
 import { TxRow } from '../src/components/transactions/TxRow';
-import { TRANSACTIONS } from '../src/data/mocks/transactions';
-import { CARDS } from '../src/data/mocks/cards';
-import { SUMMARY } from '../src/data/mocks/summary';
-import { USER } from '../src/data/mocks/user';
+import { useTransactions } from '../hooks/useTransactions';
+import { useCards } from '../hooks/useCards';
+import { useAuthStore } from '../store/auth.store';
+import { getCurrentMonth, getCurrentMonthParam } from '../src/lib/date';
 import { fmtBRLShort } from '../src/lib/currency';
 import { colors } from '../src/theme/colors';
 import { Card } from '../src/types/finance';
@@ -49,11 +49,10 @@ function MiniCardSummary({ card, onTap }: { card: Card; onTap?: () => void }) {
         marginRight: 12,
       }}
     >
-      {/* glow */}
       <View style={{
         position: 'absolute', top: -30, right: -30,
         width: 100, height: 100, borderRadius: 50,
-        backgroundColor: card.accent,
+        backgroundColor: card.accent ?? '#fff',
         opacity: 0.18,
       }} />
 
@@ -74,14 +73,26 @@ function MiniCardSummary({ card, onTap }: { card: Card; onTap?: () => void }) {
       <View style={{ marginTop: 'auto' }}>
         <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>Fatura atual</Text>
         <Text style={{ fontSize: 20, fontWeight: '500', color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>
-          R$ {fmtBRLShort(card.current_month_total)}
+          R$ {fmtBRLShort(card.currentMonthTotal)}
         </Text>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
-          <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>{card.open_installments_count} parcelas</Text>
-          <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>Fecha dia {card.closing_day}</Text>
+          <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>{card.openInstallmentsCount} parcelas</Text>
+          <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>Fecha dia {card.closingDay}</Text>
         </View>
       </View>
     </Pressable>
+  );
+}
+
+/* ─── Skeleton simples ───────────────────────────────────── */
+function SkeletonBlock({ w, h, radius = 8 }: { w: number | string; h: number; radius?: number }) {
+  return (
+    <View style={{
+      width: w as number,
+      height: h,
+      borderRadius: radius,
+      backgroundColor: 'rgba(255,255,255,0.10)',
+    }} />
   );
 }
 
@@ -89,10 +100,37 @@ function MiniCardSummary({ card, onTap }: { card: Card; onTap?: () => void }) {
 export default function HomeScreen() {
   const router = useRouter();
   const [showBalance, setShowBalance] = useState(true);
+  const user = useAuthStore(state => state.user);
 
-  const recent = TRANSACTIONS.slice(0, 5);
-  const creditCards = CARDS.filter(c => c.type === 'credit');
-  const balance = SUMMARY.income - SUMMARY.expense;
+  const currentMonth = getCurrentMonth();
+  const monthParam = getCurrentMonthParam();
+
+  const { summary, transactions, isLoading, isError, refetch } = useTransactions(monthParam);
+  const { data: cards, isLoading: cardsLoading } = useCards();
+
+  const recent = transactions?.slice(0, 5) ?? [];
+  const creditCards = cards?.filter(c => c.type === 'credit') ?? [];
+  const income = summary?.income ?? 0;
+  const expense = summary?.expense ?? 0;
+  const balance = summary?.balance ?? 0;
+
+  // Sparkbars: agrupa despesas por dia (últimos 14 dias)
+  const sparkData = React.useMemo(() => {
+    if (!transactions) return Array(14).fill(0);
+    const today = new Date();
+    return Array.from({ length: 14 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() - (13 - i));
+      const key = d.toISOString().slice(0, 10);
+      return transactions
+        .filter(t => t.type === 'expense' && t.date === key)
+        .reduce((s, t) => s + t.amount, 0);
+    });
+  }, [transactions]);
+
+  const initials = user?.name
+    ? user.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
+    : '?';
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
@@ -114,13 +152,13 @@ export default function HomeScreen() {
               alignItems: 'center', justifyContent: 'center',
             }}>
               <Text style={{ color: colors.surface, fontSize: 14, fontWeight: '600', letterSpacing: 0.4 }}>
-                {USER.initials}
+                {initials}
               </Text>
             </View>
             <View>
               <Text style={{ fontSize: 12, color: colors.muted }}>Olá,</Text>
               <Text style={{ fontSize: 15, fontWeight: '500', color: colors.ink, marginTop: 1 }}>
-                {USER.name.split(' ')[0]}
+                {user?.name?.split(' ')[0] ?? ''}
               </Text>
             </View>
           </View>
@@ -162,15 +200,12 @@ export default function HomeScreen() {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Icon.Calendar size={13} color="rgba(251,250,246,0.7)" />
-                <Text style={{ fontSize: 12, color: 'rgba(251,250,246,0.7)' }}>{SUMMARY.month}</Text>
+                <Text style={{ fontSize: 12, color: 'rgba(251,250,246,0.7)' }}>{currentMonth}</Text>
                 <Icon.ChevR size={11} color="rgba(251,250,246,0.7)" sw={1.5} />
               </View>
               <Pressable
                 onPress={() => setShowBalance(!showBalance)}
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.08)',
-                  padding: 6, borderRadius: 999,
-                }}
+                style={{ backgroundColor: 'rgba(255,255,255,0.08)', padding: 6, borderRadius: 999 }}
               >
                 {showBalance
                   ? <Icon.Eye size={14} color="#fff" />
@@ -186,20 +221,30 @@ export default function HomeScreen() {
               Saldo do mês
             </Text>
 
-            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 4 }}>
-              <Text style={{ fontSize: 18, color: 'rgba(251,250,246,0.6)' }}>R$</Text>
-              <Text style={{ fontSize: 40, fontWeight: '500', color: '#FBFAF6', letterSpacing: -1.6, lineHeight: 48 }}>
-                {showBalance ? fmtBRLShort(balance) : '•••••'}
-              </Text>
-            </View>
+            {isLoading ? (
+              <View style={{ marginTop: 8, gap: 8 }}>
+                <SkeletonBlock w={160} h={40} radius={10} />
+              </View>
+            ) : isError ? (
+              <Pressable onPress={() => refetch()} style={{ marginTop: 12 }}>
+                <Text style={{ color: colors.neg, fontSize: 13 }}>Erro ao carregar. Toque para tentar novamente.</Text>
+              </Pressable>
+            ) : (
+              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 4 }}>
+                <Text style={{ fontSize: 18, color: 'rgba(251,250,246,0.6)' }}>R$</Text>
+                <Text style={{ fontSize: 40, fontWeight: '500', color: '#FBFAF6', letterSpacing: -1.6, lineHeight: 48 }}>
+                  {showBalance ? fmtBRLShort(balance) : '•••••'}
+                </Text>
+              </View>
+            )}
 
             {/* Sparkbars */}
             <View style={{ marginTop: 18 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
                 <Text style={{ fontSize: 11, color: 'rgba(251,250,246,0.6)' }}>Despesas — últimos 14 dias</Text>
-                <Text style={{ fontSize: 11, color: 'rgba(251,250,246,0.6)' }}>R$ {fmtBRLShort(SUMMARY.expense)}</Text>
+                <Text style={{ fontSize: 11, color: 'rgba(251,250,246,0.6)' }}>R$ {fmtBRLShort(expense)}</Text>
               </View>
-              <Sparkbars data={SUMMARY.daily} barColor="#FBFAF6" height={32} />
+              <Sparkbars data={sparkData} barColor="#FBFAF6" height={32} />
             </View>
 
             {/* Receita / Despesa split */}
@@ -207,8 +252,7 @@ export default function HomeScreen() {
               <View style={{
                 flex: 1,
                 backgroundColor: 'rgba(255,255,255,0.06)',
-                borderRadius: 12,
-                padding: 12,
+                borderRadius: 12, padding: 12,
                 borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
               }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
@@ -221,15 +265,17 @@ export default function HomeScreen() {
                   </View>
                   <Text style={{ fontSize: 11, color: 'rgba(251,250,246,0.7)' }}>Receitas</Text>
                 </View>
-                <Text style={{ fontSize: 16, fontWeight: '500', color: '#FBFAF6', marginTop: 4 }}>
-                  {showBalance ? `R$ ${fmtBRLShort(SUMMARY.income)}` : '•••••'}
-                </Text>
+                {isLoading
+                  ? <SkeletonBlock w={80} h={20} radius={6} />
+                  : <Text style={{ fontSize: 16, fontWeight: '500', color: '#FBFAF6', marginTop: 4 }}>
+                      {showBalance ? `R$ ${fmtBRLShort(income)}` : '•••••'}
+                    </Text>
+                }
               </View>
               <View style={{
                 flex: 1,
                 backgroundColor: 'rgba(255,255,255,0.06)',
-                borderRadius: 12,
-                padding: 12,
+                borderRadius: 12, padding: 12,
                 borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
               }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
@@ -242,9 +288,12 @@ export default function HomeScreen() {
                   </View>
                   <Text style={{ fontSize: 11, color: 'rgba(251,250,246,0.7)' }}>Despesas</Text>
                 </View>
-                <Text style={{ fontSize: 16, fontWeight: '500', color: '#FBFAF6', marginTop: 4 }}>
-                  {showBalance ? `R$ ${fmtBRLShort(SUMMARY.expense)}` : '•••••'}
-                </Text>
+                {isLoading
+                  ? <SkeletonBlock w={80} h={20} radius={6} />
+                  : <Text style={{ fontSize: 16, fontWeight: '500', color: '#FBFAF6', marginTop: 4 }}>
+                      {showBalance ? `R$ ${fmtBRLShort(expense)}` : '•••••'}
+                    </Text>
+                }
               </View>
             </View>
           </View>
@@ -273,9 +322,27 @@ export default function HomeScreen() {
           paddingTop: 4,
           borderWidth: 1, borderColor: colors.hairline,
         }}>
-          {recent.map((tx, i) => (
-            <TxRow key={tx.id} tx={tx} last={i === recent.length - 1} />
-          ))}
+          {isLoading ? (
+            <View style={{ paddingVertical: 20, gap: 16 }}>
+              {[1, 2, 3].map(i => (
+                <View key={i} style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                  <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: colors.hairline }} />
+                  <View style={{ gap: 6, flex: 1 }}>
+                    <View style={{ height: 14, borderRadius: 6, backgroundColor: colors.hairline, width: '60%' }} />
+                    <View style={{ height: 11, borderRadius: 6, backgroundColor: colors.hairline, width: '40%' }} />
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : recent.length === 0 ? (
+            <View style={{ paddingVertical: 32, alignItems: 'center' }}>
+              <Text style={{ fontSize: 14, color: colors.muted }}>Nenhuma transação este mês</Text>
+            </View>
+          ) : (
+            recent.map((tx, i) => (
+              <TxRow key={tx.id} tx={tx} last={i === recent.length - 1} />
+            ))
+          )}
         </View>
 
         {/* Cartões de crédito */}
@@ -293,17 +360,23 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingLeft: 16, paddingRight: 4, paddingVertical: 4 }}
-          snapToInterval={232}
-          decelerationRate="fast"
-        >
-          {creditCards.map(card => (
-            <MiniCardSummary key={card.id} card={card} onTap={() => router.push('/cards')} />
-          ))}
-        </ScrollView>
+        {cardsLoading ? (
+          <View style={{ paddingHorizontal: 16 }}>
+            <View style={{ width: 220, height: 130, borderRadius: 18, backgroundColor: colors.hairline }} />
+          </View>
+        ) : (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingLeft: 16, paddingRight: 4, paddingVertical: 4 }}
+            snapToInterval={232}
+            decelerationRate="fast"
+          >
+            {creditCards.map(card => (
+              <MiniCardSummary key={card.id} card={card} onTap={() => router.push('/cards')} />
+            ))}
+          </ScrollView>
+        )}
 
         <View style={{ height: 32 }} />
       </ScrollView>

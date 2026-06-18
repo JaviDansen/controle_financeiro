@@ -17,37 +17,31 @@ interface ProfileRowProps {
 
 function ProfileRow({ icon, label, value, onPress, destructive = false }: ProfileRowProps) {
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 14,
-        paddingVertical: 14,
-        opacity: pressed ? 0.6 : 1,
-      })}
-    >
-      <View style={{
-        width: 34, height: 34, borderRadius: 10,
-        backgroundColor: destructive ? colors.negSoft : colors.bg,
-        alignItems: 'center', justifyContent: 'center',
-      }}>
-        {icon}
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={{
-          fontSize: 15, fontWeight: '500',
-          color: destructive ? colors.neg : colors.ink,
+    <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12 }}>
+        <View style={{
+          width: 32, height: 32, borderRadius: 9,
+          backgroundColor: destructive ? colors.negSoft : colors.hairline,
+          alignItems: 'center', justifyContent: 'center',
+          marginRight: 12,
         }}>
-          {label}
-        </Text>
-        {value && (
-          <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>{value}</Text>
+          {icon}
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{
+            fontSize: 14, fontWeight: '500',
+            color: destructive ? colors.neg : colors.ink,
+          }}>
+            {label}
+          </Text>
+          {value && (
+            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>{value}</Text>
+          )}
+        </View>
+        {!destructive && (
+          <Icon.ChevR size={13} color={colors.muted} sw={1.8} />
         )}
       </View>
-      {!destructive && (
-        <Icon.ChevR size={14} color={colors.muted} sw={1.8} />
-      )}
     </Pressable>
   );
 }
@@ -55,14 +49,14 @@ function ProfileRow({ icon, label, value, onPress, destructive = false }: Profil
 function SectionTitle({ children }: { children: string }) {
   return (
     <Text style={{
-      fontSize: 11,
-      fontWeight: '500',
+      fontSize: 10,
+      fontWeight: '600',
       color: colors.muted,
       textTransform: 'uppercase',
-      letterSpacing: 1.2,
+      letterSpacing: 1.1,
       paddingHorizontal: 4,
-      paddingBottom: 4,
-      paddingTop: 16,
+      paddingBottom: 6,
+      paddingTop: 20,
     }}>
       {children}
     </Text>
@@ -134,29 +128,31 @@ export default function ProfileScreen() {
         {/* Avatar + nome */}
         <View style={{
           marginHorizontal: 16,
-          marginTop: 16,
+          marginTop: 12,
           backgroundColor: colors.surface,
-          borderRadius: 22,
-          padding: 20,
+          borderRadius: 18,
+          paddingHorizontal: 16,
+          paddingVertical: 14,
           flexDirection: 'row',
           alignItems: 'center',
-          gap: 16,
+          gap: 14,
           borderWidth: 1, borderColor: colors.hairline,
         }}>
           <View style={{
-            width: 60, height: 60, borderRadius: 30,
+            width: 48, height: 48, borderRadius: 24,
             backgroundColor: colors.ink,
             alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
           }}>
-            <Text style={{ fontSize: 22, fontWeight: '600', color: colors.surface, letterSpacing: 0.5 }}>
+            <Text style={{ fontSize: 18, fontWeight: '600', color: colors.surface, letterSpacing: 0.5 }}>
               {profile.initials}
             </Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 18, fontWeight: '500', color: colors.ink, letterSpacing: -0.3 }}>
+            <Text style={{ fontSize: 16, fontWeight: '500', color: colors.ink, letterSpacing: -0.2 }}>
               {profile.name}
             </Text>
-            <Text style={{ fontSize: 13, color: colors.muted, marginTop: 2 }}>{profile.email}</Text>
+            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{profile.email}</Text>
           </View>
         </View>
 
@@ -166,7 +162,7 @@ export default function ProfileScreen() {
           <View style={{
             backgroundColor: colors.surface,
             borderRadius: 18,
-            paddingHorizontal: 16,
+            paddingHorizontal: 14,
             borderWidth: 1, borderColor: colors.hairline,
           }}>
             <ProfileRow
@@ -174,12 +170,12 @@ export default function ProfileScreen() {
               label="E-mail"
               value={profile.email}
             />
-            <View style={{ height: 1, backgroundColor: colors.hairline }} />
+            <View style={{ height: 1, backgroundColor: colors.hairline, marginHorizontal: -14 }} />
             <ProfileRow
               icon={<Icon.Lock size={16} color={colors.ink2} />}
               label="Alterar senha"
             />
-            <View style={{ height: 1, backgroundColor: colors.hairline }} />
+            <View style={{ height: 1, backgroundColor: colors.hairline, marginHorizontal: -14 }} />
             <ProfileRow
               icon={<Icon.Bell size={16} color={colors.ink2} />}
               label="Notificações"
@@ -190,7 +186,7 @@ export default function ProfileScreen() {
           <View style={{
             backgroundColor: colors.surface,
             borderRadius: 18,
-            paddingHorizontal: 16,
+            paddingHorizontal: 14,
             borderWidth: 1, borderColor: colors.hairline,
           }}>
             <ProfileRow
@@ -198,7 +194,7 @@ export default function ProfileScreen() {
               label="Cartões"
               value="3 cadastrados"
             />
-            <View style={{ height: 1, backgroundColor: colors.hairline }} />
+            <View style={{ height: 1, backgroundColor: colors.hairline, marginHorizontal: -14 }} />
             <ProfileRow
               icon={<Icon.Tx size={16} color={colors.ink2} />}
               label="Exportar transações"
@@ -209,7 +205,7 @@ export default function ProfileScreen() {
           <View style={{
             backgroundColor: colors.surface,
             borderRadius: 18,
-            paddingHorizontal: 16,
+            paddingHorizontal: 14,
             borderWidth: 1, borderColor: colors.hairline,
           }}>
             <ProfileRow
