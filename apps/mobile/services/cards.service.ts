@@ -1,6 +1,34 @@
-import { Card } from '../src/types/finance'
-
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000'
+
+interface BaseCard {
+  id: string
+  name: string
+  bank: string | null
+  last4: string | null
+  holder: string | null
+  expiry: string | null
+  gradientColors: [string, string]
+  accent: string | null
+}
+
+export interface CreditCard extends BaseCard {
+  type: 'credit'
+  limit: number | null
+  used: number
+  currentMonthTotal: number
+  closingDay: number | null
+  dueDay: number | null
+  bestPurchaseDate: string | null
+  openInstallmentsCount: number
+  openInstallmentsTotal: number
+}
+
+export interface DebitCard extends BaseCard {
+  type: 'debit'
+  monthlySpent: number
+}
+
+export type Card = CreditCard | DebitCard
 
 export interface CreateCardPayload {
   name: string

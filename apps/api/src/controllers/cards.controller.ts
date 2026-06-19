@@ -123,23 +123,38 @@ function formatLocalDate(date: Date): string {
   return `${resultYear}-${resultMonth}-${resultDay}`
 }
 
-function toCardDto(card: CardRow, currentMonthTotal: number) {
+function toCreditCardDto(card: CardRow, currentMonthTotal: number) {
   return {
     id: card.id,
     name: card.name,
     bank: card.bank,
-    type: card.type as 'credit' | 'debit',
+    type: 'credit' as const,
     last4: card.lastFour,
     holder: card.holder,
     expiry: card.expiry,
     limit: toNumber(card.creditLimit),
+    used: currentMonthTotal,
+    currentMonthTotal,
     closingDay: card.closingDay,
     dueDay: card.dueDay,
     bestPurchaseDate: calculateBestPurchaseDate(card.closingDay),
-    used: currentMonthTotal,
-    currentMonthTotal,
     openInstallmentsCount: 0,
     openInstallmentsTotal: 0,
+    gradientColors: [card.color ?? '#15151A', card.gradientTo ?? '#0A0A0A'],
+    accent: card.accent,
+  }
+}
+
+function toDebitCardDto(card: CardRow, monthlySpent: number) {
+  return {
+    id: card.id,
+    name: card.name,
+    bank: card.bank,
+    type: 'debit' as const,
+    last4: card.lastFour,
+    holder: card.holder,
+    expiry: card.expiry,
+    monthlySpent,
     gradientColors: [card.color ?? '#15151A', card.gradientTo ?? '#0A0A0A'],
     accent: card.accent,
   }
@@ -179,7 +194,10 @@ export const listCards: RequestHandler = async (req, res) => {
           )
         )
 
-      return toCardDto(card, parseFloat(total?.amount ?? '0'))
+      const spent = parseFloat(total?.amount ?? '0')
+      return card.type === 'credit'
+        ? toCreditCardDto(card, spent)
+        : toDebitCardDto(card, spent)
     })
   )
 

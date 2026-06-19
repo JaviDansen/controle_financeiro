@@ -27,6 +27,10 @@ export interface MonthSummary {
   month: string
 }
 
+export interface MonthSummaryObject extends MonthSummary {
+  label: string
+}
+
 export interface TransactionsResponse {
   summary: MonthSummary
   transactions: Transaction[]

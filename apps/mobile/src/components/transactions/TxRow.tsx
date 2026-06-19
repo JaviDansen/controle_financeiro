@@ -17,10 +17,9 @@ interface TxRowProps {
   };
   last?: boolean;
   onPress?: () => void;
-  onMorePress?: () => void;
 }
 
-export function TxRow({ tx, last = false, onPress, onMorePress }: TxRowProps) {
+export function TxRow({ tx, last = false, onPress }: TxRowProps) {
   const isPos = tx.type === 'income';
   const catColor = tx.categoryColor || '#8B8B92';
   const LucideIcon = getCategoryIcon(tx.categoryIcon);
@@ -82,27 +81,6 @@ export function TxRow({ tx, last = false, onPress, onMorePress }: TxRowProps) {
           {isPos ? '+' : '−'} R${fmtBRLShort(tx.amount)}
         </Text>
 
-        {/* Wrapper com marginLeft fixo — Pressable com style fn ignora margin no NativeWind */}
-        <View style={{ marginLeft: 20, flexShrink: 0 }}>
-          <Pressable
-            onPress={onMorePress}
-            hitSlop={{ top: 10, bottom: 10, left: 8, right: 4 }}
-            style={({ pressed }) => ({
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              backgroundColor: pressed ? colors.hairline : 'transparent',
-              alignItems: 'center',
-              justifyContent: 'center',
-            })}
-          >
-            <View style={{ alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-              <View style={{ width: 20, height: 2, borderRadius: 1.5, backgroundColor: colors.muted }} />
-              <View style={{ width: 14, height: 2, borderRadius: 1.5, backgroundColor: colors.muted }} />
-              <View style={{ width: 20, height: 2, borderRadius: 1.5, backgroundColor: colors.muted }} />
-            </View>
-          </Pressable>
-        </View>
       </View>
     </Pressable>
   );

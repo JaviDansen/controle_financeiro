@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { ScreenContainer } from '../../src/components/ui/ScreenContainer';
 import { Icon } from '../../src/components/ui/Icon';
 import { colors } from '../../src/theme/colors';
 import { useAuthStore } from '../../store/auth.store';
@@ -115,8 +115,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <ScreenContainer>
 
         {/* Header */}
         <View style={{ paddingHorizontal: 22, paddingTop: 8, paddingBottom: 4 }}>
@@ -218,7 +217,6 @@ export default function ProfileScreen() {
         </View>
 
         <View style={{ height: 32 }} />
-      </ScrollView>
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }

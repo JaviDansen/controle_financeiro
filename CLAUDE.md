@@ -112,6 +112,9 @@ API_URL=http://localhost:3000
 - **Estado global via Zustand** — apenas para dados persistidos (usuário autenticado, preferências)
 - **Formulários validados com Zod** antes de enviar à API
 - Nomenclatura de arquivos: `kebab-case` para rotas, `PascalCase` para componentes
+- **Toda nova tela deve usar `ScreenContainer`** em vez de `SafeAreaView + ScrollView` — o pull to refresh global já vem embutido
+- **Exceção: telas com `FlatList`** não podem usar `ScreenContainer` (scroll dentro de scroll é proibido no React Native) — nesse caso importar `useRefreshAll` diretamente e passar o `RefreshControl` na própria `FlatList`
+- **Toda nova queryKey deve ser registrada em `src/lib/queryKeys.ts`** — é a fonte de verdade do refresh global; sem registro, o pull to refresh não invalida aquele dado
 
 ### Banco de Dados (packages/db)
 
