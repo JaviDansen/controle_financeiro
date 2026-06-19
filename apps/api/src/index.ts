@@ -11,6 +11,7 @@ import authRoutes from './routes/auth.routes'
 import cardsRoutes from './routes/cards.routes'
 import transactionsRoutes from './routes/transactions.routes'
 import categoriesRoutes from './routes/categories.routes'
+import importRoutes from './routes/import.routes'
 import { requestErrorHandler, requestLogger } from './middlewares/request-logger.middleware'
 
 export const app = express()
@@ -24,6 +25,7 @@ app.use('/auth', authRoutes)
 app.use('/cards', cardsRoutes)
 app.use('/transactions', transactionsRoutes)
 app.use('/categories', categoriesRoutes)
+app.use('/import', importRoutes)
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' })
