@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Importar Extrato — FinApp</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #ECE7DC;
+    font-family: -apple-system, 'Segoe UI', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 40px 16px;
+    gap: 32px;
+  }
+
+  /* ── Phone frame ───────────────────────────────────── */
+  .phone {
+    width: 375px;
+    background: #ECE7DC;
+    border-radius: 44px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.18), 0 0 0 10px #15151A;
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .status-bar {
+    background: #ECE7DC;
+    padding: 14px 24px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .status-bar span { font-size: 12px; font-weight: 600; color: #15151A; }
+
+  .screen { padding: 0 0 40px; }
+
+  /* ── Header ───────────────────────────────────────── */
+  .header {
+    padding: 8px 22px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .btn-back {
+    width: 36px; height: 36px; border-radius: 18px;
+    background: #FBFAF6;
+    border: 1px solid rgba(21,21,26,0.10);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .header-center { text-align: center; }
+  .header-title { font-size: 17px; font-weight: 500; color: #15151A; letter-spacing: -0.3px; }
+  .header-sub { font-size: 11px; color: #8B8B92; margin-top: 2px; }
+  .header-spacer { width: 36px; }
+
+  /* ── Section label ────────────────────────────────── */
+  .section-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: #8B8B92;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
+    padding-left: 4px;
+  }
+
+  /* ── Banco selector ───────────────────────────────── */
+  .section { margin: 0 16px 20px; }
+
+  .bank-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-radius: 16px;
+    border: 1.5px solid rgba(21,21,26,0.10);
+    background: #FBFAF6;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    margin-bottom: 8px;
+  }
+  .bank-option.active {
+    border-color: #15151A;
+    background: #15151A;
+  }
+  .bank-option-left { display: flex; align-items: center; gap: 12px; }
+  .bank-logo {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    background: rgba(21,21,26,0.06);
+  }
+  .bank-option.active .bank-logo { background: rgba(251,250,246,0.12); }
+  .bank-name { font-size: 14px; font-weight: 500; color: #15151A; }
+  .bank-option.active .bank-name { color: #FBFAF6; }
+  .bank-tag {
+    font-size: 10px;
+    font-weight: 500;
+    color: #8B8B92;
+    background: rgba(21,21,26,0.06);
+    padding: 3px 8px;
+    border-radius: 999px;
+    letter-spacing: 0.4px;
+  }
+  .bank-option.active .bank-tag { background: rgba(251,250,246,0.12); color: rgba(251,250,246,0.6); }
+
+  .check-icon {
+    width: 20px; height: 20px; border-radius: 10px;
+    background: #FBFAF6;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .bank-option.active .check-icon { opacity: 1; }
+
+  /* ── Upload area ──────────────────────────────────── */
+  .upload-area {
+    margin: 0 16px;
+    border: 1.5px dashed rgba(21,21,26,0.20);
+    border-radius: 16px;
+    background: #FBFAF6;
+    padding: 28px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .upload-area:hover { border-color: #15151A; }
+  .upload-area.has-file { border-color: #15151A; border-style: solid; }
+
+  .upload-icon-wrap {
+    width: 52px; height: 52px; border-radius: 15px;
+    background: rgba(21,21,26,0.06);
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .upload-area.has-file .upload-icon-wrap { background: #15151A; }
+
+  .upload-title { font-size: 14px; font-weight: 500; color: #15151A; }
+  .upload-sub { font-size: 12px; color: #8B8B92; }
+
+  /* ── Preview badge ────────────────────────────────── */
+  .file-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(21,21,26,0.06);
+    border-radius: 10px;
+    padding: 8px 12px;
+    margin-top: 4px;
+    display: none;
+  }
+  .file-badge.visible { display: flex; }
+  .file-badge-name { font-size: 12px; color: #15151A; font-weight: 500; }
+  .file-badge-remove {
+    width: 18px; height: 18px; border-radius: 9px;
+    background: rgba(21,21,26,0.10);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 11px; color: #8B8B92;
+  }
+
+  /* ── Feedback banners ─────────────────────────────── */
+  .feedback {
+    margin: 16px 16px 0;
+    border-radius: 16px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    display: none;
+  }
+  .feedback.visible { display: flex; }
+  .feedback.success { background: #DDF0E4; border: 1px solid #3D8B4E; }
+  .feedback.duplicate { background: #F5F0DC; border: 1px solid #9A8030; }
+  .feedback.error { background: #F7E8E0; border: 1px solid #B85732; }
+
+  .feedback-icon {
+    width: 32px; height: 32px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .feedback.success .feedback-icon { background: rgba(61,139,78,0.15); }
+  .feedback.duplicate .feedback-icon { background: rgba(154,128,48,0.15); }
+  .feedback.error .feedback-icon { background: rgba(184,87,50,0.15); }
+
+  .feedback-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .feedback.success .feedback-title { color: #1E5229; }
+  .feedback.duplicate .feedback-title { color: #5A4A10; }
+  .feedback.error .feedback-title { color: #7A2F10; }
+
+  .feedback-desc { font-size: 12px; line-height: 1.5; }
+  .feedback.success .feedback-desc { color: #3D8B4E; }
+  .feedback.duplicate .feedback-desc { color: #9A8030; }
+  .feedback.error .feedback-desc { color: #B85732; }
+
+  /* ── Botões ───────────────────────────────────────── */
+  .actions { margin: 16px 16px 0; display: flex; flex-direction: column; gap: 10px; }
+
+  .btn-primary {
+    width: 100%;
+    background: #15151A;
+    color: #FBFAF6;
+    border: none;
+    border-radius: 18px;
+    padding: 16px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.15s;
+    font-family: inherit;
+  }
+  .btn-primary:disabled { background: rgba(21,21,26,0.12); color: #8B8B92; cursor: default; }
+  .btn-primary:not(:disabled):hover { opacity: 0.88; }
+  .btn-primary:not(:disabled):active { transform: scale(0.97); }
+
+  .btn-secondary {
+    width: 100%;
+    background: transparent;
+    color: #8B8B92;
+    border: 1.5px solid rgba(21,21,26,0.10);
+    border-radius: 18px;
+    padding: 14px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s;
+    display: none;
+  }
+  .btn-secondary.visible { display: block; }
+  .btn-secondary:hover { opacity: 0.7; }
+
+  /* ── Loading spinner ──────────────────────────────── */
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(251,250,246,0.3);
+    border-top-color: #FBFAF6;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  .btn-primary.loading .spinner { display: block; }
+  .btn-primary.loading .btn-icon { display: none; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Painel lateral de estados ────────────────────── */
+  .states-panel {
+    width: 220px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 80px;
+  }
+  .state-btn {
+    background: #FBFAF6;
+    border: 1.5px solid rgba(21,21,26,0.10);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #15151A;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: all 0.12s;
+  }
+  .state-btn:hover { border-color: #15151A; background: #15151A; color: #FBFAF6; }
+  .states-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #8B8B92;
+    padding-left: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="status-bar">
+    <span>9:41</span>
+    <span>●●●</span>
+  </div>
+
+  <div class="screen">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="btn-back">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+          <path d="M13 4l-6 6 6 6" stroke="#15151A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="header-center">
+        <div class="header-title">Importar extrato</div>
+        <div class="header-sub">Envie uma screenshot do seu banco</div>
+      </div>
+      <div class="header-spacer"></div>
+    </div>
+
+    <!-- Seleção de banco -->
+    <div class="section">
+      <div class="section-label">Banco</div>
+      <div class="bank-option active" id="bank-mp" onclick="selectBank('mercadopago')">
+        <div class="bank-option-left">
+          <div class="bank-logo">💳</div>
+          <div>
+            <div class="bank-name">Mercado Pago</div>
+          </div>
+          <div class="bank-tag">FASE 1</div>
+        </div>
+        <div class="check-icon">
+          <svg width="11" height="11" viewBox="0 0 20 20" fill="none">
+            <path d="M4 10.5l4 4 8-9" stroke="#15151A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="bank-option" id="bank-nu" onclick="selectBank('nubank')" style="opacity:0.45;pointer-events:none;">
+        <div class="bank-option-left">
+          <div class="bank-logo">💜</div>
+          <div>
+            <div class="bank-name">Nubank</div>
+          </div>
+          <div class="bank-tag">EM BREVE</div>
+        </div>
+        <div class="check-icon">
+          <svg width="11" height="11" viewBox="0 0 20 20" fill="none">
+            <path d="M4 10.5l4 4 8-9" stroke="#15151A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Área de upload -->
+    <div class="upload-area" id="upload-area" onclick="simulatePickImage()">
+      <div class="upload-icon-wrap" id="upload-icon-wrap">
+        <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
+          <path d="M10 13V4M6 8l4-4 4 4" stroke="#8B8B92" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" id="upload-svg-path"/>
+          <path d="M3 15h14" stroke="#8B8B92" stroke-width="1.8" stroke-linecap="round" id="upload-svg-line"/>
+        </svg>
+      </div>
+      <div class="upload-title" id="upload-title">Selecionar imagem</div>
+      <div class="upload-sub" id="upload-sub">Toque para abrir a galeria</div>
+      <div class="file-badge" id="file-badge">
+        <svg width="13" height="13" viewBox="0 0 20 20" fill="none">
+          <rect x="4" y="2" width="12" height="16" rx="2" stroke="#15151A" stroke-width="1.6"/>
+          <path d="M7 7h6M7 10h4" stroke="#15151A" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        <span class="file-badge-name" id="file-name">extrato-junho.jpg</span>
+        <div class="file-badge-remove" onclick="removeFile(event)">×</div>
+      </div>
+    </div>
+
+    <!-- Feedback -->
+    <div class="feedback success" id="feedback-success">
+      <div class="feedback-icon">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+          <path d="M4 10.5l4 4 8-9" stroke="#1E5229" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="feedback-title">Extrato recebido!</div>
+        <div class="feedback-desc">Imagem salva com sucesso. Em breve as transações serão extraídas.</div>
+      </div>
+    </div>
+
+    <div class="feedback duplicate" id="feedback-duplicate">
+      <div class="feedback-icon">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+          <path d="M10 6v5M10 13.5v.5" stroke="#5A4A10" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="10" cy="10" r="7.5" stroke="#9A8030" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="feedback-title">Imagem duplicada</div>
+        <div class="feedback-desc">Este extrato já foi enviado anteriormente. Selecione uma imagem diferente.</div>
+      </div>
+    </div>
+
+    <div class="feedback error" id="feedback-error">
+      <div class="feedback-icon">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+          <path d="M10 6v5M10 13.5v.5" stroke="#7A2F10" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="10" cy="10" r="7.5" stroke="#B85732" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="feedback-title">Erro ao enviar</div>
+        <div class="feedback-desc">Não foi possível processar a imagem. Tente novamente.</div>
+      </div>
+    </div>
+
+    <!-- Ações -->
+    <div class="actions">
+      <button class="btn-primary" id="btn-send" onclick="simulateSend()" disabled>
+        <div class="spinner"></div>
+        <svg class="btn-icon" width="16" height="16" viewBox="0 0 20 20" fill="none">
+          <path d="M10 13V4M6 8l4-4 4 4" stroke="#FBFAF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M3 15h14" stroke="#FBFAF6" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span id="btn-label">Enviar extrato</span>
+      </button>
+      <button class="btn-secondary" id="btn-back" onclick="resetState()">
+        Voltar para transações
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Painel de estados para demonstração -->
+<div class="states-panel">
+  <div class="states-title">Simular estado</div>
+  <button class="state-btn" onclick="simulatePickImage()">📎 Selecionar imagem</button>
+  <button class="state-btn" onclick="simulateSend()">⬆ Enviar extrato</button>
+  <button class="state-btn" onclick="showState('success')">✅ Sucesso</button>
+  <button class="state-btn" onclick="showState('duplicate')">⚠️ Duplicata</button>
+  <button class="state-btn" onclick="showState('error')">❌ Erro</button>
+  <button class="state-btn" onclick="resetState()">↺ Resetar</button>
+</div>
+
+<script>
+  let hasFile = false
+  let isSending = false
+  let currentState = null // null | 'success' | 'duplicate' | 'error'
+
+  function selectBank(id) {
+    document.getElementById('bank-mp').classList.remove('active')
+    if (id === 'mercadopago') document.getElementById('bank-mp').classList.add('active')
+  }
+
+  function simulatePickImage() {
+    if (isSending || currentState === 'success') return
+    hasFile = true
+    const area = document.getElementById('upload-area')
+    area.classList.add('has-file')
+    document.getElementById('upload-icon-wrap').style.background = '#15151A'
+    document.getElementById('upload-svg-path').setAttribute('stroke', '#FBFAF6')
+    document.getElementById('upload-svg-line').setAttribute('stroke', '#FBFAF6')
+    document.getElementById('upload-title').textContent = 'extrato-junho-2026.jpg'
+    document.getElementById('upload-sub').textContent = 'Toque para trocar'
+    document.getElementById('file-badge').classList.add('visible')
+    document.getElementById('btn-send').disabled = false
+    clearFeedback()
+    currentState = null
+  }
+
+  function removeFile(e) {
+    e.stopPropagation()
+    resetState()
+  }
+
+  function simulateSend() {
+    if (!hasFile || isSending) return
+    isSending = true
+    const btn = document.getElementById('btn-send')
+    btn.classList.add('loading')
+    btn.disabled = true
+    document.getElementById('btn-label').textContent = 'Enviando...'
+    clearFeedback()
+
+    setTimeout(() => {
+      isSending = false
+      btn.classList.remove('loading')
+      // Alterna entre sucesso e duplicata para demonstração
+      if (!currentState) showState('success')
+    }, 1800)
+  }
+
+  function showState(state) {
+    clearFeedback()
+    isSending = false
+    currentState = state
+    const btn = document.getElementById('btn-send')
+    btn.classList.remove('loading')
+
+    if (state === 'success') {
+      document.getElementById('feedback-success').classList.add('visible')
+      btn.disabled = true
+      document.getElementById('btn-label').textContent = 'Extrato enviado!'
+      document.getElementById('btn-back').classList.add('visible')
+    } else if (state === 'duplicate') {
+      document.getElementById('feedback-duplicate').classList.add('visible')
+      btn.disabled = false
+      document.getElementById('btn-label').textContent = 'Enviar extrato'
+    } else if (state === 'error') {
+      document.getElementById('feedback-error').classList.add('visible')
+      btn.disabled = false
+      document.getElementById('btn-label').textContent = 'Tentar novamente'
+    }
+  }
+
+  function clearFeedback() {
+    document.getElementById('feedback-success').classList.remove('visible')
+    document.getElementById('feedback-duplicate').classList.remove('visible')
+    document.getElementById('feedback-error').classList.remove('visible')
+    document.getElementById('btn-back').classList.remove('visible')
+  }
+
+  function resetState() {
+    hasFile = false
+    isSending = false
+    currentState = null
+    const area = document.getElementById('upload-area')
+    area.classList.remove('has-file')
+    document.getElementById('upload-icon-wrap').style.background = ''
+    document.getElementById('upload-svg-path').setAttribute('stroke', '#8B8B92')
+    document.getElementById('upload-svg-line').setAttribute('stroke', '#8B8B92')
+    document.getElementById('upload-title').textContent = 'Selecionar imagem'
+    document.getElementById('upload-sub').textContent = 'Toque para abrir a galeria'
+    document.getElementById('file-badge').classList.remove('visible')
+    document.getElementById('btn-send').disabled = true
+    document.getElementById('btn-label').textContent = 'Enviar extrato'
+    clearFeedback()
+  }
+</script>
+</body>
+</html>

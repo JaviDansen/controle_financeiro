@@ -8,17 +8,27 @@
     "ios": {
       "supportsTablet": false
     },
-    "android": {},
+    "android": {
+      "package": "com.finapp.controlefinanceiro"
+    },
     "plugins": [
+      "expo-dev-client",
       "expo-router",
       "expo-asset",
-      "expo-font"
+      "expo-font",
+      "@react-native-google-signin/google-signin"
     ],
     "newArchEnabled": true,
     "scheme": "finapp",
     "web": {
       "output": "static",
       "bundler": "metro"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "202d559c-72ec-46be-b7f6-3e1a68a722cd"
+      }
     }
   }
 }

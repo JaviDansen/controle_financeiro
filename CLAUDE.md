@@ -79,7 +79,7 @@ npm run mobile
 
 # Banco de dados
 npm run db:generate   # Gera migration após alterar schema
-npm run db:migrations # Aplica migrations na VPS
+npm run migrations    # Aplica migrations na VPS
 npm run db:studio     # Abre Drizzle Studio local
 ```
 
@@ -112,6 +112,11 @@ API_URL=http://localhost:3000
 - **Estado global via Zustand** — apenas para dados persistidos (usuário autenticado, preferências)
 - **Formulários validados com Zod** antes de enviar à API
 - Nomenclatura de arquivos: `kebab-case` para rotas, `PascalCase` para componentes
+- **Toda nova tela deve usar `ScreenContainer`** em vez de `SafeAreaView + ScrollView` — o pull to refresh global já vem embutido
+- **Exceção: telas com `FlatList`** não podem usar `ScreenContainer` (scroll dentro de scroll é proibido no React Native) — nesse caso importar `useRefreshAll` diretamente e passar o `RefreshControl` na própria `FlatList`
+- **Toda nova queryKey deve ser registrada em `src/lib/queryKeys.ts`** — é a fonte de verdade do refresh global; sem registro, o pull to refresh não invalida aquele dado
+- **Telas devem ter no máximo ~100 linhas** — apenas hooks, navegação e estrutura de seções. Toda lógica visual vai para componentes em `src/components/<tela>/`, toda transformação de dado vai para o hook correspondente. Referência: `(tabs)/index.tsx` foi reduzida de 302 para 86 linhas aplicando esse padrão
+- **Componentes de tela seguem separação por responsabilidade:** header → `<TelaHeader>`, lista com skeleton → `<TelaList>`, item da lista → `<TelaRow>`, card/carrossel → `<TelaCard>`. Cada um recebe apenas os dados que precisa via props, sem acessar hooks diretamente
 
 ### Banco de Dados (packages/db)
 
@@ -251,6 +256,69 @@ Pasta local (ignorada pelo Git) com artefatos auxiliares do projeto:
 
 Após qualquer implementação relevante, rodar `/atualizar-tasks` para manter o histórico atualizado.
 
+## Regra de Testes — TDD — OBRIGATÓRIO
+
+O projeto segue **Test-Driven Development (TDD)**. A ordem correta é sempre:
+
+1. **Escrever o teste primeiro** — define o contrato esperado
+2. **Rodar o teste** — ele deve falhar (red)
+3. **Implementar o código mínimo** para o teste passar (green)
+4. **Refatorar** se necessário, mantendo os testes passando
+
+### Regra absoluta — NUNCA viole isso:
+
+> **Jamais altere um teste para fazer o código passar.**
+> **O código é que deve ser modificado. O teste é a especificação.**
+
+Se um teste estiver falhando, o problema está no código de produção, não no teste. A única exceção é quando o requisito de negócio mudou explicitamente — nesse caso, o teste deve ser reescrito **antes** de alterar o código, não depois.
+
+Isso vale para todos os testes: unitários, de integração, e2e.
+
+### Setup do ambiente de testes (apps/api)
+
+| Pacote | Versão | Função |
+|---|---|---|
+| `jest` | ^30 | Runner de testes |
+| `ts-jest` | ^29 | Transpilação TypeScript para Jest |
+| `supertest` | ^7 | Testes HTTP de integração |
+| `@types/jest` | ^30 | Tipos TypeScript do Jest |
+| `@types/supertest` | ^7 | Tipos TypeScript do Supertest |
+
+**Comandos:**
+```bash
+cd apps/api
+npm test          # Roda todos os testes
+npm run test:watch  # Modo watch
+```
+
+**Arquivos de configuração:**
+- `apps/api/jest.config.ts` — configuração do Jest (preset ts-jest, testMatch, globalSetup)
+- `apps/api/tests/helpers/global-setup.ts` — carrega `.env` e aponta `DATABASE_URL` para o banco de teste
+- `apps/api/tests/helpers/global-teardown.ts` — encerra conexões após todos os testes
+- `apps/api/tests/helpers/db.ts` — exporta `testDb` (instância Drizzle no banco de teste) e `clearTables()`
+- `apps/api/tests/helpers/app.ts` — exporta `api()` com supertest apontando para a instância Express
+
+**Convenção de nomenclatura dos testes:**
+`tests/<módulo>_<tipo>_test.ts` — exemplos: `auth_integration_test.ts`, `transactions_unit_test.ts`
+
+**Variável de ambiente obrigatória para testes com banco:**
+```
+DATABASE_URL_TEST=postgres://usuario:senha@host:porta/finapp-test?sslmode=disable
+```
+
+**Como usar os helpers em um teste:**
+```typescript
+import { api } from './helpers/app'
+import { clearTables } from './helpers/db'
+
+beforeEach(async () => { await clearTables() })
+
+it('GET /health retorna ok', async () => {
+  const res = await api().get('/health')
+  expect(res.status).toBe(200)
+})
+```
+
 ## O Que NÃO Fazer
 
 - Não usar Neon — banco é PostgreSQL na VPS própria
@@ -260,3 +328,4 @@ Após qualquer implementação relevante, rodar `/atualizar-tasks` para manter o
 - Não fazer queries SQL diretamente — sempre Drizzle ORM
 - Não retornar `passwordHash` em nenhum endpoint
 - Não criar arquivos de documentação `.md` sem pedido explícito
+- **Não alterar testes para o código passar** — sempre o contrário

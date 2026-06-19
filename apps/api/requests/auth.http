@@ -1,0 +1,153 @@
+@base = http://localhost:3000
+
+# ─────────────────────────────────────────────────────
+# POST /auth/register
+# ─────────────────────────────────────────────────────
+
+### ✅ Registro válido — espera: 201 { data: { id, name, email, createdAt } }
+POST {{base}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "João Teste",
+  "email": "joao@teste.com",
+  "password": "senha123"
+}
+
+### 🚫 Email duplicado — espera: 409 { error: "Email já cadastrado" }
+POST {{base}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "João Teste",
+  "email": "joao@teste.com",
+  "password": "senha123"
+}
+
+### ⚠️ Sem name — espera: 400 { error }
+POST {{base}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "joao@teste.com",
+  "password": "senha123"
+}
+
+### ⚠️ Sem email — espera: 400 { error }
+POST {{base}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "João Teste",
+  "password": "senha123"
+}
+
+### ⚠️ Sem password — espera: 400 { error }
+POST {{base}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "João Teste",
+  "email": "joao@teste.com"
+}
+
+### 📧 Email inválido — espera: 400 { error }
+POST {{base}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "João Teste",
+  "email": "nao-é-um-email",
+  "password": "senha123"
+}
+
+### 🔑 Senha com menos de 6 caracteres — espera: 400 { error }
+POST {{base}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "João Teste",
+  "email": "joao@teste.com",
+  "password": "123"
+}
+
+# ─────────────────────────────────────────────────────
+# POST /auth/login
+# ─────────────────────────────────────────────────────
+
+### ✅ Login válido — espera: 200 { data: { token, user: { id, name, email } } }
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "joao@teste.com",
+  "password": "senha123"
+}
+
+### ❌ Senha incorreta — espera: 401 { error }
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "joao@teste.com",
+  "password": "senha-errada"
+}
+
+### ❌ Email não cadastrado — espera: 401 { error }
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "nao-existe@teste.com",
+  "password": "qualquer"
+}
+
+### ⚠️ Sem email — espera: 400 { error }
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "password": "senha123"
+}
+
+### ⚠️ Sem password — espera: 400 { error }
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "joao@teste.com"
+}
+
+# ─────────────────────────────────────────────────────
+# POST /auth/forgot-password
+# ─────────────────────────────────────────────────────
+
+### ✅ Email cadastrado — espera: 200 { data: { message } }
+POST {{base}}/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "joao@teste.com"
+}
+
+### ✅ Email NÃO cadastrado — espera: 200 mesma resposta (não revela existência)
+POST {{base}}/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "nao-existe@teste.com"
+}
+
+### ⚠️ Sem email — espera: 400 { error }
+POST {{base}}/auth/forgot-password
+Content-Type: application/json
+
+{}
+
+### 📧 Email inválido — espera: 400 { error }
+POST {{base}}/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "nao-é-email"
+}

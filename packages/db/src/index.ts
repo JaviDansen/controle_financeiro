@@ -8,5 +8,9 @@ const pool = new Pool({ connectionString: buildConnectionString() })
 
 export const db = drizzle(pool, { schema })
 
+export async function closeDb(): Promise<void> {
+  await pool.end()
+}
+
 export * from '../schema'
 export { buildConnectionString, getConnectionLabel } from './connection'

@@ -77,9 +77,16 @@ Verificação de conexão ao banco no startup        Concluído
 Integração Google Docs/Drive        Concluído
 Ambiente de agentes Claude Code        Concluído
 Mobile — Hello World (tela inicial)        Concluído
-Autenticação (rotas e telas)        Planejado
+Ambiente de testes da API (Jest + Supertest)        Concluído
+POST /auth/register        Concluído
+Testes TDD mobile (infraestrutura + 33 testes red)        Concluído
+Schema de cartões expandido — Migration 0003        Concluído
+Testes TDD da API para /cards (15 cenários)        Concluído
+Mobile — service, hook e tela de cartões conectada        Concluído
+POST /auth/login e demais rotas de auth        Planejado
+Telas mobile de autenticação        Planejado
 Módulo de Transações        Planejado
-Módulo de Cartões        Planejado
+Módulo de Cartões — implementação da API        Em andamento (testes prontos, controller pendente)
 Módulo de Metas        Planejado
 Dashboard Home        Planejado
 
@@ -313,12 +320,18 @@ Cadastro e acompanhamento de cartões de crédito e débito para categorização
 Campos de um cartão
 Campo        Tipo        Observação
 name        string        Nome do cartão (ex: Nubank)
+bank        string        Nome do banco emissor
 type        enum        'credit' ou 'debit'
 last_four        string(4)        Últimos 4 dígitos
+holder        string        Nome do titular impresso no cartão
+expiry        string        Validade no formato MM/YY
 credit_limit        decimal        Limite (apenas cartões de crédito)
 closing_day        int        Dia de fechamento da fatura
 due_day        int        Dia de vencimento da fatura
-color        string        Cor de identificação visual (hex)
+gradient_from        string        Cor primária do gradiente (hex) — coluna 'color' no banco
+gradient_to        string        Cor secundária do gradiente (hex)
+accent        string        Cor de destaque do cartão (hex)
+best_purchase_day        int        Virtual — calculado pelo backend, não persiste no banco
 
 
 
@@ -558,6 +571,7 @@ PORT        Não        Porta da API (padrão: 3000)
 API_URL        Não        URL base da API usada pelo mobile
 TRELLO_API_KEY        Não        API key do Trello (MCP)
 TRELLO_TOKEN        Não        Token de acesso do Trello (MCP)
+DATABASE_URL_TEST        Não        Connection string do banco isolado para testes (finapp-test)
 GOOGLE_SERVICE_ACCOUNT_KEY        Não        JSON da service account do Google Cloud (minificado, uma linha)
 
 
@@ -762,6 +776,74 @@ npm run migrations
 npm run db:studio
 
 
+# Rodar testes da API
+cd apps/api && npm test
+
+
+# Rodar testes em modo watch
+cd apps/api && npm run test:watch
+
+
+________________
+
+
+
+
+10.5 Sistema de Testes da API
+10.5.1 Visão Geral
+O ambiente de testes está configurado em apps/api e utiliza Jest + ts-jest + Supertest. Segue o padrão TDD: testes escritos antes da implementação.
+
+
+Pacotes instalados (devDependencies em apps/api):
+
+
+Pacote        Versão        Função
+jest        ^30        Runner de testes
+ts-jest        ^29        Transpilação TypeScript para Jest
+supertest        ^7        Testes HTTP de integração
+@types/jest        ^30        Tipos TypeScript do Jest
+@types/supertest        ^7        Tipos TypeScript do Supertest
+
+
+10.5.2 Estrutura de Arquivos
+
+
+apps/api/
+├── jest.config.ts                  — configuração do Jest (ts-jest, testMatch, globalSetup)
+├── tests/
+│   ├── helpers/
+│   │   ├── global-setup.ts        — carrega .env, aponta DATABASE_URL para banco de teste
+│   │   ├── global-teardown.ts     — encerra conexões após todos os testes
+│   │   ├── db.ts                  — instância testDb + helper clearTables()
+│   │   └── app.ts                 — helper api() com supertest para integração
+│   └── <módulo>_<tipo>_test.ts    — ex: auth_integration_test.ts
+
+
+10.5.3 Convenção de Nomenclatura
+Todos os arquivos de teste ficam em apps/api/tests/ com o padrão:
+<módulo>_<tipo>_test.ts
+Exemplos: auth_integration_test.ts, transactions_unit_test.ts, goals_integration_test.ts
+
+
+10.5.4 Banco de Dados de Teste
+Os testes de integração exigem um banco PostgreSQL separado apontado por DATABASE_URL_TEST no .env.
+O banco de teste (finapp-test) deve ser criado manualmente na mesma VPS:
+CREATE DATABASE "finapp-test";
+O helper clearTables() trunca todas as tabelas entre testes para garantir isolamento.
+
+
+10.5.5 Como Usar os Helpers em um Teste
+import { api } from './helpers/app'
+import { clearTables } from './helpers/db'
+
+beforeEach(async () => { await clearTables() })
+
+it('GET /health retorna ok', async () => {
+  const res = await api().get('/health')
+  expect(res.status).toBe(200)
+})
+
+
 
 
 10.5 Configuração da Railway (Passo a Passo)
@@ -783,4 +865,4 @@ ________________
 
 
 
-FinApp — Documentação Técnica v1.1  ·  Atualizado em 13 mai 2026
+FinApp — Documentação Técnica v1.3  ·  Atualizado em 19 mai 2026

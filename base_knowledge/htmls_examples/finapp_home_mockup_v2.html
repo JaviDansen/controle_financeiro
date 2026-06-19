@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg-primary, #0f1117);
+    color: var(--text-primary, #e8eaf0);
+    padding: 32px;
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    justify-content: center;
+    flex-wrap: wrap;
+    min-height: 100vh;
+  }
+
+  /* Phone */
+  .phone-outer {
+    position: relative;
+  }
+  .phone {
+    width: 260px;
+    height: 560px;
+    background: #0d0f16;
+    border-radius: 36px;
+    border: 2.5px solid #2a2d3a;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+  }
+  .notch {
+    width: 90px; height: 24px;
+    background: #0d0f16;
+    border-radius: 0 0 16px 16px;
+    margin: 0 auto;
+    position: relative; z-index: 10;
+    border-bottom: 2px solid #2a2d3a;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .notch-cam { width: 8px; height: 8px; border-radius: 50%; background: #1e2130; }
+  .scroll-content {
+    height: calc(100% - 24px);
+    overflow-y: auto;
+    padding: 12px 14px 80px;
+    scrollbar-width: none;
+  }
+  .scroll-content::-webkit-scrollbar { display: none; }
+
+  /* Status bar */
+  .status-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 4px 4px; margin-bottom: 4px;
+  }
+  .status-time { font-size: 11px; font-weight: 700; color: #e8eaf0; }
+  .status-icons { font-size: 9px; color: #aaa; display: flex; gap: 4px; align-items: center; }
+
+  /* Header */
+  .header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 14px;
+  }
+  .greet-line { font-size: 10px; color: #777; }
+  .user-name { font-size: 15px; font-weight: 700; color: #e8eaf0; letter-spacing: -0.3px; }
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #fff;
+  }
+
+  /* Saldo Card */
+  .saldo-card {
+    background: linear-gradient(135deg, #1d2a4a 0%, #162040 100%);
+    border: 1px solid rgba(37,99,235,0.3);
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .saldo-card::before {
+    content: '';
+    position: absolute; top: -30px; right: -30px;
+    width: 100px; height: 100px;
+    background: rgba(37,99,235,0.08);
+    border-radius: 50%;
+  }
+  .saldo-label {
+    font-size: 9px; color: #6b8ab8; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.8px;
+    margin-bottom: 4px;
+  }
+  .saldo-value {
+    font-size: 24px; font-weight: 800; color: #e8eaf0;
+    letter-spacing: -1px; margin-bottom: 12px;
+  }
+  .saldo-value.negative { color: #f87171; }
+  .saldo-row { display: flex; gap: 8px; }
+  .saldo-mini {
+    flex: 1;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px; padding: 8px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .saldo-mini-top {
+    display: flex; align-items: center; gap: 4px;
+    margin-bottom: 3px;
+  }
+  .saldo-mini-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .dot-green { background: #22c55e; }
+  .dot-red { background: #ef4444; }
+  .saldo-mini-label { font-size: 8px; color: #888; }
+  .saldo-mini-val { font-size: 11px; font-weight: 700; }
+  .val-green { color: #4ade80; }
+  .val-red { color: #f87171; }
+
+  /* Section header */
+  .sec-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 8px;
+  }
+  .sec-title { font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.6px; }
+  .sec-link { font-size: 9px; color: #2563eb; }
+
+  /* Transações */
+  .tx-list { margin-bottom: 16px; }
+  .tx-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .tx-item:last-child { border-bottom: none; }
+  .tx-icon {
+    width: 30px; height: 30px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .tx-info { flex: 1; min-width: 0; }
+  .tx-title { font-size: 11px; font-weight: 600; color: #e0e2ea; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tx-sub { font-size: 9px; color: #666; margin-top: 1px; }
+  .tx-right { text-align: right; flex-shrink: 0; }
+  .tx-val { font-size: 11px; font-weight: 700; }
+  .tx-date { font-size: 8px; color: #555; margin-top: 1px; }
+
+  /* Cards section */
+  .cards-section { margin-bottom: 16px; }
+  .card-item {
+    background: #141720;
+    border: 1px solid #1e2333;
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .card-item:last-child { margin-bottom: 0; }
+  .card-top {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+  }
+  .card-chip {
+    width: 28px; height: 20px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .card-name { font-size: 11px; font-weight: 700; color: #e0e2ea; }
+  .card-type { font-size: 8px; color: #555; margin-top: 1px; }
+  .card-badge {
+    margin-left: auto;
+    font-size: 8px; font-weight: 600; padding: 2px 6px;
+    border-radius: 99px;
+  }
+  .badge-credit { background: rgba(37,99,235,0.15); color: #60a5fa; }
+  .card-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+  .card-stat { background: #0d0f16; border-radius: 7px; padding: 5px 7px; }
+  .card-stat-label { font-size: 7px; color: #555; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .card-stat-val { font-size: 10px; font-weight: 700; color: #c8cad4; }
+  .card-stat-val.highlight { color: #fb923c; }
+  .card-stat-val.green { color: #4ade80; }
+
+  /* FAB */
+  .fab {
+    position: absolute; bottom: 16px; right: 16px;
+    width: 40px; height: 40px;
+    background: #2563eb;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 300; color: #fff;
+    box-shadow: 0 4px 16px rgba(37,99,235,0.5);
+  }
+
+  /* Bottom nav */
+  .bottom-nav {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 56px;
+    background: rgba(13,15,22,0.95);
+    border-top: 1px solid #1e2130;
+    display: flex; align-items: center; justify-content: space-around;
+    padding: 0 8px;
+    backdrop-filter: blur(10px);
+  }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1; }
+  .nav-icon { font-size: 16px; }
+  .nav-label { font-size: 8px; color: #555; }
+  .nav-item.active .nav-label { color: #2563eb; }
+  .nav-item.active .nav-icon { filter: none; }
+
+  /* Annotation panel */
+  .annotations {
+    max-width: 340px;
+    display: flex; flex-direction: column; gap: 12px;
+    padding-top: 8px;
+  }
+  .ann-block {
+    background: #141720;
+    border: 1px solid #1e2333;
+    border-radius: 12px;
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .ann-block::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px; border-radius: 3px 0 0 3px;
+  }
+  .ann-blue::before { background: #2563eb; }
+  .ann-green::before { background: #22c55e; }
+  .ann-orange::before { background: #f97316; }
+  .ann-title {
+    font-size: 12px; font-weight: 700; color: #e0e2ea;
+    margin-bottom: 4px; display: flex; align-items: center; gap: 6px;
+  }
+  .ann-emoji { font-size: 14px; }
+  .ann-desc { font-size: 11px; color: #777; line-height: 1.5; }
+  .ann-desc strong { color: #aaa; font-weight: 600; }
+  .ann-tag {
+    display: inline-block; margin-top: 8px;
+    font-size: 9px; font-weight: 600; padding: 2px 8px;
+    border-radius: 99px;
+  }
+  .tag-blue { background: rgba(37,99,235,0.12); color: #60a5fa; }
+  .tag-green { background: rgba(34,197,94,0.1); color: #4ade80; }
+  .tag-orange { background: rgba(249,115,22,0.1); color: #fb923c; }
+  .tag-mono { font-family: monospace; font-size: 9px; }
+</style>
+</head>
+<body>
+
+<h2 class="sr-only">Mockup da tela Home do FinApp com saldo, transações e parcelamentos</h2>
+
+<!-- PHONE -->
+<div class="phone-outer">
+  <div class="phone">
+    <div class="notch"><div class="notch-cam"></div></div>
+    <div class="scroll-content">
+
+      <!-- Status -->
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
+      </div>
+
+      <!-- Header -->
+      <div class="header">
+        <div>
+          <div class="greet-line">Bom dia 👋</div>
+          <div class="user-name">Walber</div>
+        </div>
+        <div class="avatar">W</div>
+      </div>
+
+      <!-- SALDO DO MÊS -->
+      <div class="saldo-card">
+        <div class="saldo-label">Saldo do mês · Mai 2026</div>
+        <div class="saldo-value">R$ 3.240,00</div>
+        <div class="saldo-row">
+          <div class="saldo-mini">
+            <div class="saldo-mini-top">
+              <div class="saldo-mini-dot dot-green"></div>
+              <div class="saldo-mini-label">Receitas</div>
+            </div>
+            <div class="saldo-mini-val val-green">R$ 8.500</div>
+          </div>
+          <div class="saldo-mini">
+            <div class="saldo-mini-top">
+              <div class="saldo-mini-dot dot-red"></div>
+              <div class="saldo-mini-label">Despesas</div>
+            </div>
+            <div class="saldo-mini-val val-red">R$ 5.260</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ÚLTIMAS TRANSAÇÕES -->
+      <div class="sec-header">
+        <div class="sec-title">Últimas transações</div>
+        <div class="sec-link">Ver todas</div>
+      </div>
+      <div class="tx-list">
+        <div class="tx-item">
+          <div class="tx-icon" style="background:#1a2e1a;">🛒</div>
+          <div class="tx-info">
+            <div class="tx-title">Supermercado Extra</div>
+            <div class="tx-sub">Alimentação</div>
+          </div>
+          <div class="tx-right">
+            <div class="tx-val val-red">−R$ 320,00</div>
+            <div class="tx-date">13 mai</div>
+          </div>
+        </div>
+        <div class="tx-item">
+          <div class="tx-icon" style="background:#1a2d1a;">💼</div>
+          <div class="tx-info">
+            <div class="tx-title">Salário</div>
+            <div class="tx-sub">Receita</div>
+          </div>
+          <div class="tx-right">
+            <div class="tx-val val-green">+R$ 5.000</div>
+            <div class="tx-date">10 mai</div>
+          </div>
+        </div>
+        <div class="tx-item">
+          <div class="tx-icon" style="background:#1e1a2e;">⛽</div>
+          <div class="tx-info">
+            <div class="tx-title">Posto Ipiranga</div>
+            <div class="tx-sub">Transporte</div>
+          </div>
+          <div class="tx-right">
+            <div class="tx-val val-red">−R$ 180,00</div>
+            <div class="tx-date">09 mai</div>
+          </div>
+        </div>
+        <div class="tx-item">
+          <div class="tx-icon" style="background:#1a1e2e;">💊</div>
+          <div class="tx-info">
+            <div class="tx-title">Farmácia</div>
+            <div class="tx-sub">Saúde</div>
+          </div>
+          <div class="tx-right">
+            <div class="tx-val val-red">−R$ 94,50</div>
+            <div class="tx-date">08 mai</div>
+          </div>
+        </div>
+        <div class="tx-item">
+          <div class="tx-icon" style="background:#1a2a1a;">🏠</div>
+          <div class="tx-info">
+            <div class="tx-title">Aluguel freelance</div>
+            <div class="tx-sub">Receita</div>
+          </div>
+          <div class="tx-right">
+            <div class="tx-val val-green">+R$ 1.800</div>
+            <div class="tx-date">05 mai</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PARCELAMENTOS -->
+      <div class="sec-header">
+        <div class="sec-title">Parcelamentos</div>
+        <div class="sec-link">Detalhes</div>
+      </div>
+      <div class="cards-section">
+
+        <div class="card-item">
+          <div class="card-top">
+            <div class="card-chip" style="background:#8b5cf6;">N</div>
+            <div>
+              <div class="card-name">Nubank</div>
+              <div class="card-type">Crédito · ****4521</div>
+            </div>
+            <span class="card-badge badge-credit">Crédito</span>
+          </div>
+          <div class="card-stats">
+            <div class="card-stat">
+              <div class="card-stat-label">Fatura mai</div>
+              <div class="card-stat-val highlight">R$1.240</div>
+            </div>
+            <div class="card-stat">
+              <div class="card-stat-label">Parcelas</div>
+              <div class="card-stat-val">4 abertas</div>
+            </div>
+            <div class="card-stat">
+              <div class="card-stat-label">Melhor dia</div>
+              <div class="card-stat-val green">Dia 19</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-item">
+          <div class="card-top">
+            <div class="card-chip" style="background:#16a34a;">I</div>
+            <div>
+              <div class="card-name">Inter</div>
+              <div class="card-type">Crédito · ****8812</div>
+            </div>
+            <span class="card-badge badge-credit">Crédito</span>
+          </div>
+          <div class="card-stats">
+            <div class="card-stat">
+              <div class="card-stat-label">Fatura mai</div>
+              <div class="card-stat-val highlight">R$890</div>
+            </div>
+            <div class="card-stat">
+              <div class="card-stat-label">Parcelas</div>
+              <div class="card-stat-val">2 abertas</div>
+            </div>
+            <div class="card-stat">
+              <div class="card-stat-label">Melhor dia</div>
+              <div class="card-stat-val green">Dia 06</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- FAB -->
+    <div class="fab">+</div>
+
+    <!-- Bottom Nav -->
+    <div class="bottom-nav">
+      <div class="nav-item active">
+        <div class="nav-icon">🏠</div>
+        <div class="nav-label" style="color:#2563eb;">Home</div>
+      </div>
+      <div class="nav-item">
+        <div class="nav-icon">↕️</div>
+        <div class="nav-label">Transações</div>
+      </div>
+      <div class="nav-item">
+        <div class="nav-icon">💳</div>
+        <div class="nav-label">Cartões</div>
+      </div>
+      <div class="nav-item">
+        <div class="nav-icon">🎯</div>
+        <div class="nav-label">Metas</div>
+      </div>
+      <div class="nav-item">
+        <div class="nav-icon">👤</div>
+        <div class="nav-label">Perfil</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ANNOTATIONS -->
+<div class="annotations">
+  <div style="font-size:13px;font-weight:700;color:#e8eaf0;margin-bottom:4px;">Componentes da Home</div>
+  <div style="font-size:11px;color:#666;margin-bottom:8px;">Detalhes de cada seção</div>
+
+  <div class="ann-block ann-blue">
+    <div class="ann-title"><span class="ann-emoji">💰</span>Saldo do Mês</div>
+    <div class="ann-desc">
+      Calculado em tempo real: <strong>receitas − despesas</strong> do mês corrente.
+      Verde quando positivo, vermelho quando negativo.
+    </div>
+    <span class="ann-tag tag-blue tag-mono">GET /dashboard/summary · 5min</span>
+  </div>
+
+  <div class="ann-block ann-green">
+    <div class="ann-title"><span class="ann-emoji">📋</span>Últimas Transações</div>
+    <div class="ann-desc">
+      Lista unificada de <strong>receitas e despesas</strong>, ordenada por data.
+      Valores em verde (receita) e vermelho (despesa). Máximo 5 itens.
+    </div>
+    <span class="ann-tag tag-green tag-mono">GET /transactions?limit=5 · 2min</span>
+  </div>
+
+  <div class="ann-block ann-orange">
+    <div class="ann-title"><span class="ann-emoji">💳</span>Parcelamentos dos Cartões</div>
+    <div class="ann-desc">
+      Por cartão de crédito: <strong>fatura do mês atual</strong>, quantidade de parcelas abertas e
+      o <strong>melhor dia de compra</strong> calculado automaticamente pelo backend.
+      Apenas cartões do tipo <strong>credit</strong> aparecem aqui.
+    </div>
+    <span class="ann-tag tag-orange tag-mono">GET /dashboard/cards-summary · 5min</span>
+  </div>
+</div>
+
+</body>
+</html>

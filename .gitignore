@@ -54,3 +54,18 @@ base_knowledge/*
 !base_knowledge/tasks/**
 !base_knowledge/technical/
 !base_knowledge/technical/**
+!base_knowledge/html_tabs_example/
+!base_knowledge/html_tabs_example/**
+!base_knowledge/htmls_examples/
+!base_knowledge/styles_examples/
+!base_knowledge/feature/
+!base_knowledge/feature/**
+
+.gpt
+
+# Credenciais e segredos
+secrets/
+
+base_knowledge/html_tabs_example/streamings-489921-7ea5d1613ae3.json
+
+apps/mobile/android
