@@ -115,6 +115,8 @@ API_URL=http://localhost:3000
 - **Toda nova tela deve usar `ScreenContainer`** em vez de `SafeAreaView + ScrollView` — o pull to refresh global já vem embutido
 - **Exceção: telas com `FlatList`** não podem usar `ScreenContainer` (scroll dentro de scroll é proibido no React Native) — nesse caso importar `useRefreshAll` diretamente e passar o `RefreshControl` na própria `FlatList`
 - **Toda nova queryKey deve ser registrada em `src/lib/queryKeys.ts`** — é a fonte de verdade do refresh global; sem registro, o pull to refresh não invalida aquele dado
+- **Telas devem ter no máximo ~100 linhas** — apenas hooks, navegação e estrutura de seções. Toda lógica visual vai para componentes em `src/components/<tela>/`, toda transformação de dado vai para o hook correspondente. Referência: `(tabs)/index.tsx` foi reduzida de 302 para 86 linhas aplicando esse padrão
+- **Componentes de tela seguem separação por responsabilidade:** header → `<TelaHeader>`, lista com skeleton → `<TelaList>`, item da lista → `<TelaRow>`, card/carrossel → `<TelaCard>`. Cada um recebe apenas os dados que precisa via props, sem acessar hooks diretamente
 
 ### Banco de Dados (packages/db)
 
