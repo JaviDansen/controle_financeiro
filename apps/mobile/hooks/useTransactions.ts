@@ -33,6 +33,7 @@ export function useDeleteTransaction(month: string) {
     mutationFn: (txId: string) => deleteTransaction(txId, token!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions', month] })
+      queryClient.invalidateQueries({ queryKey: ['cards'] })
     },
   })
 }
@@ -46,6 +47,7 @@ export function useUpdateTransaction(month: string) {
       updateTransaction(id, payload, token!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions', month] })
+      queryClient.invalidateQueries({ queryKey: ['cards'] })
     },
   })
 }
