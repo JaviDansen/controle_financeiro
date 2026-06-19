@@ -312,6 +312,26 @@ export const deleteCard: RequestHandler = async (req, res) => {
     return
   }
 
+  const linkedTransactions = await db
+    .select({
+      id: transactions.id,
+      title: transactions.title,
+      amount: transactions.amount,
+      type: transactions.type,
+      date: transactions.date,
+    })
+    .from(transactions)
+    .where(and(eq(transactions.cardId, cardId), eq(transactions.userId, userId)))
+
+  if (linkedTransactions.length > 0) {
+    logRequestEvent(req, 'cards.delete.blocked', { userId, cardId, transactionCount: linkedTransactions.length })
+    res.status(409).json({
+      error: 'Cartao possui transacoes vinculadas',
+      transactions: linkedTransactions,
+    })
+    return
+  }
+
   await db.delete(cards).where(and(eq(cards.id, cardId), eq(cards.userId, userId)))
 
   logRequestEvent(req, 'cards.delete.success', { userId, cardId })
