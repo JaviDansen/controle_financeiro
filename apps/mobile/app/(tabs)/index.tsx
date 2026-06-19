@@ -233,7 +233,7 @@ export default function HomeScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 4 }}>
                 <Text style={{ fontSize: 18, color: 'rgba(251,250,246,0.6)' }}>R$</Text>
                 <Text style={{ fontSize: 40, fontWeight: '500', color: '#FBFAF6', letterSpacing: -1.6, lineHeight: 48 }}>
-                  {showBalance ? fmtBRLShort(balance) : '•••••'}
+                  {showBalance ? `${balance < 0 ? '−' : ''}${fmtBRLShort(balance)}` : '•••••'}
                 </Text>
               </View>
             )}
