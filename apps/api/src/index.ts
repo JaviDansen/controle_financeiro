@@ -35,17 +35,25 @@ app.get('/hello', (_req, res) => {
 
 app.use(requestErrorHandler)
 
+function log(level: 'INF' | 'ERR', message: string, fields?: Record<string, unknown>): void {
+  const time = new Date().toTimeString().slice(0, 8)
+  const suffix = fields
+    ? ' ' + Object.entries(fields).map(([k, v]) => `${k}=${v}`).join(' ')
+    : ''
+  const line = `${time} [${level}] ${message}${suffix}`
+  level === 'ERR' ? console.error(line) : console.log(line)
+}
+
 async function checkDatabase(): Promise<void> {
   const pool = new Pool({ connectionString: buildConnectionString() })
   try {
     const client = await pool.connect()
     await client.query('SELECT 1')
     client.release()
-    console.log('✔ Banco de dados conectado:', getConnectionLabel())
+    log('INF', 'banco conectado', { host: getConnectionLabel() })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    console.error('✘ Falha ao conectar no banco de dados:', message)
-    console.error('  Host:', getConnectionLabel())
+    log('ERR', 'banco falhou', { host: getConnectionLabel(), error: message })
   } finally {
     await pool.end()
   }
@@ -53,7 +61,7 @@ async function checkDatabase(): Promise<void> {
 
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`API rodando na porta ${PORT}`)
+    log('INF', 'servidor iniciado', { port: PORT })
     checkDatabase()
   })
 }

@@ -22,8 +22,8 @@ const REDACTED_KEYS = new Set([
   'newpassword',
 ])
 
-function nowIso(): string {
-  return new Date().toISOString()
+function nowTime(): string {
+  return new Date().toTimeString().slice(0, 8)
 }
 
 function createRequestId(): string {
@@ -83,15 +83,33 @@ function sourceFromPath(method: string, path: string): string {
   return `${resource}.${action}`
 }
 
+const SLOW_REQUEST_MS = 2000
+
 function statusOutcome(statusCode: number): 'success' | 'client_error' | 'server_error' {
   if (statusCode >= 500) return 'server_error'
   if (statusCode >= 400) return 'client_error'
   return 'success'
 }
 
+const LEVEL_ABBR: Record<'INFO' | 'WARN' | 'ERROR', string> = {
+  INFO: 'INF',
+  WARN: 'WRN',
+  ERROR: 'ERR',
+}
+
+function toLogfmt(details: LogDetails): string {
+  return Object.entries(details)
+    .filter(([, v]) => v !== undefined && v !== null)
+    .map(([k, v]) => {
+      const str = typeof v === 'object' ? JSON.stringify(v) : String(v)
+      return str.includes(' ') ? `${k}="${str}"` : `${k}=${str}`
+    })
+    .join(' ')
+}
+
 function writeLog(level: 'INFO' | 'WARN' | 'ERROR', message: string, details?: LogDetails): void {
-  const suffix = details ? ` ${JSON.stringify(details)}` : ''
-  const line = `[${nowIso()}] [${level}] ${message}${suffix}`
+  const suffix = details ? ` ${toLogfmt(details)}` : ''
+  const line = `${nowTime()} [${LEVEL_ABBR[level]}] ${message}${suffix}`
 
   if (level === 'ERROR') {
     console.error(line)
@@ -131,28 +149,27 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
 
   const isWrite = ['POST', 'PUT', 'PATCH'].includes(req.method)
   writeLog('INFO', 'request.started', {
-    requestId,
-    source,
+    rid: requestId.split('-')[0],
     method: req.method,
     path: req.originalUrl || req.url,
-    ...(Object.keys(req.query).length > 0 && { query: sanitizeForLog(req.query) }),
-    ...(isWrite && req.body && Object.keys(req.body).length > 0 && { body: sanitizeForLog(req.body) }),
+    ...(Object.keys(req.query).length > 0 && { query: JSON.stringify(sanitizeForLog(req.query)) }),
+    ...(isWrite && req.body && Object.keys(req.body).length > 0 && { body: JSON.stringify(sanitizeForLog(req.body)) }),
   })
 
   res.on('finish', () => {
     const durationMs = Date.now() - startedAt
-    const level = res.statusCode >= 500 ? 'ERROR' : res.statusCode >= 400 ? 'WARN' : 'INFO'
+    const isSlow = durationMs > SLOW_REQUEST_MS
+    const level = res.statusCode >= 500 ? 'ERROR' : res.statusCode >= 400 || isSlow ? 'WARN' : 'INFO'
+    const event = isSlow ? 'request.slow' : 'request.finished'
 
-    writeLog(level, 'request.finished', {
-      requestId,
-      source,
+    writeLog(level, event, {
+      rid: requestId.split('-')[0],
       method: req.method,
       path: req.originalUrl || req.url,
-      statusCode: res.statusCode,
+      status: res.statusCode,
       outcome: statusOutcome(res.statusCode),
-      durationMs,
-      userId: req.userId,
-      response: responsePayload,
+      ms: durationMs,
+      uid: req.userId ? req.userId.slice(0, 8) : undefined,
     })
   })
 
@@ -163,16 +180,12 @@ export function requestErrorHandler(err: unknown, req: Request, res: Response, _
   const error = err instanceof Error ? err : new Error(String(err))
 
   writeLog('ERROR', 'request.unhandled_error', {
-    requestId: req.requestId,
-    source: req.requestSource,
+    rid: req.requestId?.split('-')[0],
     method: req.method,
     path: req.originalUrl || req.url,
-    userId: req.userId,
-    error: {
-      name: error.name,
-      message: error.message,
-      stack: process.env.NODE_ENV === 'production' ? undefined : error.stack,
-    },
+    uid: req.userId ? req.userId.slice(0, 8) : undefined,
+    error: error.message,
+    ...(process.env.NODE_ENV !== 'production' && { stack: error.stack }),
   })
 
   if (res.headersSent) {
