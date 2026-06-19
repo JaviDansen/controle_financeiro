@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -94,6 +94,17 @@ export default function NewTransactionStep3() {
 
   const [status, setStatus] = useState<Status>((params.status as Status) ?? 'confirmed');
   const [saved, setSaved] = useState(false);
+  const [canCreateNew, setCanCreateNew] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Reseta ao trocar de transação (criação → edição ou vice-versa)
+  const txKey = `${params.txId ?? 'new'}-${params.amount}-${params.title}`;
+  React.useEffect(() => {
+    setSaved(false);
+    setCanCreateNew(false);
+    setStatus((params.status as Status) ?? 'confirmed');
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [txKey]);
 
   const typeColor = params.type === 'income' ? colors.pos : colors.neg;
   const typeLabel = params.type === 'income' ? 'Receita' : 'Despesa';
@@ -127,10 +138,17 @@ export default function NewTransactionStep3() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions', month] });
+      queryClient.invalidateQueries({ queryKey: ['cards'] });
       setSaved(true);
-      setTimeout(() => {
-        router.replace('/(tabs)/transactions');
-      }, 1400);
+      if (isEditing) {
+        timerRef.current = setTimeout(() => {
+          router.replace('/(tabs)/transactions');
+        }, 1400);
+      } else {
+        timerRef.current = setTimeout(() => {
+          setCanCreateNew(true);
+        }, 2000);
+      }
     },
   });
 
@@ -313,7 +331,39 @@ export default function NewTransactionStep3() {
 
         {/* Ações */}
         <View style={{ marginHorizontal: 16, gap: 10 }}>
-          {saved ? (
+          {saved && canCreateNew ? (
+            <>
+              <View style={{
+                borderRadius: 18, paddingVertical: 16,
+                backgroundColor: colors.pos,
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+              }}>
+                <Icon.Check size={16} color="#fff" sw={2.5} />
+                <Text style={{ fontSize: 15, fontWeight: '500', color: '#fff' }}>Transação salva!</Text>
+              </View>
+              <Pressable
+                onPress={() => router.replace('/(tabs)/new-transaction')}
+                style={{
+                  borderRadius: 18, paddingVertical: 16,
+                  backgroundColor: colors.ink,
+                  flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+              >
+                <Icon.Plus size={16} color="#FBFAF6" sw={2.5} />
+                <Text style={{ fontSize: 15, fontWeight: '500', color: colors.surface }}>Nova transação?</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => router.replace('/(tabs)/transactions')}
+                style={{
+                  borderRadius: 18, paddingVertical: 14,
+                  borderWidth: 1.5, borderColor: colors.hairline,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ fontSize: 14, fontWeight: '500', color: colors.muted }}>Ver transações</Text>
+              </Pressable>
+            </>
+          ) : saved ? (
             <View style={{
               borderRadius: 18, paddingVertical: 16,
               backgroundColor: colors.pos,
@@ -354,18 +404,20 @@ export default function NewTransactionStep3() {
             </Text>
           )}
 
-          <Pressable
-            onPress={() => router.back()}
-            disabled={mutation.isPending || saved}
-            style={{
-              borderRadius: 18, paddingVertical: 14,
-              borderWidth: 1.5, borderColor: colors.hairline,
-              alignItems: 'center',
-              opacity: mutation.isPending || saved ? 0.4 : 1,
-            }}
-          >
-            <Text style={{ fontSize: 14, fontWeight: '500', color: colors.muted }}>Editar dados</Text>
-          </Pressable>
+          {!saved && (
+            <Pressable
+              onPress={() => router.back()}
+              disabled={mutation.isPending}
+              style={{
+                borderRadius: 18, paddingVertical: 14,
+                borderWidth: 1.5, borderColor: colors.hairline,
+                alignItems: 'center',
+                opacity: mutation.isPending ? 0.4 : 1,
+              }}
+            >
+              <Text style={{ fontSize: 14, fontWeight: '500', color: colors.muted }}>Editar dados</Text>
+            </Pressable>
+          )}
         </View>
 
       </ScrollView>
