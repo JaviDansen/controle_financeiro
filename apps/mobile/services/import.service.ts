@@ -1,15 +1,26 @@
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000'
 
+export type ImportFormat = 'screenshot' | 'csv' | 'pdf' | 'xls' | 'xlsx'
+
+export interface ExtractUploadPayload {
+  fileBase64: string
+  fileName: string
+  format: ImportFormat
+  mimeType?: string | null
+}
+
 export interface ImportResponse {
   imageId: string
   imageHash: string
   bank: string
   format: string
+  fileName?: string
+  mimeType?: string
   transactions: []
 }
 
-export async function sendExtractImage(
-  imageBase64: string,
+export async function sendExtractFile(
+  file: ExtractUploadPayload,
   bank: string,
   token: string,
 ): Promise<ImportResponse> {
@@ -19,7 +30,13 @@ export async function sendExtractImage(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ imageBase64, bank, format: 'screenshot' }),
+    body: JSON.stringify({
+      bank,
+      format: file.format,
+      fileBase64: file.fileBase64,
+      fileName: file.fileName,
+      mimeType: file.mimeType,
+    }),
   })
 
   const json = await res.json()
@@ -32,7 +49,7 @@ export async function sendExtractImage(
 
 export class DuplicateImageError extends Error {
   constructor() {
-    super('Imagem ja processada anteriormente')
+    super('Arquivo ja processado anteriormente')
     this.name = 'DuplicateImageError'
   }
 }

@@ -7,19 +7,52 @@ import {
   Text,
   View,
 } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
 import { Icon } from '../../src/components/ui/Icon';
 import { colors } from '../../src/theme/colors';
 import { useAuthStore } from '../../store/auth.store';
-import { sendExtractImage, DuplicateImageError } from '../../services/import.service';
+import {
+  sendExtractFile,
+  DuplicateImageError,
+  type ExtractUploadPayload,
+  type ImportFormat,
+} from '../../services/import.service';
 
 const BANKS = [
   { id: 'mercadopago', label: 'Mercado Pago' },
 ] as const
 
+const DOCUMENT_TYPES = [
+  'application/pdf',
+  'text/csv',
+  'application/csv',
+  'text/comma-separated-values',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+]
+
 type BankId = typeof BANKS[number]['id']
+
+function inferFormat(fileName?: string | null, mimeType?: string | null): ImportFormat | null {
+  const extension = fileName?.split('.').pop()?.toLowerCase()
+
+  if (extension === 'csv') return 'csv'
+  if (extension === 'pdf') return 'pdf'
+  if (extension === 'xls') return 'xls'
+  if (extension === 'xlsx') return 'xlsx'
+
+  if (mimeType?.startsWith('image/')) return 'screenshot'
+  if (mimeType === 'application/pdf') return 'pdf'
+  if (mimeType?.includes('spreadsheetml')) return 'xlsx'
+  if (mimeType?.includes('csv')) return 'csv'
+  if (mimeType === 'application/vnd.ms-excel') return 'xls'
+
+  return null
+}
 
 export default function ImportExtractScreen() {
   const router = useRouter()
@@ -27,13 +60,21 @@ export default function ImportExtractScreen() {
   const statusBarHeight = StatusBar.currentHeight ?? 0
 
   const [selectedBank, setSelectedBank] = useState<BankId>('mercadopago')
-  const [imageName, setImageName] = useState<string | null>(null)
-  const [imageBase64, setImageBase64] = useState<string | null>(null)
+  const [selectedUpload, setSelectedUpload] = useState<ExtractUploadPayload | null>(null)
+  const [selectionError, setSelectionError] = useState<string | null>(null)
   const [result, setResult] = useState<'success' | 'duplicate' | null>(null)
+
+  function handleNewSelection(upload: ExtractUploadPayload) {
+    setSelectedUpload(upload)
+    setSelectionError(null)
+    setResult(null)
+    mutation.reset()
+  }
 
   async function pickImage() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync()
     if (!permission.granted) {
+      setSelectionError('Permita acesso a galeria para selecionar uma imagem.')
       return
     }
 
@@ -45,16 +86,57 @@ export default function ImportExtractScreen() {
 
     if (!picked.canceled && picked.assets[0]) {
       const asset = picked.assets[0]
-      setImageBase64(asset.base64 ?? null)
-      setImageName(asset.fileName ?? 'imagem-selecionada.jpg')
-      setResult(null)
+      if (!asset.base64) {
+        setSelectionError('Nao foi possivel ler a imagem selecionada.')
+        return
+      }
+
+      handleNewSelection({
+        fileBase64: asset.base64,
+        fileName: asset.fileName ?? 'imagem-selecionada.jpg',
+        format: 'screenshot',
+        mimeType: asset.mimeType,
+      })
+    }
+  }
+
+  async function pickDocument() {
+    try {
+      const picked = await DocumentPicker.getDocumentAsync({
+        type: DOCUMENT_TYPES,
+        copyToCacheDirectory: true,
+        multiple: false,
+      })
+
+      if (picked.canceled || !picked.assets[0]) return
+
+      const asset = picked.assets[0]
+      const format = inferFormat(asset.name, asset.mimeType)
+
+      if (!format) {
+        setSelectionError('Formato nao suportado. Use PDF, CSV, XLS ou XLSX.')
+        return
+      }
+
+      const fileBase64 = await FileSystem.readAsStringAsync(asset.uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      })
+
+      handleNewSelection({
+        fileBase64,
+        fileName: asset.name,
+        format,
+        mimeType: asset.mimeType,
+      })
+    } catch {
+      setSelectionError('Nao foi possivel ler o arquivo selecionado.')
     }
   }
 
   const mutation = useMutation({
     mutationFn: () => {
-      if (!imageBase64 || !token) throw new Error('Dados incompletos')
-      return sendExtractImage(imageBase64, selectedBank, token)
+      if (!selectedUpload || !token) throw new Error('Dados incompletos')
+      return sendExtractFile(selectedUpload, selectedBank, token)
     },
     onSuccess: () => {
       setResult('success')
@@ -66,7 +148,7 @@ export default function ImportExtractScreen() {
     },
   })
 
-  const canSend = !!imageBase64 && !mutation.isPending && result === null
+  const canSend = !!selectedUpload && !mutation.isPending && result === null
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: statusBarHeight }}>
@@ -92,7 +174,7 @@ export default function ImportExtractScreen() {
               Importar extrato
             </Text>
             <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>
-              Envie uma screenshot do seu banco
+              Envie imagem, PDF ou planilha do seu banco
             </Text>
           </View>
           <View style={{ width: 36 }} />
@@ -139,13 +221,13 @@ export default function ImportExtractScreen() {
               fontSize: 11, fontWeight: '500', color: colors.muted,
               textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8, paddingLeft: 4,
             }}>
-              Imagem do extrato
+              Arquivo do extrato
             </Text>
             <Pressable
-              onPress={pickImage}
+              onPress={pickDocument}
               style={{
                 borderRadius: 16, borderWidth: 1.5, borderStyle: 'dashed',
-                borderColor: imageBase64 ? colors.ink : colors.hairline,
+                borderColor: selectedUpload ? colors.ink : colors.hairline,
                 backgroundColor: colors.surface,
                 padding: 24,
                 alignItems: 'center', justifyContent: 'center', gap: 10,
@@ -153,20 +235,58 @@ export default function ImportExtractScreen() {
             >
               <View style={{
                 width: 48, height: 48, borderRadius: 14,
-                backgroundColor: imageBase64 ? colors.ink : colors.hairline,
+                backgroundColor: selectedUpload ? colors.ink : colors.hairline,
                 alignItems: 'center', justifyContent: 'center',
               }}>
-                <Icon.Upload size={22} color={imageBase64 ? '#FBFAF6' : colors.muted} sw={1.8} />
+                <Icon.Upload size={22} color={selectedUpload ? '#FBFAF6' : colors.muted} sw={1.8} />
               </View>
               <View style={{ alignItems: 'center', gap: 4 }}>
                 <Text style={{ fontSize: 14, fontWeight: '500', color: colors.ink }}>
-                  {imageName ?? 'Selecionar imagem'}
+                  {selectedUpload?.fileName ?? 'Selecionar arquivo'}
                 </Text>
                 <Text style={{ fontSize: 12, color: colors.muted }}>
-                  {imageBase64 ? 'Toque para trocar' : 'Toque para abrir a galeria'}
+                  {selectedUpload
+                    ? 'Toque para trocar o arquivo selecionado'
+                    : 'Aceita imagem, PDF, CSV, XLS e XLSX'}
                 </Text>
               </View>
             </Pressable>
+
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+              <Pressable
+                onPress={pickImage}
+                style={{
+                  flex: 1,
+                  borderRadius: 14,
+                  paddingVertical: 13,
+                  backgroundColor: colors.surface,
+                  borderWidth: 1,
+                  borderColor: colors.hairline,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ fontSize: 13, fontWeight: '500', color: colors.ink }}>
+                  Selecionar imagem
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={pickDocument}
+                style={{
+                  flex: 1,
+                  borderRadius: 14,
+                  paddingVertical: 13,
+                  backgroundColor: colors.surface,
+                  borderWidth: 1,
+                  borderColor: colors.hairline,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ fontSize: 13, fontWeight: '500', color: colors.ink }}>
+                  Selecionar arquivo
+                </Text>
+              </Pressable>
+            </View>
           </View>
 
           {/* Feedback */}
@@ -178,9 +298,9 @@ export default function ImportExtractScreen() {
             }}>
               <Icon.Check size={16} color="#1E5229" sw={2.5} />
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: '#1E5229' }}>Extrato recebido!</Text>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: '#1E5229' }}>Arquivo recebido!</Text>
                 <Text style={{ fontSize: 12, color: '#3D8B4E', marginTop: 2 }}>
-                  Imagem salva com sucesso. Em breve as transações serão extraídas.
+                  Arquivo salvo com sucesso. Em breve as transacoes serao extraidas.
                 </Text>
               </View>
             </View>
@@ -194,12 +314,18 @@ export default function ImportExtractScreen() {
             }}>
               <Icon.Filter size={16} color="#5A4A10" sw={2} />
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: '#5A4A10' }}>Imagem duplicada</Text>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: '#5A4A10' }}>Arquivo duplicado</Text>
                 <Text style={{ fontSize: 12, color: '#9A8030', marginTop: 2 }}>
-                  Este extrato já foi enviado anteriormente. Selecione uma imagem diferente.
+                  Este arquivo ja foi enviado anteriormente. Selecione outro arquivo.
                 </Text>
               </View>
             </View>
+          )}
+
+          {selectionError && (
+            <Text style={{ fontSize: 13, color: colors.neg, textAlign: 'center' }}>
+              {selectionError}
+            </Text>
           )}
 
           {mutation.isError && result === null && (

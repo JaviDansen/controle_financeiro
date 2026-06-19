@@ -7,11 +7,18 @@ import { AuthenticatedRequest } from '../middlewares/auth.middleware'
 import { logRequestEvent } from '../middlewares/request-logger.middleware'
 
 const SUPPORTED_BANKS = ['mercadopago'] as const
+const SUPPORTED_FORMATS = ['screenshot', 'csv', 'pdf', 'xls', 'xlsx'] as const
 
 const importSchema = z.object({
   bank: z.enum(SUPPORTED_BANKS),
-  format: z.enum(['screenshot', 'csv', 'pdf']).default('screenshot'),
-  imageBase64: z.string().min(1),
+  format: z.enum(SUPPORTED_FORMATS).default('screenshot'),
+  fileBase64: z.string().min(1).optional(),
+  imageBase64: z.string().min(1).optional(),
+  fileName: z.string().trim().min(1).max(255).optional(),
+  mimeType: z.string().trim().min(1).max(255).optional(),
+}).refine((data) => Boolean(data.fileBase64 ?? data.imageBase64), {
+  message: 'Arquivo é obrigatório',
+  path: ['fileBase64'],
 })
 
 export const importExtract: RequestHandler = async (req, res) => {
@@ -24,9 +31,10 @@ export const importExtract: RequestHandler = async (req, res) => {
     return
   }
 
-  const { bank, format, imageBase64 } = parsed.data
+  const { bank, format, fileBase64, imageBase64, fileName, mimeType } = parsed.data
+  const uploadBase64 = fileBase64 ?? imageBase64!
 
-  const imageHash = createHash('sha256').update(imageBase64).digest('hex')
+  const imageHash = createHash('sha256').update(uploadBase64).digest('hex')
 
   const [existing] = await db
     .select({ id: importImages.id })
@@ -35,7 +43,7 @@ export const importExtract: RequestHandler = async (req, res) => {
 
   if (existing) {
     logRequestEvent(req, 'import.duplicate', { userId, imageHash: imageHash.slice(0, 8) })
-    res.status(409).json({ error: 'Imagem ja processada anteriormente' })
+    res.status(409).json({ error: 'Arquivo ja processado anteriormente' })
     return
   }
 
@@ -56,6 +64,8 @@ export const importExtract: RequestHandler = async (req, res) => {
       imageHash,
       bank,
       format,
+      fileName,
+      mimeType,
       transactions: [],
     },
   })
