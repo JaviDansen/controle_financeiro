@@ -60,7 +60,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     }
   };
 
-  const hiddenRoutes = new Set(['add', 'new-transaction', 'new-transaction-step2', 'new-transaction-step3']);
+  const hiddenRoutes = new Set(['add', 'new-transaction', 'new-transaction-step2', 'new-transaction-step3', 'import-extract']);
   const routes = state.routes.filter((r) => !hiddenRoutes.has(r.name));
 
   return (
@@ -190,6 +190,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="new-transaction" options={{ href: null, title: '' }} />
       <Tabs.Screen name="new-transaction-step2" options={{ href: null, title: '' }} />
       <Tabs.Screen name="new-transaction-step3" options={{ href: null, title: '' }} />
+      <Tabs.Screen name="import-extract" options={{ href: null, title: '' }} />
     </Tabs>
   );
 }

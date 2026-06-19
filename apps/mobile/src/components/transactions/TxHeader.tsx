@@ -1,5 +1,6 @@
 import React from 'react'
 import { View, Text, Pressable } from 'react-native'
+import { useRouter } from 'expo-router'
 import { Icon } from '../ui/Icon'
 import { colors } from '../../theme/colors'
 
@@ -8,6 +9,8 @@ interface TxHeaderProps {
 }
 
 export function TxHeader({ currentMonth }: TxHeaderProps) {
+  const router = useRouter()
+
   return (
     <View style={{
       flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -37,6 +40,16 @@ export function TxHeader({ currentMonth }: TxHeaderProps) {
           alignItems: 'center', justifyContent: 'center',
         }}>
           <Icon.Filter size={18} color={colors.ink} />
+        </Pressable>
+        <Pressable
+          onPress={() => router.push('/(tabs)/import-extract')}
+          style={{
+            width: 38, height: 38, borderRadius: 19,
+            backgroundColor: colors.ink,
+            alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          <Icon.Upload size={17} color="#FBFAF6" sw={1.8} />
         </Pressable>
       </View>
     </View>

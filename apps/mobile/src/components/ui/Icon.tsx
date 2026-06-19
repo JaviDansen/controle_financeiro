@@ -151,4 +151,11 @@ export const Icon = {
       <Circle cx="16" cy="10" r="1.6" fill={color} />
     </Svg>
   ),
+
+  Upload: ({ size = 18, color = '#15151A', sw = 1.6 }: IconProps) => (
+    <Svg viewBox="0 0 20 20" width={size} height={size} fill="none">
+      <Path d="M10 13V4M6 8l4-4 4 4" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M3 15h14" stroke={color} strokeWidth={sw} strokeLinecap="round" />
+    </Svg>
+  ),
 } as const;
