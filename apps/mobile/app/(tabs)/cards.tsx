@@ -7,7 +7,10 @@ import { Icon } from '../../src/components/ui/Icon';
 import { colors } from '../../src/theme/colors';
 import { fmtBRLShort } from '../../src/lib/currency';
 import { useCards } from '../../hooks/useCards';
-import { deleteCard } from '../../services/cards.service';
+import { useTransactions } from '../../hooks/useTransactions';
+import { getCurrentMonthParam } from '../../src/lib/date';
+import { deleteCard, CardHasTransactionsError, BlockedTransaction } from '../../services/cards.service';
+import { updateTransaction } from '../../services/transactions.service';
 import { useAuthStore } from '../../store/auth.store';
 
 function formatShortDate(value: string | null) {
@@ -29,8 +32,16 @@ export default function CardsScreen() {
   const queryClient = useQueryClient();
   const token = useAuthStore((s) => s.token);
   const { data: cards = [], isLoading } = useCards();
+  const { summary } = useTransactions(getCurrentMonthParam());
+  const monthIncome = summary?.income ?? 0;
   const [activeIdx, setActiveIdx] = useState(0);
   const [isActionsOpen, setIsActionsOpen] = useState(false);
+  const [blockedTxs, setBlockedTxs] = useState<BlockedTransaction[]>([]);
+  const [reassignCardId, setReassignCardId] = useState<string | null>(null);
+  // reassignTarget: null = sem vínculo, 'pix'|'transfer'|'boleto' = pagamento, uuid = cartão
+  const [reassignTargets, setReassignTargets] = useState<Record<string, string | null>>({});
+
+  const activeCard = cards[activeIdx] ?? cards[0];
 
   useEffect(() => {
     if (activeIdx > cards.length - 1) {
@@ -52,7 +63,40 @@ export default function CardsScreen() {
       Alert.alert('Cartao removido', 'O cartao foi removido com sucesso.');
     },
     onError: (error) => {
-      Alert.alert('Erro ao excluir', error instanceof Error ? error.message : 'Nao foi possivel excluir o cartao.');
+      if (error instanceof CardHasTransactionsError) {
+        setBlockedTxs(error.transactions);
+        setReassignCardId(activeCard.id);
+        const initial: Record<string, string | null> = {};
+        error.transactions.forEach(tx => { initial[tx.id] = null; });
+        setReassignTargets(initial);
+        setIsActionsOpen(false);
+      } else {
+        Alert.alert('Erro ao excluir', error instanceof Error ? error.message : 'Nao foi possivel excluir o cartao.');
+      }
+    },
+  });
+
+  const reassignMutation = useMutation({
+    mutationFn: async () => {
+      if (!token) throw new Error('Sessao invalida');
+      await Promise.all(
+        blockedTxs.map(tx => {
+          const target = reassignTargets[tx.id];
+          const isCard = target !== null && !['pix', 'transfer', 'boleto'].includes(target ?? '');
+          return updateTransaction(tx.id, { cardId: isCard ? target : null }, token);
+        })
+      );
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      await queryClient.invalidateQueries({ queryKey: ['cards'] });
+      setBlockedTxs([]);
+      setReassignCardId(null);
+      // Tenta deletar novamente após remanejamento
+      if (reassignCardId) deleteCardMutation.mutate(reassignCardId);
+    },
+    onError: () => {
+      Alert.alert('Erro', 'Nao foi possivel remanejar as transacoes. Tente novamente.');
     },
   });
 
@@ -108,8 +152,6 @@ export default function CardsScreen() {
       </SafeAreaView>
     );
   }
-
-  const activeCard = cards[activeIdx] ?? cards[0];
 
   const handleDelete = () => {
     Alert.alert('Excluir cartao', 'Deseja realmente excluir este cartao?', [
@@ -256,45 +298,211 @@ export default function CardsScreen() {
                 <Icon.More size={18} color={colors.ink} />
               </Pressable>
             </View>
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'uppercase' }}>Fatura atual</Text>
-                <Text style={{ fontSize: 20, fontWeight: '600', color: colors.ink, marginTop: 4 }}>
-                  R$ {fmtBRLShort(activeCard.currentMonthTotal)}
-                </Text>
+            {activeCard.type === 'debit' ? (
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'uppercase' }}>Fatura atual</Text>
+                  <Text numberOfLines={1} adjustsFontSizeToFit style={{ fontSize: 20, fontWeight: '600', color: colors.ink, marginTop: 4 }}>
+                    R$ {fmtBRLShort(activeCard.currentMonthTotal)}
+                  </Text>
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'uppercase' }}>Saldo</Text>
+                  <Text numberOfLines={1} adjustsFontSizeToFit style={{ fontSize: 20, fontWeight: '600', color: colors.pos, marginTop: 4 }}>
+                    R$ {fmtBRLShort(monthIncome)}
+                  </Text>
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'uppercase' }}>Disponivel</Text>
+                  <Text numberOfLines={1} adjustsFontSizeToFit style={{ fontSize: 20, fontWeight: '600', color: colors.ink, marginTop: 4 }}>
+                    R$ {fmtBRLShort(Math.max(0, monthIncome - activeCard.currentMonthTotal))}
+                  </Text>
+                </View>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'uppercase' }}>Limite</Text>
-                <Text style={{ fontSize: 20, fontWeight: '600', color: colors.ink, marginTop: 4 }}>
-                  {activeCard.limit !== null ? `R$ ${fmtBRLShort(activeCard.limit)}` : 'Nao informado'}
-                </Text>
-              </View>
-            </View>
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'uppercase' }}>Compre apos</Text>
-                <Text style={{ fontSize: 16, fontWeight: '500', color: colors.ink, marginTop: 4 }}>
-                  {formatShortDate(activeCard.bestPurchaseDate)}
-                </Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'uppercase' }}>Fechamento</Text>
-                <Text style={{ fontSize: 16, fontWeight: '500', color: colors.ink, marginTop: 4 }}>
-                  {activeCard.closingDay ?? '--'}
-                </Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'uppercase' }}>Vencimento</Text>
-                <Text style={{ fontSize: 16, fontWeight: '500', color: colors.ink, marginTop: 4 }}>
-                  {activeCard.dueDay ?? '--'}
-                </Text>
-              </View>
-            </View>
+            ) : (
+              <>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'uppercase' }}>Fatura atual</Text>
+                    <Text style={{ fontSize: 20, fontWeight: '600', color: colors.ink, marginTop: 4 }}>
+                      R$ {fmtBRLShort(activeCard.currentMonthTotal)}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'uppercase' }}>Limite</Text>
+                    <Text style={{ fontSize: 20, fontWeight: '600', color: colors.ink, marginTop: 4 }}>
+                      {activeCard.limit !== null ? `R$ ${fmtBRLShort(activeCard.limit)}` : 'Nao informado'}
+                    </Text>
+                  </View>
+                </View>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'uppercase' }}>Compre apos</Text>
+                    <Text style={{ fontSize: 16, fontWeight: '500', color: colors.ink, marginTop: 4 }}>
+                      {formatShortDate(activeCard.bestPurchaseDate)}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'uppercase' }}>Fechamento</Text>
+                    <Text style={{ fontSize: 16, fontWeight: '500', color: colors.ink, marginTop: 4 }}>
+                      {activeCard.closingDay ?? '--'}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 11, color: colors.muted, textTransform: 'uppercase' }}>Vencimento</Text>
+                    <Text style={{ fontSize: 16, fontWeight: '500', color: colors.ink, marginTop: 4 }}>
+                      {activeCard.dueDay ?? '--'}
+                    </Text>
+                  </View>
+                </View>
+              </>
+            )}
           </View>
         </View>
 
         <View style={{ height: 32 }} />
       </ScrollView>
+
+      {/* ── Modal de bloqueio: cartão com transações ──────────── */}
+      <Modal
+        visible={blockedTxs.length > 0}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setBlockedTxs([])}
+      >
+        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(21,21,26,0.45)' }}>
+          <View style={{
+            backgroundColor: colors.surface,
+            borderTopLeftRadius: 28, borderTopRightRadius: 28,
+            paddingBottom: 36, paddingTop: 20, maxHeight: '85%',
+          }}>
+            {/* Handle */}
+            <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.hairline, alignSelf: 'center', marginBottom: 20 }} />
+
+            {/* Cabeçalho */}
+            <View style={{ paddingHorizontal: 20, marginBottom: 16 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: '#F7E8E0', alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon.Trash size={16} color="#A43E2C" sw={1.8} />
+                </View>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: colors.ink }}>Cartão com transações</Text>
+              </View>
+              <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 19 }}>
+                Para excluir este cartão, remaneie as {blockedTxs.length} transação(ões) abaixo para outro método de pagamento.
+              </Text>
+            </View>
+
+            {/* Lista de transações para remanejar */}
+            <ScrollView style={{ paddingHorizontal: 20 }} showsVerticalScrollIndicator={false}>
+              {blockedTxs.map(tx => {
+                const target = reassignTargets[tx.id];
+                const otherCards = cards.filter(c => c.id !== reassignCardId);
+                return (
+                  <View key={tx.id} style={{
+                    borderRadius: 16, borderWidth: 1, borderColor: colors.hairline,
+                    backgroundColor: colors.bg, marginBottom: 10, overflow: 'hidden',
+                  }}>
+                    {/* Info da transação */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14 }}>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '500', color: colors.ink }}>{tx.title}</Text>
+                        <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{tx.date}</Text>
+                      </View>
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: tx.type === 'income' ? colors.pos : colors.neg, marginLeft: 12 }}>
+                        {tx.type === 'income' ? '+' : '−'} R$ {fmtBRLShort(tx.amount)}
+                      </Text>
+                    </View>
+
+                    {/* Seletor de destino */}
+                    <View style={{ borderTopWidth: 1, borderTopColor: colors.hairline, padding: 10, flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                      {/* Sem vínculo */}
+                      {[
+                        { id: null, label: 'Sem vínculo' },
+                        { id: 'pix', label: 'Pix' },
+                        { id: 'transfer', label: 'Transferência' },
+                        { id: 'boleto', label: 'Boleto' },
+                      ].map(opt => {
+                        const active = target === opt.id;
+                        return (
+                          <Pressable
+                            key={String(opt.id)}
+                            onPress={() => setReassignTargets(prev => ({ ...prev, [tx.id]: opt.id }))}
+                            style={{
+                              paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999,
+                              borderWidth: 1.5,
+                              borderColor: active ? colors.ink : colors.hairline,
+                              backgroundColor: active ? colors.ink : 'transparent',
+                            }}
+                          >
+                            <Text style={{ fontSize: 12, fontWeight: '500', color: active ? '#FBFAF6' : colors.muted }}>
+                              {opt.label}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                      {/* Outros cartões */}
+                      {otherCards.map(card => {
+                        const active = target === card.id;
+                        return (
+                          <Pressable
+                            key={card.id}
+                            onPress={() => setReassignTargets(prev => ({ ...prev, [tx.id]: card.id }))}
+                            style={{
+                              paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999,
+                              borderWidth: 1.5,
+                              borderColor: active ? colors.ink : colors.hairline,
+                              backgroundColor: active ? colors.ink : 'transparent',
+                            }}
+                          >
+                            <Text style={{ fontSize: 12, fontWeight: '500', color: active ? '#FBFAF6' : colors.muted }}>
+                              {card.name}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                );
+              })}
+              <View style={{ height: 8 }} />
+            </ScrollView>
+
+            {/* Ações */}
+            <View style={{ paddingHorizontal: 20, paddingTop: 12, gap: 10 }}>
+              <Pressable
+                onPress={() => reassignMutation.mutate()}
+                disabled={reassignMutation.isPending}
+                style={{
+                  borderRadius: 18, paddingVertical: 16,
+                  backgroundColor: colors.ink,
+                  flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  opacity: reassignMutation.isPending ? 0.7 : 1,
+                }}
+              >
+                {reassignMutation.isPending
+                  ? <ActivityIndicator size="small" color="#FBFAF6" />
+                  : <Icon.Check size={16} color="#FBFAF6" sw={2.5} />
+                }
+                <Text style={{ fontSize: 15, fontWeight: '500', color: '#FBFAF6' }}>
+                  {reassignMutation.isPending ? 'Remanejando...' : 'Remanejar e excluir cartão'}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => { setBlockedTxs([]); setReassignCardId(null); }}
+                disabled={reassignMutation.isPending}
+                style={{
+                  borderRadius: 18, paddingVertical: 14,
+                  borderWidth: 1.5, borderColor: colors.hairline,
+                  alignItems: 'center',
+                  opacity: reassignMutation.isPending ? 0.4 : 1,
+                }}
+              >
+                <Text style={{ fontSize: 14, fontWeight: '500', color: colors.muted }}>Cancelar</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         visible={isActionsOpen}

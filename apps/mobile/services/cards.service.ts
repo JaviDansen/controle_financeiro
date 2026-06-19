@@ -75,6 +75,23 @@ export async function updateCard(id: string, payload: UpdateCardPayload, token: 
   return json.data
 }
 
+export interface BlockedTransaction {
+  id: string
+  title: string
+  amount: number
+  type: 'income' | 'expense'
+  date: string
+}
+
+export class CardHasTransactionsError extends Error {
+  transactions: BlockedTransaction[]
+  constructor(transactions: BlockedTransaction[]) {
+    super('Cartao possui transacoes vinculadas')
+    this.name = 'CardHasTransactionsError'
+    this.transactions = transactions
+  }
+}
+
 export async function deleteCard(id: string, token: string): Promise<void> {
   const res = await fetch(`${API_URL}/cards/${id}`, {
     method: 'DELETE',
@@ -85,6 +102,9 @@ export async function deleteCard(id: string, token: string): Promise<void> {
 
   if (!res.ok) {
     const json = await res.json()
+    if (res.status === 409 && json.transactions) {
+      throw new CardHasTransactionsError(json.transactions)
+    }
     throw new Error(json.error ?? 'Erro ao excluir cartao')
   }
 }
