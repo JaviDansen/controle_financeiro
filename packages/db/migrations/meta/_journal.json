@@ -50,6 +50,20 @@
       "when": 1781881496971,
       "tag": "0006_flawless_jamie_braddock",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1781932671725,
+      "tag": "0007_pretty_risque",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1782000000000,
+      "tag": "0008_remove_mp_connections",
+      "breakpoints": true
     }
   ]
 }
