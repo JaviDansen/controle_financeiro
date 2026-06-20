@@ -13,7 +13,7 @@ export interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   hasHydrated: boolean;
-  setUser: (user: User | null) => void;
+  setUser: (user: User | null) => Promise<void>;
   setToken: (token: string | null) => Promise<void>;
   hydrate: () => Promise<void>;
   logout: () => Promise<void>;
@@ -25,8 +25,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
   hasHydrated: false,
 
-  setUser: (user) => {
+  setUser: async (user) => {
     set({ user });
+    if (user) {
+      await SecureStore.setItemAsync('user', JSON.stringify(user));
+    } else {
+      await SecureStore.deleteItemAsync('user');
+    }
   },
 
   setToken: async (token) => {
@@ -43,11 +48,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     const token = await SecureStore.getItemAsync('token');
 
     if (!token) {
-      set({
-        token: null,
-        isAuthenticated: false,
-        hasHydrated: true,
-      });
+      set({ token: null, isAuthenticated: false, hasHydrated: true });
       return;
     }
 
@@ -55,24 +56,20 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     if (!isValidToken) {
       await SecureStore.deleteItemAsync('token');
-      set({
-        user: null,
-        token: null,
-        isAuthenticated: false,
-        hasHydrated: true,
-      });
+      await SecureStore.deleteItemAsync('user');
+      set({ user: null, token: null, isAuthenticated: false, hasHydrated: true });
       return;
     }
 
-    set({
-      token,
-      isAuthenticated: true,
-      hasHydrated: true,
-    });
+    const userRaw = await SecureStore.getItemAsync('user');
+    const user: User | null = userRaw ? JSON.parse(userRaw) : null;
+
+    set({ token, user, isAuthenticated: true, hasHydrated: true });
   },
 
   logout: async () => {
     set({ user: null, token: null, isAuthenticated: false, hasHydrated: true });
     await SecureStore.deleteItemAsync('token');
+    await SecureStore.deleteItemAsync('user');
   },
 }));
