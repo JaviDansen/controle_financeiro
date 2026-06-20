@@ -21,7 +21,9 @@
     "test:watch": "npm run test:watch --workspace=apps/api",
     "test:mobile": "npm run test --workspace=apps/mobile",
     "test:mobile:serial": "npm run test --workspace=apps/mobile -- --runInBand",
-    "test:mobile:watch": "npm run test:watch --workspace=apps/mobile"
+    "test:mobile:watch": "npm run test:watch --workspace=apps/mobile",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "engines": {
     "node": "24.15.0"
@@ -30,5 +32,10 @@
     "expo": "~54.0.0",
     "expo-router": "~6.0.0",
     "react-test-renderer": "19.1.0"
+  },
+  "dependencies": {
+    "expo": "~54.0.34",
+    "react": "19.1.0",
+    "react-native": "0.81.5"
   }
 }

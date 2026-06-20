@@ -1,0 +1,13 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    ports:
+      - "3011:3011"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3011
+    restart: unless-stopped

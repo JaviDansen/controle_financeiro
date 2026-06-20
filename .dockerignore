@@ -1,0 +1,8 @@
+node_modules
+apps/api/node_modules
+apps/api/dist
+apps/mobile
+packages/db/node_modules
+packages/db/dist
+.env
+*.log
