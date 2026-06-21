@@ -171,4 +171,19 @@ export const Icon = {
       <Path d="M5 5l10 10M15 5L5 15" stroke={color} strokeWidth={sw} strokeLinecap="round" />
     </Svg>
   ),
+
+  Refresh: ({ size = 16, color = '#15151A', sw = 1.8 }: IconProps) => (
+    <Svg viewBox="0 0 20 20" width={size} height={size} fill="none">
+      <Path d="M3.5 10a6.5 6.5 0 1 0 1.2-3.8" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M3.5 4v3.5H7" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  ),
+
+  Image: ({ size = 16, color = '#15151A', sw = 1.6 }: IconProps) => (
+    <Svg viewBox="0 0 20 20" width={size} height={size} fill="none">
+      <Rect x="2.5" y="3.5" width="15" height="13" rx="2" stroke={color} strokeWidth={sw} />
+      <Circle cx="7.5" cy="8" r="1.5" stroke={color} strokeWidth={sw} />
+      <Path d="M2.5 14l4-4 3 3 2.5-2.5 5.5 5.5" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  ),
 } as const;

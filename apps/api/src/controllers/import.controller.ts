@@ -2,7 +2,7 @@ import { RequestHandler } from 'express'
 import { createHash } from 'crypto'
 import { join } from 'path'
 import { z } from 'zod'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, desc } from 'drizzle-orm'
 import { db, importImages, importSessions, importExtractedTransactions } from '@finapp/db'
 import { AuthenticatedRequest } from '../middlewares/auth.middleware'
 import { logRequestEvent } from '../middlewares/request-logger.middleware'
@@ -173,4 +173,147 @@ export const importExtract: RequestHandler = async (req, res) => {
       transactions,
     },
   })
+}
+
+// ─── GET /import/history ────────────────────────────────────────────────────
+
+export const importHistory: RequestHandler = async (req, res) => {
+  const userId = (req as AuthenticatedRequest).userId
+
+  const images = await db
+    .select({
+      id: importImages.id,
+      bank: importImages.bank,
+      format: importImages.format,
+      status: importImages.status,
+      filePath: importImages.filePath,
+      createdAt: importImages.createdAt,
+    })
+    .from(importImages)
+    .where(eq(importImages.userId, userId))
+    .orderBy(desc(importImages.createdAt))
+    .limit(50)
+
+  const result = await Promise.all(
+    images.map(async (img) => {
+      const transactions = await db
+        .select({
+          id: importExtractedTransactions.id,
+          title: importExtractedTransactions.title,
+          amount: importExtractedTransactions.amount,
+          type: importExtractedTransactions.type,
+          date: importExtractedTransactions.date,
+          skipped: importExtractedTransactions.skipped,
+        })
+        .from(importExtractedTransactions)
+        .where(and(
+          eq(importExtractedTransactions.imageId, img.id),
+          eq(importExtractedTransactions.skipped, false),
+        ))
+        .orderBy(importExtractedTransactions.date)
+        .limit(3)
+
+      const [session] = await db
+        .select({ extractedCount: importSessions.extractedCount })
+        .from(importSessions)
+        .where(eq(importSessions.imageId, img.id))
+
+      return {
+        ...img,
+        extractedCount: session?.extractedCount ?? 0,
+        preview: transactions,
+      }
+    })
+  )
+
+  res.json({ data: result })
+}
+
+// ─── POST /import/reanalyze/:imageId ────────────────────────────────────────
+
+const reanalyzeSchema = z.object({
+  validationStrategy: z.enum(['gemini', 'tesseract']).default('tesseract'),
+})
+
+export const importReanalyze: RequestHandler = async (req, res) => {
+  const userId = (req as AuthenticatedRequest).userId
+  const { imageId } = req.params
+
+  const [image] = await db
+    .select()
+    .from(importImages)
+    .where(and(eq(importImages.id, imageId), eq(importImages.userId, userId)))
+
+  if (!image) {
+    res.status(404).json({ error: 'Imagem não encontrada' })
+    return
+  }
+
+  if (!image.filePath) {
+    res.status(422).json({ error: 'Arquivo não disponível para reanálise' })
+    return
+  }
+
+  const parsed = reanalyzeSchema.safeParse(req.body)
+  const { validationStrategy } = parsed.success ? parsed.data : { validationStrategy: 'tesseract' as const }
+
+  await db.update(importImages).set({ status: 'pending' }).where(eq(importImages.id, image.id))
+  await db.delete(importExtractedTransactions).where(eq(importExtractedTransactions.imageId, image.id))
+
+  if (image.format === 'screenshot') {
+    const absoluteFilePath = join(API_ROOT, image.filePath)
+    const validation = await validateImageHasDateHeader(absoluteFilePath, validationStrategy as ValidationStrategy)
+    if (!validation.valid) {
+      await db.update(importImages).set({ status: 'failed' }).where(eq(importImages.id, image.id))
+      res.status(400).json({ error: 'header_not_found', message: 'A imagem não contém um cabeçalho de data visível.' })
+      return
+    }
+  }
+
+  let transactions: TransacaoExtraida[] = []
+  try {
+    const extraction = await extractFromImage({ filePath: image.filePath, bank: image.bank as 'mercadopago', format: image.format as any })
+    transactions = extraction.transactions as TransacaoExtraida[]
+    const { usage } = extraction
+
+    await db.update(importImages).set({
+      status: 'processed',
+      tokensPrompt: usage.tokensPrompt,
+      tokensOutput: usage.tokensOutput,
+      tokensTotal: usage.tokensTotal,
+      costBrl: usage.costBrl,
+    }).where(eq(importImages.id, image.id))
+
+    if (transactions.length > 0) {
+      await db.insert(importExtractedTransactions).values(
+        transactions.map((t) => ({
+          imageId: image.id,
+          userId,
+          title: t.title,
+          description: t.description,
+          amount: String(t.amount),
+          type: t.type,
+          date: t.date,
+          time: t.time,
+          paymentMethod: t.payment_method,
+          dateInferred: t.date_inferred,
+          skipped: t.skipped,
+          skipReason: t.skip_reason,
+          status: 'pending' as const,
+        }))
+      )
+    }
+
+    await db.update(importSessions)
+      .set({ extractedCount: transactions.length })
+      .where(eq(importSessions.imageId, image.id))
+
+    logRequestEvent(req, 'import.reanalyzed', { userId, imageId: image.id, count: transactions.length })
+  } catch (err) {
+    await db.update(importImages).set({ status: 'failed' }).where(eq(importImages.id, image.id))
+    res.status(500).json({ error: 'extraction_failed', message: 'Não foi possível extrair as transações.' })
+    return
+  }
+
+  res.json({ data: { imageId: image.id, transactions } })
 }

@@ -64,6 +64,53 @@ export async function sendExtractFile(
   return json.data
 }
 
+export interface HistoryPreviewTransaction {
+  id: string
+  title: string
+  amount: string
+  type: 'income' | 'expense'
+  date: string
+}
+
+export interface ImportHistoryItem {
+  id: string
+  bank: string
+  format: string
+  status: string
+  filePath: string | null
+  createdAt: string
+  extractedCount: number
+  preview: HistoryPreviewTransaction[]
+}
+
+export async function getImportHistory(token: string): Promise<ImportHistoryItem[]> {
+  const res = await fetch(`${API_URL}/import/history`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  const json = await res.json()
+  if (!res.ok) throw new Error(json.error ?? 'Erro ao buscar histórico')
+  return json.data
+}
+
+export async function reanalyzeImage(
+  imageId: string,
+  token: string,
+  validationStrategy: ValidationStrategy = 'tesseract',
+): Promise<{ imageId: string; transactions: ExtractedTransaction[] }> {
+  const res = await fetch(`${API_URL}/import/reanalyze/${imageId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ validationStrategy }),
+  })
+  const json = await res.json()
+  if (res.status === 400 && json.error === 'header_not_found') throw new HeaderNotFoundError()
+  if (!res.ok) throw new Error(json.error ?? 'Erro ao reanalisar imagem')
+  return json.data
+}
+
 export class DuplicateImageError extends Error {
   constructor() {
     super('Arquivo ja processado anteriormente')
