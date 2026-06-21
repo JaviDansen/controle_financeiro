@@ -64,6 +64,20 @@
       "when": 1782000000000,
       "tag": "0008_remove_mp_connections",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1781994785462,
+      "tag": "0009_goofy_bastion",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1781999357485,
+      "tag": "0010_tough_union_jack",
+      "breakpoints": true
     }
   ]
 }

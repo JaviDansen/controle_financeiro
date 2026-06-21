@@ -31,7 +31,6 @@ RUN npm ci --workspace=packages/db --workspace=apps/api --omit=dev
 
 COPY --from=builder /app/packages/db/dist ./packages/db/dist
 COPY --from=builder /app/apps/api/dist    ./apps/api/dist
-COPY apps/api/src/services/mp-sample.csv  ./apps/api/dist/services/mp-sample.csv
 
 ENV NODE_ENV=production
 ENV PORT=3011

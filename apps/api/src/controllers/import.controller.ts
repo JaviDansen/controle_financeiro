@@ -1,10 +1,17 @@
 import { RequestHandler } from 'express'
 import { createHash } from 'crypto'
+import { join } from 'path'
 import { z } from 'zod'
 import { and, eq } from 'drizzle-orm'
-import { db, importImages, importSessions } from '@finapp/db'
+import { db, importImages, importSessions, importExtractedTransactions } from '@finapp/db'
 import { AuthenticatedRequest } from '../middlewares/auth.middleware'
 import { logRequestEvent } from '../middlewares/request-logger.middleware'
+import { saveUploadedFile } from '../services/file-storage.service'
+import { validateImageHasDateHeader, ValidationStrategy } from '../services/gemini/validator'
+import { extractFromImage } from '../services/gemini/gemini.service'
+import { TransacaoExtraida } from '../services/gemini/types'
+
+const API_ROOT = join(__dirname, '../../')
 
 const SUPPORTED_BANKS = ['mercadopago'] as const
 const SUPPORTED_FORMATS = ['screenshot', 'csv', 'pdf', 'xls', 'xlsx'] as const
@@ -16,6 +23,7 @@ const importSchema = z.object({
   imageBase64: z.string().min(1).optional(),
   fileName: z.string().trim().min(1).max(255).optional(),
   mimeType: z.string().trim().min(1).max(255).optional(),
+  validationStrategy: z.enum(['gemini', 'tesseract']).default('tesseract'),
 }).refine((data) => Boolean(data.fileBase64 ?? data.imageBase64), {
   message: 'Arquivo é obrigatório',
   path: ['fileBase64'],
@@ -23,16 +31,27 @@ const importSchema = z.object({
 
 export const importExtract: RequestHandler = async (req, res) => {
   const userId = (req as AuthenticatedRequest).userId
-  logRequestEvent(req, 'import.started', { userId })
 
-  const parsed = importSchema.safeParse(req.body)
+  const rawBody = req.body ?? {}
+  logRequestEvent(req, 'import.received', {
+    userId,
+    body_keys: Object.keys(rawBody),
+    bank: rawBody.bank,
+    format: rawBody.format,
+    fileName: rawBody.fileName,
+    mimeType: rawBody.mimeType,
+    fileBase64_len: typeof rawBody.fileBase64 === 'string' ? rawBody.fileBase64.length : undefined,
+    imageBase64_len: typeof rawBody.imageBase64 === 'string' ? rawBody.imageBase64.length : undefined,
+  })
+
+  const parsed = importSchema.safeParse(rawBody)
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.errors[0].message })
     return
   }
 
-  const { bank, format, fileBase64, imageBase64, fileName, mimeType } = parsed.data
-  const uploadBase64 = fileBase64 ?? imageBase64!
+  const { bank, format, fileBase64, imageBase64, fileName, mimeType, validationStrategy } = parsed.data
+  const uploadBase64 = (fileBase64 ?? imageBase64)!
 
   const imageHash = createHash('sha256').update(uploadBase64).digest('hex')
 
@@ -49,14 +68,99 @@ export const importExtract: RequestHandler = async (req, res) => {
 
   const [image] = await db
     .insert(importImages)
-    .values({ userId, imageHash, bank, format, status: 'processed' })
+    .values({ userId, imageHash, bank, format, status: 'pending' })
     .returning()
+
+  const filePath = await saveUploadedFile({
+    userId,
+    imageId: image.id,
+    format,
+    mimeType,
+    base64: uploadBase64,
+  })
+
+  await db
+    .update(importImages)
+    .set({ filePath })
+    .where(eq(importImages.id, image.id))
 
   await db
     .insert(importSessions)
     .values({ userId, imageId: image.id, extractedCount: 0, confirmedCount: 0 })
 
-  logRequestEvent(req, 'import.success', { userId, imageId: image.id, bank })
+  logRequestEvent(req, 'import.file_saved', { userId, imageId: image.id, filePath })
+
+  // Validação: screenshot deve ter cabeçalho de data visível
+  if (format === 'screenshot') {
+    const absoluteFilePath = join(API_ROOT, filePath)
+    const validation = await validateImageHasDateHeader(absoluteFilePath, validationStrategy as ValidationStrategy)
+
+    if (!validation.valid) {
+      logRequestEvent(req, 'import.validation_failed', { userId, imageId: image.id, reason: validation.reason })
+      await db.update(importImages).set({ status: 'failed' }).where(eq(importImages.id, image.id))
+      res.status(400).json({
+        error: 'header_not_found',
+        message: 'A imagem não contém um cabeçalho de data visível. Certifique-se de que a lista de transações está visível com a data acima.',
+      })
+      return
+    }
+  }
+
+  // Extração via Gemini
+  let transactions: TransacaoExtraida[] = []
+  try {
+    const extraction = await extractFromImage({ filePath, bank, format })
+    transactions = extraction.transactions as TransacaoExtraida[]
+    const { usage } = extraction
+
+    // Persiste tokens e custo na imagem
+    await db.update(importImages).set({
+      status: 'processed',
+      tokensPrompt: usage.tokensPrompt,
+      tokensOutput: usage.tokensOutput,
+      tokensTotal: usage.tokensTotal,
+      costBrl: usage.costBrl,
+    }).where(eq(importImages.id, image.id))
+
+    // Persiste transações extraídas
+    if (transactions.length > 0) {
+      await db.insert(importExtractedTransactions).values(
+        transactions.map((t) => ({
+          imageId: image.id,
+          userId,
+          title: t.title,
+          description: t.description,
+          amount: String(t.amount),
+          type: t.type,
+          date: t.date,
+          time: t.time,
+          paymentMethod: t.payment_method,
+          dateInferred: t.date_inferred,
+          skipped: t.skipped,
+          skipReason: t.skip_reason,
+          status: 'pending' as const,
+        }))
+      )
+    }
+
+    await db.update(importSessions)
+      .set({ extractedCount: transactions.length })
+      .where(eq(importSessions.imageId, image.id))
+
+    logRequestEvent(req, 'import.extracted', {
+      userId,
+      imageId: image.id,
+      count: transactions.length,
+      tokensTotal: usage.tokensTotal,
+      costBrl: usage.costBrl,
+    })
+  } catch (err) {
+    console.error('[import.controller] Falha na extração Gemini:', err)
+    logRequestEvent(req, 'import.extraction_failed', { userId, imageId: image.id, error: String(err) })
+    await db.update(importImages).set({ status: 'failed' }).where(eq(importImages.id, image.id))
+    res.status(500).json({ error: 'extraction_failed', message: 'Não foi possível extrair as transações. Tente novamente.' })
+    return
+  }
 
   res.status(201).json({
     data: {
@@ -66,7 +170,7 @@ export const importExtract: RequestHandler = async (req, res) => {
       format,
       fileName,
       mimeType,
-      transactions: [],
+      transactions,
     },
   })
 }

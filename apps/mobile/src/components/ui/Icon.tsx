@@ -165,4 +165,10 @@ export const Icon = {
       <Path d="M11.5 8.5a4.24 4.24 0 0 0-6 0l-2 2a4.24 4.24 0 0 0 6 6l1-1" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   ),
+
+  X: ({ size = 16, color = '#15151A', sw = 2 }: IconProps) => (
+    <Svg viewBox="0 0 20 20" width={size} height={size} fill="none">
+      <Path d="M5 5l10 10M15 5L5 15" stroke={color} strokeWidth={sw} strokeLinecap="round" />
+    </Svg>
+  ),
 } as const;

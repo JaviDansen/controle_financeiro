@@ -66,6 +66,10 @@ base_knowledge/*
 # Credenciais e segredos
 secrets/
 
+# Armazenamento simulado de arquivos importados — NÃO vai para produção
+# Ver base_knowledge/feature/auto-import/auto-import.md
+apps/api/data_import/
+
 base_knowledge/html_tabs_example/streamings-489921-7ea5d1613ae3.json
 
 apps/mobile/android
