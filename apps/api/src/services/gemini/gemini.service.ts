@@ -53,6 +53,7 @@ export async function extractFromImage(params: {
   console.log(`[gemini] tokens — prompt: ${tokensPrompt}, output: ${tokensOutput}, total: ${tokensTotal}, custo: R$ ${costBrl}`)
 
   const raw = result.response.text().trim()
+  console.log('[gemini] resposta bruta:\n' + raw)
 
   const json = raw
     .replace(/^```json\s*/i, '')

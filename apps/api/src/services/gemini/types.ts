@@ -35,7 +35,8 @@ export type ExtractionResult = {
 
 export type ValidationResult = {
   valid: boolean
-  reason?: string // motivo da rejeição quando valid = false
+  reason?: string       // motivo da rejeição quando valid = false
+  detectedDate?: string // texto da data encontrada, ex: "19 de junho"
 }
 
 export type ImportFormat = 'screenshot' | 'csv' | 'pdf' | 'xls' | 'xlsx'

@@ -7,14 +7,15 @@ export async function validateWithTesseract(imagePath: string): Promise<Validati
 
     return {
       valid: analysis.valid,
+      detectedDate: analysis.matchedLine,
       reason: analysis.valid
         ? undefined
-        : 'Nenhum cabeçalho de data encontrado na imagem pelo OCR Tesseract',
+        : 'Nenhum cabeÃ§alho de data encontrado na imagem pelo OCR Tesseract',
     }
   } catch {
     return {
       valid: false,
-      reason: 'Tesseract não disponível ou falhou ao processar a imagem',
+      reason: 'Tesseract nï¿½o disponï¿½vel ou falhou ao processar a imagem',
     }
   }
 }

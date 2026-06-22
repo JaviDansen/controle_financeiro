@@ -17,6 +17,7 @@ const SUPPORTED_BANKS = ['mercadopago'] as const
 const SUPPORTED_FORMATS = ['screenshot', 'csv', 'pdf', 'xls', 'xlsx'] as const
 
 const importSchema = z.object({
+  imageId: z.string().uuid().optional(), // se fornecido, reutiliza imagem já validada
   bank: z.enum(SUPPORTED_BANKS),
   format: z.enum(SUPPORTED_FORMATS).default('screenshot'),
   fileBase64: z.string().min(1).optional(),
@@ -24,8 +25,8 @@ const importSchema = z.object({
   fileName: z.string().trim().min(1).max(255).optional(),
   mimeType: z.string().trim().min(1).max(255).optional(),
   validationStrategy: z.enum(['gemini', 'tesseract']).default('tesseract'),
-}).refine((data) => Boolean(data.fileBase64 ?? data.imageBase64), {
-  message: 'Arquivo é obrigatório',
+}).refine((data) => Boolean(data.imageId ?? data.fileBase64 ?? data.imageBase64), {
+  message: 'Arquivo ou imageId é obrigatório',
   path: ['fileBase64'],
 })
 
@@ -50,66 +51,65 @@ export const importExtract: RequestHandler = async (req, res) => {
     return
   }
 
-  const { bank, format, fileBase64, imageBase64, fileName, mimeType, validationStrategy } = parsed.data
-  const uploadBase64 = (fileBase64 ?? imageBase64)!
+  const { imageId: existingImageId, bank, format, fileBase64, imageBase64, fileName, mimeType, validationStrategy } = parsed.data
 
-  const imageHash = createHash('sha256').update(uploadBase64).digest('hex')
+  let image: typeof importImages.$inferSelect
 
-  const [existing] = await db
-    .select({ id: importImages.id })
-    .from(importImages)
-    .where(and(eq(importImages.userId, userId), eq(importImages.imageHash, imageHash)))
+  if (existingImageId) {
+    // Reutiliza imagem já salva e validada pelo /validate
+    const [found] = await db
+      .select()
+      .from(importImages)
+      .where(and(eq(importImages.id, existingImageId), eq(importImages.userId, userId)))
 
-  if (existing) {
-    logRequestEvent(req, 'import.duplicate', { userId, imageHash: imageHash.slice(0, 8) })
-    res.status(409).json({ error: 'Arquivo ja processado anteriormente' })
-    return
-  }
-
-  const [image] = await db
-    .insert(importImages)
-    .values({ userId, imageHash, bank, format, status: 'pending' })
-    .returning()
-
-  const filePath = await saveUploadedFile({
-    userId,
-    imageId: image.id,
-    format,
-    mimeType,
-    base64: uploadBase64,
-  })
-
-  await db
-    .update(importImages)
-    .set({ filePath })
-    .where(eq(importImages.id, image.id))
-
-  await db
-    .insert(importSessions)
-    .values({ userId, imageId: image.id, extractedCount: 0, confirmedCount: 0 })
-
-  logRequestEvent(req, 'import.file_saved', { userId, imageId: image.id, filePath })
-
-  // Validação: screenshot deve ter cabeçalho de data visível
-  if (format === 'screenshot') {
-    const absoluteFilePath = join(API_ROOT, filePath)
-    const validation = await validateImageHasDateHeader(absoluteFilePath, validationStrategy as ValidationStrategy)
-
-    if (!validation.valid) {
-      logRequestEvent(req, 'import.validation_failed', { userId, imageId: image.id, reason: validation.reason })
-      await db.update(importImages).set({ status: 'failed' }).where(eq(importImages.id, image.id))
-      res.status(400).json({
-        error: 'header_not_found',
-        message: 'A imagem não contém um cabeçalho de data visível. Certifique-se de que a lista de transações está visível com a data acima.',
-      })
+    if (!found?.filePath) {
+      res.status(404).json({ error: 'Imagem não encontrada ou sem arquivo' })
       return
+    }
+    image = found
+  } else {
+    const uploadBase64 = (fileBase64 ?? imageBase64)!
+    const imageHash = createHash('sha256').update(uploadBase64).digest('hex')
+
+    const [existing] = await db
+      .select({ id: importImages.id })
+      .from(importImages)
+      .where(and(eq(importImages.userId, userId), eq(importImages.imageHash, imageHash)))
+
+    if (existing) {
+      logRequestEvent(req, 'import.duplicate', { userId, imageHash: imageHash.slice(0, 8) })
+      res.status(409).json({ error: 'Arquivo ja processado anteriormente', imageId: existing.id })
+      return
+    }
+
+    const [inserted] = await db
+      .insert(importImages)
+      .values({ userId, imageHash, bank, format, status: 'pending' })
+      .returning()
+
+    const filePath = await saveUploadedFile({ userId, imageId: inserted.id, format, mimeType, base64: uploadBase64 })
+    await db.update(importImages).set({ filePath }).where(eq(importImages.id, inserted.id))
+    await db.insert(importSessions).values({ userId, imageId: inserted.id, extractedCount: 0, confirmedCount: 0 })
+    logRequestEvent(req, 'import.file_saved', { userId, imageId: inserted.id, filePath })
+
+    image = { ...inserted, filePath }
+
+    if (format === 'screenshot') {
+      const absoluteFilePath = join(API_ROOT, filePath)
+      const validation = await validateImageHasDateHeader(absoluteFilePath, validationStrategy as ValidationStrategy)
+      if (!validation.valid) {
+        logRequestEvent(req, 'import.validation_failed', { userId, imageId: image.id, reason: validation.reason })
+        await db.update(importImages).set({ status: 'failed' }).where(eq(importImages.id, image.id))
+        res.status(400).json({ error: 'header_not_found', message: 'A imagem não contém um cabeçalho de data visível.' })
+        return
+      }
     }
   }
 
   // Extração via Gemini
   let transactions: TransacaoExtraida[] = []
   try {
-    const extraction = await extractFromImage({ filePath, bank, format })
+    const extraction = await extractFromImage({ filePath: image.filePath!, bank: image.bank as 'mercadopago', format: image.format as any })
     transactions = extraction.transactions as TransacaoExtraida[]
     const { usage } = extraction
 
@@ -165,14 +165,79 @@ export const importExtract: RequestHandler = async (req, res) => {
   res.status(201).json({
     data: {
       imageId: image.id,
-      imageHash,
-      bank,
-      format,
-      fileName,
-      mimeType,
+      bank: image.bank,
+      format: image.format,
       transactions,
     },
   })
+}
+
+// ─── POST /import/validate ──────────────────────────────────────────────────
+
+const validateSchema = z.object({
+  bank: z.enum(SUPPORTED_BANKS),
+  format: z.enum(SUPPORTED_FORMATS).default('screenshot'),
+  fileBase64: z.string().min(1).optional(),
+  imageBase64: z.string().min(1).optional(),
+  fileName: z.string().trim().min(1).max(255).optional(),
+  mimeType: z.string().trim().min(1).max(255).optional(),
+  validationStrategy: z.enum(['gemini', 'tesseract']).default('tesseract'),
+}).refine((data) => Boolean(data.fileBase64 ?? data.imageBase64), {
+  message: 'Arquivo é obrigatório',
+  path: ['fileBase64'],
+})
+
+export const importValidate: RequestHandler = async (req, res) => {
+  const userId = (req as AuthenticatedRequest).userId
+
+  const parsed = validateSchema.safeParse(req.body ?? {})
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.errors[0].message })
+    return
+  }
+
+  const { bank, format, fileBase64, imageBase64, fileName, mimeType, validationStrategy } = parsed.data
+  const uploadBase64 = (fileBase64 ?? imageBase64)!
+
+  const imageHash = createHash('sha256').update(uploadBase64).digest('hex')
+
+  const [existing] = await db
+    .select({ id: importImages.id })
+    .from(importImages)
+    .where(and(eq(importImages.userId, userId), eq(importImages.imageHash, imageHash)))
+
+  if (existing) {
+    res.status(409).json({ error: 'Arquivo já processado anteriormente', imageId: existing.id })
+    return
+  }
+
+  const [image] = await db
+    .insert(importImages)
+    .values({ userId, imageHash, bank, format, status: 'pending' })
+    .returning()
+
+  const filePath = await saveUploadedFile({ userId, imageId: image.id, format, mimeType, base64: uploadBase64 })
+
+  await db.update(importImages).set({ filePath }).where(eq(importImages.id, image.id))
+  await db.insert(importSessions).values({ userId, imageId: image.id, extractedCount: 0, confirmedCount: 0 })
+
+  logRequestEvent(req, 'import.file_saved', { userId, imageId: image.id, filePath, fileName })
+
+  if (format !== 'screenshot') {
+    res.status(200).json({ data: { imageId: image.id, valid: true, detectedDate: null } })
+    return
+  }
+
+  const absoluteFilePath = join(API_ROOT, filePath)
+  const validation = await validateImageHasDateHeader(absoluteFilePath, validationStrategy as ValidationStrategy)
+
+  if (!validation.valid) {
+    await db.update(importImages).set({ status: 'failed' }).where(eq(importImages.id, image.id))
+    res.status(400).json({ error: 'header_not_found', message: 'A imagem não contém um cabeçalho de data visível.' })
+    return
+  }
+
+  res.status(200).json({ data: { imageId: image.id, valid: true, detectedDate: validation.detectedDate ?? null } })
 }
 
 // ─── GET /import/history ────────────────────────────────────────────────────
