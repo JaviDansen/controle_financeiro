@@ -75,3 +75,18 @@ base_knowledge/html_tabs_example/streamings-489921-7ea5d1613ae3.json
 apps/mobile/android
 android/
 ios/
+
+# Modelos OCR (Tesseract traineddata) — baixados localmente, não vão para o repo
+*.traineddata
+
+# Pasta temporária de arquivos OCR processados
+apps/api/.tmp-ocr/
+
+# Scripts de diagnóstico e probe temporários
+apps/api/src/scripts/analyze-date-headers.ts
+apps/api/src/scripts/probe-confidence.ts
+apps/api/src/scripts/probe-validator.ts
+apps/api/src/scripts/test-gemini.ts
+
+# Testes incompletos / temporários fora da convenção de nomenclatura
+apps/api/tests/validator_tesseract_unit_test.ts
