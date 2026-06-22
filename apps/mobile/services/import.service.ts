@@ -33,6 +33,43 @@ export interface ImportResponse {
   transactions: ExtractedTransaction[]
 }
 
+export interface ValidateResponse {
+  imageId: string
+  valid: true
+  detectedDate: string | null
+}
+
+export async function validateExtractFile(
+  file: ExtractUploadPayload,
+  bank: string,
+  token: string,
+  validationStrategy: ValidationStrategy = 'tesseract',
+): Promise<ValidateResponse> {
+  const res = await fetch(`${API_URL}/import/validate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      bank,
+      format: file.format,
+      fileBase64: file.fileBase64,
+      fileName: file.fileName,
+      mimeType: file.mimeType,
+      validationStrategy,
+    }),
+  })
+
+  const json = await res.json()
+
+  if (res.status === 409) throw new DuplicateImageError(json.imageId)
+  if (res.status === 400 && json.error === 'header_not_found') throw new HeaderNotFoundError()
+  if (!res.ok) throw new Error(json.error ?? 'Erro ao validar extrato')
+
+  return json.data
+}
+
 export async function sendExtractFile(
   file: ExtractUploadPayload,
   bank: string,
@@ -57,10 +94,29 @@ export async function sendExtractFile(
 
   const json = await res.json()
 
-  if (res.status === 409) throw new DuplicateImageError()
+  if (res.status === 409) throw new DuplicateImageError(json.imageId)
   if (res.status === 400 && json.error === 'header_not_found') throw new HeaderNotFoundError()
   if (!res.ok) throw new Error(json.error ?? 'Erro ao enviar extrato')
 
+  return json.data
+}
+
+export async function extractByImageId(
+  imageId: string,
+  bank: string,
+  token: string,
+): Promise<ImportResponse> {
+  const res = await fetch(`${API_URL}/import/extract`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ imageId, bank, format: 'screenshot' }),
+  })
+
+  const json = await res.json()
+  if (!res.ok) throw new Error(json.error ?? 'Erro ao extrair transações')
   return json.data
 }
 
@@ -112,9 +168,11 @@ export async function reanalyzeImage(
 }
 
 export class DuplicateImageError extends Error {
-  constructor() {
+  imageId?: string
+  constructor(imageId?: string) {
     super('Arquivo ja processado anteriormente')
     this.name = 'DuplicateImageError'
+    this.imageId = imageId
   }
 }
 
