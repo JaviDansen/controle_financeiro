@@ -1,10 +1,11 @@
+import { resolve } from 'path'
+// dotenv deve ser carregado antes de qualquer import que leia process.env
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+require('dotenv').config({ path: resolve(__dirname, '../../../.env') })
+
 import express from 'express'
 import cors from 'cors'
-import { config } from 'dotenv'
-import { resolve } from 'path'
 import { Pool } from 'pg'
-
-config({ path: resolve(__dirname, '../../../.env') })
 
 import { buildConnectionString, getConnectionLabel } from '@finapp/db'
 import authRoutes from './routes/auth.routes'
@@ -63,7 +64,7 @@ async function checkDatabase(): Promise<void> {
 
 if (require.main === module) {
   app.listen(PORT, () => {
-    log('INF', 'servidor iniciado', { port: PORT })
+    log('INF', 'servidor iniciado', { port: PORT, gemini_model: process.env.GEMINI_MODEL ?? 'gemini-2.5-flash' })
     checkDatabase()
   })
 }
