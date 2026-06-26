@@ -36,6 +36,14 @@ export default function ResetPasswordScreen() {
       }
 
       setLoading(true);
+
+      if (token === 'mock-reset-token') {
+        // Simula uma resposta do backend para o fluxo mockado
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        setSuccess(true);
+        return;
+      }
+
       const res = await fetch(`${API_URL}/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
