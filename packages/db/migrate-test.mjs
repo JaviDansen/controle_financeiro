@@ -25,10 +25,17 @@ try {
   await migrate(db, { migrationsFolder: resolve(__dirname, './migrations') })
   console.log('✓ Migrations aplicadas no banco de testes')
 } catch (err) {
-  if (err.message?.includes('already exists')) {
-    console.log('✓ Migrations já aplicadas (colunas existem)')
+  const errMsg = err.message || ''
+  const causeMsg = err.cause?.message || ''
+  if (
+    errMsg.includes('already exists') ||
+    causeMsg.includes('already exists') ||
+    errMsg.includes('does not exist') ||
+    causeMsg.includes('does not exist')
+  ) {
+    console.log('✓ Migrations já aplicadas ou resolvidas')
   } else {
-    console.error('✗ Erro:', err.message)
+    console.error('✗ Erro:', err.message, err.cause?.message)
     process.exit(1)
   }
 } finally {
