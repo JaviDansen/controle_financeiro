@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvo
 import { useRouter, useLocalSearchParams, Link } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { z } from 'zod';
+import * as authService from '../../services/auth.service';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 
@@ -37,20 +38,8 @@ export default function ResetPasswordScreen() {
 
       setLoading(true);
 
-      if (token === 'mock-reset-token') {
-        // Simula uma resposta do backend para o fluxo mockado
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        setSuccess(true);
-        return;
-      }
-
-      const res = await fetch(`${API_URL}/auth/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, newPassword }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? 'Erro ao redefinir senha');
+      // Chamada real à API
+      await authService.resetPassword(token, newPassword);
       setSuccess(true);
     } catch (err) {
       if (err instanceof z.ZodError) {

@@ -70,3 +70,24 @@ export async function validateStoredToken(token: string): Promise<boolean> {
     return false
   }
 }
+
+export async function verifyCode(email: string, code: string): Promise<{ token: string }> {
+  const res = await fetch(`${API_URL}/auth/verify-code`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, code }),
+  })
+  const json = await res.json()
+  if (!res.ok) throw new Error(json.error ?? 'Erro ao verificar código')
+  return json.data
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<void> {
+  const res = await fetch(`${API_URL}/auth/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, newPassword }),
+  })
+  const json = await res.json()
+  if (!res.ok) throw new Error(json.error ?? 'Erro ao redefinir senha')
+}

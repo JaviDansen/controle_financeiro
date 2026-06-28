@@ -15,6 +15,10 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(),
 }))
 
+jest.mock('@/services/auth.service', () => ({
+  forgotPassword: jest.fn().mockResolvedValue(undefined),
+}))
+
 describe('Tela de Recuperação de Senha', () => {
   beforeEach(() => {
     jest.clearAllMocks()

@@ -14,6 +14,7 @@ export async function clearTables() {
   await testDb.delete(schema.goals)
   await testDb.delete(schema.cards)
   await testDb.delete(schema.categories)
+  await testDb.delete(schema.passwordResets)
   await testDb.delete(schema.users)
 }
 

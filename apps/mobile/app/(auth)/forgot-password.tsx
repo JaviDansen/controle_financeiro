@@ -22,8 +22,8 @@ export default function ForgotPasswordScreen() {
       forgotPasswordSchema.parse({ email });
       setLoading(true);
       
-      // Simulação do tempo de resposta do servidor
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      // Chamada real à API
+      await authService.forgotPassword(email);
       
       // Navega para a tela de verificação de código enviando o e-mail como parâmetro
       router.push({

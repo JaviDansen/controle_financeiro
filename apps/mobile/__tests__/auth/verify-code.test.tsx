@@ -13,6 +13,11 @@ jest.mock('@expo/vector-icons', () => ({
   Feather: () => null,
 }));
 
+jest.mock('../../services/auth.service', () => ({
+  verifyCode: jest.fn(),
+  forgotPassword: jest.fn(),
+}));
+
 describe('VerifyCodeScreen — renderizacao', () => {
   beforeEach(() => {
     jest.clearAllMocks();

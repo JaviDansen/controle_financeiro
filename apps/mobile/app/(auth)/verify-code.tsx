@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import { useRouter, useLocalSearchParams, Link } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
+import * as authService from '../../services/auth.service';
 
 export default function VerifyCodeScreen() {
   const router = useRouter();
@@ -27,13 +28,17 @@ export default function VerifyCodeScreen() {
       setError('');
       setLoading(true);
 
-      // Simula uma resposta do backend
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      if (!email) {
+        throw new Error('E-mail não informado.');
+      }
 
-      // Avança para a tela de resetar a senha passando um token mockado
+      // Chamada real à API
+      const result = await authService.verifyCode(email, codeString);
+
+      // Avança para a tela de resetar a senha passando o token real
       router.push({
         pathname: '/(auth)/reset-password',
-        params: { token: 'mock-reset-token' },
+        params: { token: result.token },
       });
     } catch (err) {
       if (err instanceof Error) {
@@ -99,14 +104,22 @@ export default function VerifyCodeScreen() {
       setResending(true);
       setResendSuccess(false);
 
-      // Simulação do tempo de reenvio
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (!email) {
+        throw new Error('E-mail não informado.');
+      }
+
+      // Reenviar código chama forgotPassword
+      await authService.forgotPassword(email);
 
       setResendSuccess(true);
       // Auto-hide success message after 3 seconds
       setTimeout(() => setResendSuccess(false), 3000);
     } catch (err) {
-      setError('Erro ao reenviar o código. Tente novamente.');
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Erro ao reenviar o código. Tente novamente.');
+      }
     } finally {
       setResending(false);
     }

@@ -1,9 +1,9 @@
 import { Request, Response } from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { eq, or } from 'drizzle-orm'
+import { eq, or, and } from 'drizzle-orm'
 import { z } from 'zod'
-import { db, users } from '@finapp/db'
+import { db, users, passwordResets } from '@finapp/db'
 import { logRequestEvent } from '../middlewares/request-logger.middleware'
 import { sendPasswordResetEmail } from '../services/google/gmail.service'
 import { verifyGoogleToken } from '../services/google/oauth.service'
@@ -31,6 +31,11 @@ const loginSchema = z.object({
 
 const forgotPasswordSchema = z.object({
   email: z.string({ required_error: 'email é obrigatório' }).email(),
+})
+
+const verifyCodeSchema = z.object({
+  email: z.string({ required_error: 'email é obrigatório' }).email('email com formato inválido'),
+  code: z.string({ required_error: 'código é obrigatório' }).length(6, 'o código deve ter 6 dígitos'),
 })
 
 const resetPasswordSchema = z.object({
@@ -147,18 +152,34 @@ export async function forgotPassword(req: Request, res: Response): Promise<void>
 
   // Responde sempre 200 para não revelar se o e-mail existe
   if (user) {
-    const resetToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET || 'secret', { expiresIn: '15m' })
-    const resetLink = `${process.env.API_URL}/auth/reset-password?token=${resetToken}`
+    // 1. Expira solicitações anteriores
+    await db
+      .update(passwordResets)
+      .set({ statusCode: 'expired' })
+      .where(and(eq(passwordResets.userId, user.id), eq(passwordResets.statusCode, 'pending')))
+
+    // 2. Gera o código de 6 dígitos
+    const code = Math.floor(100000 + Math.random() * 900000).toString()
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000) // 15 minutos
+
+    // 3. Salva no banco de dados
+    await db.insert(passwordResets).values({
+      userId: user.id,
+      code,
+      expiresAt,
+      statusCode: 'pending',
+      attempts: 0,
+    })
 
     try {
-      await sendPasswordResetEmail(email, resetLink)
+      await sendPasswordResetEmail(email, code)
       logRequestEvent(req, 'auth.forgot_password.email_sent', { userId: user.id, email })
     } catch (err) {
       logRequestEvent(req, 'auth.forgot_password.email_error', { userId: user.id, email, error: String(err) })
     }
   }
 
-  res.status(200).json({ data: { message: 'Se o e-mail existir, um link de recuperação foi enviado.' } })
+  res.status(200).json({ data: { message: 'Se o e-mail existir, um código de recuperação foi enviado.' } })
 }
 
 export async function redirectResetPassword(req: Request, res: Response): Promise<void> {
@@ -272,6 +293,85 @@ export async function googleLogin(req: Request, res: Response): Promise<void> {
   })
 }
 
+export async function verifyCode(req: Request, res: Response): Promise<void> {
+  logRequestEvent(req, 'auth.verify_code.validation_started')
+  const parsed = verifyCodeSchema.safeParse(req.body)
+  if (!parsed.success) {
+    logRequestEvent(req, 'auth.verify_code.validation_failed', { error: parsed.error.errors[0].message })
+    res.status(400).json({ error: parsed.error.errors[0].message })
+    return
+  }
+
+  const { email, code } = parsed.data
+  logRequestEvent(req, 'auth.verify_code.lookup_user', { email })
+
+  const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1)
+  const user = existingUser[0]
+
+  if (!user) {
+    logRequestEvent(req, 'auth.verify_code.user_not_found', { email })
+    res.status(400).json({ error: 'Código inválido ou expirado.' })
+    return
+  }
+
+  const existingReset = await db
+    .select()
+    .from(passwordResets)
+    .where(
+      and(
+        eq(passwordResets.userId, user.id),
+        eq(passwordResets.statusCode, 'pending')
+      )
+    )
+    .limit(1)
+
+  const reset = existingReset[0]
+
+  if (!reset) {
+    logRequestEvent(req, 'auth.verify_code.no_pending_reset', { userId: user.id })
+    res.status(400).json({ error: 'Código inválido ou expirado.' })
+    return
+  }
+
+  if (new Date() > reset.expiresAt) {
+    await db.update(passwordResets).set({ statusCode: 'expired' }).where(eq(passwordResets.id, reset.id))
+    logRequestEvent(req, 'auth.verify_code.code_expired', { userId: user.id })
+    res.status(400).json({ error: 'Código inválido ou expirado.' })
+    return
+  }
+
+  if (reset.code !== code) {
+    const newAttempts = reset.attempts + 1
+    const shouldExpire = newAttempts >= 3
+
+    await db
+      .update(passwordResets)
+      .set({
+        attempts: newAttempts,
+        statusCode: shouldExpire ? 'expired' : 'pending',
+      })
+      .where(eq(passwordResets.id, reset.id))
+
+    logRequestEvent(req, 'auth.verify_code.incorrect_code', {
+      userId: user.id,
+      attempts: newAttempts,
+      expired: shouldExpire,
+    })
+
+    res.status(400).json({ error: 'Código inválido ou expirado.' })
+    return
+  }
+
+  const resetToken = jwt.sign(
+    { userId: user.id, purpose: 'reset-password' },
+    process.env.JWT_SECRET || 'secret',
+    { expiresIn: '5m' }
+  )
+
+  logRequestEvent(req, 'auth.verify_code.success', { userId: user.id })
+  res.status(200).json({ data: { token: resetToken } })
+}
+
 export async function resetPassword(req: Request, res: Response): Promise<void> {
   logRequestEvent(req, 'auth.reset_password.validation_started')
   const parsed = resetPasswordSchema.safeParse(req.body)
@@ -284,10 +384,23 @@ export async function resetPassword(req: Request, res: Response): Promise<void> 
   const { token, newPassword } = parsed.data
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as { userId: string }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as { userId: string; purpose?: string }
+    
+    if (decoded.purpose !== 'reset-password') {
+      logRequestEvent(req, 'auth.reset_password.invalid_purpose')
+      res.status(400).json({ error: 'Token inválido ou expirado' })
+      return
+    }
+
     logRequestEvent(req, 'auth.reset_password.token_verified', { userId: decoded.userId })
     const passwordHash = await bcrypt.hash(newPassword, 10)
     await db.update(users).set({ passwordHash }).where(eq(users.id, decoded.userId))
+    
+    await db
+      .update(passwordResets)
+      .set({ statusCode: 'used' })
+      .where(and(eq(passwordResets.userId, decoded.userId), eq(passwordResets.statusCode, 'pending')))
+
     logRequestEvent(req, 'auth.reset_password.success', { userId: decoded.userId })
     res.status(200).json({ data: { message: 'Senha atualizada com sucesso' } })
   } catch (error) {
