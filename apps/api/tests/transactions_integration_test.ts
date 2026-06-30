@@ -1,5 +1,5 @@
 import { api } from './helpers/app'
-import { clearTables, testDb } from './helpers/db'
+import { testDb } from './helpers/db'
 import * as schema from '@finapp/db'
 
 const VALID_USER = {
@@ -9,12 +9,22 @@ const VALID_USER = {
 }
 
 async function registerAndLogin(overrides = {}) {
-  await api().post('/auth/register').send({ ...VALID_USER, ...overrides })
+  const user = { ...VALID_USER, ...overrides } as typeof VALID_USER
+  user.email = uniqueEmail(user.email)
+
+  await api().post('/auth/register').send(user)
   const res = await api().post('/auth/login').send({
-    email: (overrides as any).email ?? VALID_USER.email,
-    password: (overrides as any).password ?? VALID_USER.password,
+    email: user.email,
+    password: user.password,
   })
   return res.body.data.token as string
+}
+
+let userSeq = 0
+function uniqueEmail(email: string) {
+  userSeq += 1
+  const [local, domain] = email.split('@')
+  return `${local}+${Date.now()}-${userSeq}@${domain}`
 }
 
 async function createCategory(userId: string, name = 'Alimentação') {
@@ -52,9 +62,6 @@ function userIdFromToken(token: string) {
   return (jwt.decode(token) as { userId: string }).userId
 }
 
-beforeEach(async () => {
-  await clearTables()
-})
 
 // ─────────────────────────────────────────────────────
 // GET /transactions

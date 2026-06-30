@@ -1,6 +1,5 @@
 import jwt from 'jsonwebtoken'
 import { api } from './helpers/app'
-import { clearTables } from './helpers/db'
 
 const VALID_USER = {
   name: 'João Teste',
@@ -8,21 +7,29 @@ const VALID_USER = {
   password: 'senha123',
 }
 
+let userSeq = 0
+let currentUser = VALID_USER
+
+beforeEach(() => {
+  userSeq += 1
+  currentUser = {
+    ...VALID_USER,
+    email: `joao+${Date.now()}-${userSeq}@teste.com`,
+  }
+})
+
 async function registerUser(overrides = {}) {
-  return api().post('/auth/register').send({ ...VALID_USER, ...overrides })
+  return api().post('/auth/register').send({ ...currentUser, ...overrides })
 }
 
 async function createUserAndLogin() {
   await registerUser()
   return api().post('/auth/login').send({
-    email: VALID_USER.email,
-    password: VALID_USER.password,
+    email: currentUser.email,
+    password: currentUser.password,
   })
 }
 
-beforeEach(async () => {
-  await clearTables()
-})
 
 // ─────────────────────────────────────────────────────
 // POST /auth/register
@@ -37,8 +44,8 @@ describe('POST /auth/register', () => {
   it('retorna id, name, email e createdAt do usuário criado', async () => {
     const res = await registerUser()
     expect(res.body.data).toHaveProperty('id')
-    expect(res.body.data).toHaveProperty('name', VALID_USER.name)
-    expect(res.body.data).toHaveProperty('email', VALID_USER.email)
+    expect(res.body.data).toHaveProperty('name', currentUser.name)
+    expect(res.body.data).toHaveProperty('email', currentUser.email)
     expect(res.body.data).toHaveProperty('createdAt')
   })
 
@@ -67,7 +74,7 @@ describe('POST /auth/register', () => {
     expect(res.status).toBe(400)
     expect(res.body).toHaveProperty('error')
   })
-  
+
   it('400: email ausente', async () => {
     const res = await registerUser({ email: undefined })
     expect(res.status).toBe(400)
@@ -120,8 +127,8 @@ describe('POST /auth/login', () => {
   it('retorna dados do usuário junto com o token', async () => {
     const res = await createUserAndLogin()
     expect(res.body.data.user).toHaveProperty('id')
-    expect(res.body.data.user).toHaveProperty('name', VALID_USER.name)
-    expect(res.body.data.user).toHaveProperty('email', VALID_USER.email)
+    expect(res.body.data.user).toHaveProperty('name', currentUser.name)
+    expect(res.body.data.user).toHaveProperty('email', currentUser.email)
   })
 
   it('nunca expõe passwordHash na resposta de login', async () => {
@@ -134,7 +141,7 @@ describe('POST /auth/login', () => {
   it('401: senha incorreta', async () => {
     await registerUser()
     const res = await api().post('/auth/login').send({
-      email: VALID_USER.email,
+      email: currentUser.email,
       password: 'senha-errada',
     })
     expect(res.status).toBe(401)
@@ -157,7 +164,7 @@ describe('POST /auth/login', () => {
   })
 
   it('400: password ausente', async () => {
-    const res = await api().post('/auth/login').send({ email: VALID_USER.email })
+    const res = await api().post('/auth/login').send({ email: currentUser.email })
     expect(res.status).toBe(400)
     expect(res.body).toHaveProperty('error')
   })
@@ -172,7 +179,7 @@ describe('POST /auth/forgot-password', () => {
     await registerUser()
     const res = await api()
       .post('/auth/forgot-password')
-      .send({ email: VALID_USER.email })
+      .send({ email: currentUser.email })
     expect(res.status).toBe(200)
     expect(res.body.data).toHaveProperty('message')
   })

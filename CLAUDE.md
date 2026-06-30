@@ -295,7 +295,7 @@ npm run test:watch  # Modo watch
 - `apps/api/jest.config.ts` — configuração do Jest (preset ts-jest, testMatch, globalSetup)
 - `apps/api/tests/helpers/global-setup.ts` — carrega `.env` e aponta `DATABASE_URL` para o banco de teste
 - `apps/api/tests/helpers/global-teardown.ts` — encerra conexões após todos os testes
-- `apps/api/tests/helpers/db.ts` — exporta `testDb` (instância Drizzle no banco de teste) e `clearTables()`
+- `apps/api/tests/helpers/db.ts` — exporta `testDb` (instância Drizzle no banco de teste)
 - `apps/api/tests/helpers/app.ts` — exporta `api()` com supertest apontando para a instância Express
 
 **Convenção de nomenclatura dos testes:**
@@ -309,10 +309,6 @@ DATABASE_URL_TEST=postgres://usuario:senha@host:porta/finapp-test?sslmode=disabl
 **Como usar os helpers em um teste:**
 ```typescript
 import { api } from './helpers/app'
-import { clearTables } from './helpers/db'
-
-beforeEach(async () => { await clearTables() })
-
 it('GET /health retorna ok', async () => {
   const res = await api().get('/health')
   expect(res.status).toBe(200)
