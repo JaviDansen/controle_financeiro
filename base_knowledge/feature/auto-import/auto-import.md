@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Permitir que o usuário registre múltiplas transações de uma vez, sem precisar preencher cada uma manualmente. O sistema lê arquivos de extrato (screenshot, PDF, CSV, XLS, XLSX), extrai os dados e apresenta uma lista de revisão antes de salvar.
+Permitir que o usuário registre múltiplas transações de uma vez, sem precisar preencher cada uma manualmente. O sistema lê arquivos de extrato (screenshot ou PDF), extrai os dados e apresenta uma lista de revisão antes de salvar.
 
 ---
 
@@ -11,11 +11,11 @@ Permitir que o usuário registre múltiplas transações de uma vez, sem precisa
 ```
 Usuário seleciona o banco
         ↓
-Seleciona o validador de data (Gemini ou Tesseract)
+Usuário seleciona a data de referência no calendário
         ↓
-Seleciona os arquivos de extrato (imagens ou documentos — múltipla seleção)
+Usuário seleciona os arquivos de extrato (imagens ou documentos — múltipla seleção)
         ↓
-Mobile envia cada arquivo (base64) para a API FinApp
+Mobile envia cada arquivo (base64) + referenceDate para a API FinApp
         ↓
 Backend calcula hash SHA-256 do arquivo
         ↓
@@ -23,20 +23,16 @@ Hash já existe no banco? → rejeita com 409, avisa o usuário
         ↓
 Backend salva o arquivo em disco (pasta data_import/)       ← [SIMULADO — ver nota abaixo]
         ↓
-Backend valida se a imagem tem cabeçalho de data visível
-  - Sem cabeçalho → rejeita com 400 (header_not_found), sem chamar o Gemini
-        ↓
 Backend extrai as transações:
-  - Screenshot → Gemini Vision (prompt por banco)
-  - CSV/XLS/XLSX → parser local por banco (a implementar)
-  - PDF → a definir
+  - Screenshot → Gemini Vision (prompt por banco) usando referenceDate como âncora de data
+  - PDF → Gemini Vision (modelo lê PDF nativamente)
         ↓
 Backend salva transações extraídas em import_extracted_transactions
 Backend salva tokens consumidos e custo em BRL em import_images
         ↓
 Retorna transactions[] ao mobile
         ↓
-Mobile exibe lista das transações extraídas (somente não-skipped)
+Mobile exibe lista das transações extraídas (somente não-skipped) — apenas visualização
         ↓
 [PRÓXIMO] Usuário revisa: edita, exclui ou mantém cada item
         ↓
@@ -73,7 +69,7 @@ apps/api/
     ├── images/             ← screenshots (.jpg, .png, .webp)
     │   └── {userId}/
     │       └── {imageId}.{ext}
-    └── documents/          ← PDFs, CSVs, XLS, XLSX
+    └── documents/          ← PDFs
         └── {userId}/
             └── {imageId}.{ext}
 ```
@@ -99,120 +95,42 @@ Cada banco exporta extratos em formatos e layouts diferentes. O sistema opera co
 
 | Banco | Método | Status |
 |---|---|---|
-| Mercado Pago | Screenshot → Gemini Vision | ✅ Implementado |
-| A definir | CSV exportado manualmente | 🔜 Planejado |
+| Mercado Pago | Screenshot / PDF → Gemini Vision | ✅ Implementado |
 
 ---
 
 ## Plano de Implementação
 
-### Etapa 1 — Recepção e salvamento do arquivo ✅ Concluída
+### Etapa 1 — Recepção, salvamento e extração ✅ Concluída
 
-- Mobile envia `fileBase64` + metadados via `POST /import/extract`
+- Usuário escolhe banco, data de referência e seleciona o(s) arquivo(s)
+- Mobile envia `fileBase64` + `referenceDate` + metadados via `POST /import/extract`
 - Backend valida com Zod, calcula hash SHA-256, verifica duplicata
 - Decodifica base64 e salva em `data_import/{images|documents}/{userId}/{imageId}.{ext}`
 - Salva caminho relativo em `import_images.file_path`
-- Insere em `import_images` (status `'pending'`) e `import_sessions`
-- Log `import.received` (tamanho do payload) e `import.file_saved` (caminho)
+- Chama Gemini Vision usando `referenceDate` como âncora de data
+- Insere transações extraídas em `import_extracted_transactions`
+- Retorna `transactions[]` ao mobile
 
-### Etapa 2 — Parser CSV (genérico) 🔜 Pendente
+> **Nota:** A etapa de pré-validação de cabeçalho de data (Tesseract/Gemini) foi removida do fluxo.
+> A data de referência agora é fornecida diretamente pelo usuário via calendário, eliminando a necessidade de detecção automática.
 
-- [ ] Ler o arquivo salvo em disco a partir do `file_path`
-- [ ] Parsear colunas de acordo com o banco selecionado (mapeamento a definir por banco)
-- [ ] Normalizar valores: vírgula → ponto, sinal negativo → `type: 'expense'`
-- [ ] Deduplicação por ID de referência do banco (coluna específica por banco)
-- [ ] Retornar array `TransacaoExtraida[]` no contrato estabelecido
+### Etapa 2 — Exibição dos resultados ✅ Concluída (parcial)
 
-### Etapa 3 — Pré-validação da imagem ✅ Concluída
+- Mobile exibe lista das transações extraídas (somente não-skipped)
+- Badge "DATA?" para `date_inferred: true`
+- Itens `skipped` não aparecem na lista principal
+- **Apenas visualização** — edição e exclusão pendentes (Etapa 5)
 
-Antes de chamar o Gemini para extração, o backend valida se a imagem contém um **cabeçalho de data visível**. Sem ele, a extração não tem como associar data às transações — a chamada seria desperdiçada.
-
-**Regra absoluta:** se nenhum cabeçalho de data for encontrado, a imagem é rejeitada imediatamente, sem chamar o Gemini de extração. O mobile exibe erro claro ao usuário.
-
-**Erro retornado pela API quando validação falha:**
-```json
-{ "error": "header_not_found", "message": "A imagem não contém um cabeçalho de data visível." }
-```
-
-#### Estratégias de validação — resultado dos testes
-
-Dois modelos foram implementados e testados em 6 imagens reais. A estratégia ativa é controlada pelo campo `validationStrategy` enviado pelo mobile (e pela env `GEMINI_VALIDATION_STRATEGY` como default).
-
-| Estratégia | Como funciona | Custo | Resultado nos testes |
-|---|---|---|---|
-| `tesseract` | OCR local com `tesseract.js` — detecta padrão de data no texto extraído | Zero | **6/6 corretas (100%)** — padrão atual |
-| `gemini` | Chamada ao Gemini Flash com prompt curtíssimo: "existe cabeçalho de data?" | ~R$ 0,001/imagem | 5/6 corretas (83%) — 1 falso positivo |
-
-**Tesseract é o padrão** por ter acerto perfeito no conjunto de teste e custo zero. Gemini permanece disponível para comparação.
-
-#### Arquitetura do validador
-
-```
-apps/api/src/services/gemini/validator/
-├── index.ts                     ← validateImageHasDateHeader(path, strategy?)
-├── gemini-validator.ts          ← validação via Gemini Flash
-├── tesseract-validator.ts       ← validação via OCR local
-└── date-header-detector.ts      ← lógica OCR: normalização, score por linha, detecção de mês
-```
-
-O `date-header-detector.ts` é o núcleo do Tesseract:
-- Remove acentos, trata `|` como `l` (ruído de OCR)
-- Score 5 → match exato (`"Hoje"`, `"19 de junho"`)
-- Score 3 → match em linha curta com padrão de data
-- Válido quando score ≥ 3
-- Cobre nomes completos e abreviações de mês (`jan`, `fev`...)
-
-**Testes:** `tests/validator_tesseract_unit_test.ts` — 26 testes (18 unitários puros + 8 com imagens reais).
-
-### Etapa 4 — Extração via Gemini Vision ✅ Concluída
-
-**LLM:** Gemini 2.5 Flash (configurável via `GEMINI_MODEL` no `.env`)
-
-**Custo real medido:** ~R$ 0,007 por imagem com 6 transações (1.888 tokens de entrada, 678 de saída).
-
-**Taxa de câmbio:** obtida em tempo real via `open.er-api.com/v6/latest/USD`, cache de 24h em memória. Fallback para `USD_TO_BRL` no `.env`.
-
-#### Arquitetura do serviço Gemini
-
-```
-apps/api/src/services/gemini/
-├── gemini.client.ts             ← instância do SDK, exporta GEMINI_MODEL
-├── gemini.service.ts            ← extractFromImage() — lê arquivo, chama Gemini, parseia JSON
-├── types.ts                     ← TransacaoExtraida, ExtractionResult, GeminiUsage, ValidationResult
-├── validator/                   ← (ver Etapa 3)
-└── prompts/
-    ├── index.ts                 ← getPrompt(bank, format)
-    └── banks/
-        └── mercadopago.ts       ← prompt completo com regras de data, reservas e cancelados
-```
-
-#### Prompt Mercado Pago — regras implementadas
-
-1. **Cabeçalho de data acima** → `date_inferred: false`
-2. **Sem cabeçalho acima, com cabeçalho abaixo** → data = dia seguinte ao cabeçalho encontrado, `date_inferred: true`
-3. **`amount` sempre positivo** — `type` determina o sinal (verde = income, vermelho = expense)
-4. **Reservas automáticas** ("Guardar ao gastar", "Reserva") → `skipped: true, skip_reason: "Reserva automática"` — são transferências internas do cofre MP, não afetam saldo real
-5. **Cancelados** → `skipped: true, skip_reason: "Cancelado"`
-6. **"Meli Dólar" (Cashback)** → incluir como `type: 'income'` — é entrada real
-7. **Transações cortadas no rodapé** → incluir se título + valor legíveis
-8. **`payment_method`** extraído da linha de descrição quando visível
-
-#### O que é salvo no banco após extração
-
-- `import_images`: `status = 'processed'`, `tokens_prompt`, `tokens_output`, `tokens_total`, `cost_brl`
-- `import_extracted_transactions`: uma linha por transação extraída (incluindo skipped)
-- `import_sessions`: `extracted_count` atualizado
-
-### Etapa 5 — Sugestão de categoria 🔜 Pendente
+### Etapa 3 — Sugestão de categoria 🔜 Pendente
 
 - [ ] Após extração, comparar `title` de cada transação com os nomes das categorias do usuário
 - [ ] Algoritmo: similaridade por palavras-chave ou Levenshtein (sem LLM)
 - [ ] Preencher `categoryId` em `import_extracted_transactions` quando confiança > threshold
 - [ ] Incluir `suggestedCategoryId` no retorno da API
 
-### Etapa 6 — Tela de revisão (Mobile) 🔜 Pendente
+### Etapa 4 — Tela de revisão editável (Mobile) 🔜 Pendente
 
-- [ ] Exibir lista editável das transações extraídas (atualmente só exibe, sem edição)
 - [ ] Cada item: editar título, valor, data; trocar/selecionar categoria
 - [ ] Diferenciar visualmente itens com `date_inferred: true` (aviso de data incerta)
 - [ ] Mostrar itens `skipped` com visual diferente (riscado ou separado)
@@ -220,7 +138,7 @@ apps/api/src/services/gemini/
 - [ ] Botão "Confirmar tudo" → `POST /import/confirm`
 - [ ] Loading state durante extração (leva 3–10s)
 
-### Etapa 7 — Confirmação e salvamento 🔜 Pendente
+### Etapa 5 — Confirmação e salvamento 🔜 Pendente
 
 - [ ] `POST /import/confirm` recebe array revisado pelo usuário
 - [ ] Insere cada item confirmado em `transactions` com `userId`
@@ -238,7 +156,7 @@ Arquivo: `apps/mobile/app/(tabs)/import-extract.tsx`
 ### Seções da tela
 
 1. **Banco** — seleção do banco (atualmente só Mercado Pago)
-2. **Validador de data** — toggle Tesseract / Gemini (controla `validationStrategy` enviado à API)
+2. **Data de referência** — calendário para o usuário escolher a data antes de enviar o arquivo
 3. **Arquivos** — seleção múltipla de imagens ou documentos; lista com status por arquivo após envio
 4. **Transações extraídas** — lista das transações retornadas (somente não-skipped); badge "DATA?" para `date_inferred: true`
 5. **Envios anteriores** — galeria de todas as imagens já enviadas; ao clicar abre modal com detalhes
@@ -249,7 +167,7 @@ Abre ao clicar em qualquer card da galeria "Envios anteriores":
 - Banco, data, status (processado / falhou / pendente)
 - Contador de transações extraídas
 - Preview das 3 primeiras transações (título, data, valor)
-- Botão **Reanalisar** → `POST /import/reanalyze/:imageId` com o validador atualmente selecionado
+- Calendário para escolher `referenceDate` + botão **Reanalisar** → `POST /import/extract` com `imageId` + data escolhida
 
 ---
 
@@ -257,21 +175,26 @@ Abre ao clicar em qualquer card da galeria "Envios anteriores":
 
 | Método | Rota | Descrição |
 |---|---|---|
-| `POST` | `/import/extract` | Recebe arquivo, valida, extrai e salva |
-| `GET` | `/import/history` | Lista as últimas 50 imagens do usuário com preview de 3 transações |
-| `POST` | `/import/reanalyze/:imageId` | Reanalisa imagem já salva no disco |
+| `POST` | `/import/extract` | Recebe arquivo + referenceDate, salva, extrai e retorna transações |
+| `GET` | `/import/gallery` | Lista as últimas imagens do usuário |
+| `GET` | `/import/image/:imageId` | Serve a imagem autenticada para o mobile |
 | `POST` | `/import/confirm` | *(a implementar)* Confirma transações revisadas pelo usuário |
+
+> **Nota:** O endpoint `POST /import/validate` ainda existe no backend mas não é mais chamado pelo mobile.
+> Pode ser removido em uma limpeza futura.
 
 ### Body de `/import/extract`
 
 ```ts
 {
   bank: 'mercadopago'
-  format: 'screenshot' | 'csv' | 'pdf' | 'xls' | 'xlsx'  // default: 'screenshot'
-  fileBase64: string        // base64 do arquivo
+  format: 'screenshot' | 'pdf'       // default: 'screenshot'
+  fileBase64: string                  // base64 do arquivo (novo upload)
   fileName?: string
   mimeType?: string
-  validationStrategy?: 'gemini' | 'tesseract'  // default: 'tesseract'
+  referenceDate: string               // ISO: "2026-06-30" — obrigatório para novos uploads
+  // OU
+  imageId: string                     // UUID de imagem já salva (reanalise da galeria)
 }
 ```
 
@@ -298,10 +221,9 @@ type TransacaoExtraida = {
 
 ### Regras de inferência de data
 
-1. **Cabeçalho de data visível acima** → `date_inferred: false`
-2. **Sem cabeçalho acima, com cabeçalho abaixo** → date = dia seguinte ao cabeçalho, `date_inferred: true`
-   - Ex: cabeçalho "31 de maio" está abaixo → transações acima são de "1 de junho"
-3. **Sem nenhum cabeçalho visível** → imagem rejeitada antes de chamar o Gemini (`header_not_found`)
+1. **`referenceDate` fornecida pelo usuário** → âncora principal para o Gemini interpretar datas relativas
+2. **Cabeçalho de data visível na imagem** → Gemini usa a data do cabeçalho diretamente, `date_inferred: false`
+3. **Sem cabeçalho visível** → Gemini usa `referenceDate` como fallback, `date_inferred: true`
 
 ---
 
@@ -315,7 +237,7 @@ type TransacaoExtraida = {
 | `user_id` | uuid FK → users | cascade delete |
 | `image_hash` | varchar(64) | SHA-256 do arquivo — único por usuário |
 | `bank` | varchar(50) | `'mercadopago'` |
-| `format` | varchar(20) | `'screenshot'` \| `'csv'` \| `'pdf'` \| `'xls'` \| `'xlsx'` |
+| `format` | varchar(20) | `'screenshot'` \| `'pdf'` |
 | `status` | varchar(20) | `'pending'` \| `'processed'` \| `'failed'` |
 | `file_path` | varchar(500) | caminho local (simulado) → URL do bucket (produção) |
 | `tokens_prompt` | integer | tokens de entrada da chamada Gemini |
@@ -367,21 +289,21 @@ type TransacaoExtraida = {
 # Gemini
 GEMINI_API_KEY=...
 GEMINI_MODEL=gemini-2.5-flash          # modelo — alterável sem tocar no código
-GEMINI_VALIDATION_STRATEGY=tesseract   # 'gemini' ou 'tesseract' — default do servidor
 GEMINI_PROJECT=projects/...            # projeto GCP
 
 # Câmbio
 USD_TO_BRL=6.10                        # fallback se open.er-api.com estiver indisponível
 ```
 
+> **Nota:** `GEMINI_VALIDATION_STRATEGY` foi removida — a detecção automática de cabeçalho não é mais usada.
+
 ---
 
 ## O Que Ainda Precisa ser Definido
 
-- [ ] Threshold de confiança para sugestão de categoria (Etapa 5)
+- [ ] Threshold de confiança para sugestão de categoria (Etapa 3)
 - [ ] UX do loading durante extração — skeleton ou spinner com mensagem de progresso
 - [ ] Política de retry em caso de falha do Gemini (tentativas, backoff)
-- [ ] Mapeamento de colunas CSV por banco (Etapa 2)
-- [ ] Tela de revisão editável (Etapa 6)
-- [ ] Endpoint `POST /import/confirm` (Etapa 7)
+- [ ] Tela de revisão editável (Etapa 4)
+- [ ] Endpoint `POST /import/confirm` (Etapa 5)
 - [ ] **[Pós-simulação]** Escolha do object storage para produção

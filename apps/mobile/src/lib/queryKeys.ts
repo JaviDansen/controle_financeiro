@@ -2,7 +2,7 @@ export const queryKeys = {
   transactions: (month?: string) => month ? ['transactions', month] : ['transactions'],
   cards: () => ['cards'],
   categories: () => ['categories'],
-  importHistory: () => ['import', 'history'],
+  importGallery: () => ['import', 'gallery'],
 } as const
 
 export type QueryKeyName = keyof typeof queryKeys

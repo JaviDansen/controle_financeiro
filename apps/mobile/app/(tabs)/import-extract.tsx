@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Modal,
   Pressable,
   ScrollView,
   StatusBar,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
@@ -20,23 +22,22 @@ import { queryKeys } from '../../src/lib/queryKeys';
 import {
   validateExtractFile,
   extractByImageId,
-  getImportHistory,
-  reanalyzeImage,
+  getImportGallery,
   DuplicateImageError,
   HeaderNotFoundError,
   type ExtractUploadPayload,
   type ExtractedTransaction,
-  type ImportHistoryItem,
+  type GalleryItem,
   type ImportFormat,
   type ValidationStrategy,
 } from '../../services/import.service';
 
-// ─── Constantes ──────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Constantes Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 const BANKS = [{ id: 'mercadopago', label: 'Mercado Pago' }] as const
 const VALIDATORS: { id: ValidationStrategy; label: string; description: string }[] = [
-  { id: 'tesseract', label: 'Tesseract', description: 'OCR local · mais rápido' },
-  { id: 'gemini',    label: 'Gemini',    description: 'IA · mais preciso' },
+  { id: 'tesseract', label: 'Tesseract', description: 'OCR local Ã‚Â· mais rÃƒÂ¡pido' },
+  { id: 'gemini',    label: 'Gemini',    description: 'IA Ã‚Â· mais preciso' },
 ]
 const DOCUMENT_TYPES = [
   'application/pdf', 'text/csv', 'application/csv',
@@ -44,21 +45,29 @@ const DOCUMENT_TYPES = [
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ]
 
+const MONTHS = ['Janeiro','Fevereiro','MarÃƒÂ§o','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+const WEEKDAYS = ['D','S','T','Q','Q','S','S']
+
+function getDaysInMonth(year: number, month: number) {
+  return new Date(year, month + 1, 0).getDate()
+}
+function getFirstDayOfWeek(year: number, month: number) {
+  return new Date(year, month, 1).getDay()
+}
+
 type BankId = typeof BANKS[number]['id']
 
-// Resultado da validação de uma imagem
 type ValidatedFile = {
   upload: ExtractUploadPayload
   imageId: string
   detectedDate: string | null
 }
 
-// Resultado da extração de uma imagem
 type ExtractResult =
   | { status: 'success'; transactions: ExtractedTransaction[] }
   | { status: 'error'; message?: string }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Helpers Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 function inferFormat(fileName?: string | null, mimeType?: string | null): ImportFormat | null {
   const ext = fileName?.split('.').pop()?.toLowerCase()
@@ -86,48 +95,114 @@ function formatDate(iso: string) {
   return `${parseInt(d)} ${months[parseInt(m) - 1]}`
 }
 
-function formatDateLong(iso: string) {
-  const [y, m, d] = iso.split('-')
-  const months = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro']
-  return `${parseInt(d)} de ${months[parseInt(m) - 1]} de ${y}`
-}
-
 function bankLabel(bank: string) {
   return bank === 'mercadopago' ? 'Mercado Pago' : bank
 }
 
-function statusColor(status: string) {
-  if (status === 'processed') return colors.accent
-  if (status === 'failed') return colors.neg
-  return colors.muted
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000'
+
+// Baixa uma imagem autenticada para o cache local e retorna a URI local.
+// Usa o imageId como chave de cache Ã¢â‚¬â€ nÃƒÂ£o rebaixa se jÃƒÂ¡ existir.
+async function fetchAuthImage(imageId: string, token: string, fileName?: string): Promise<string> {
+  const extension = fileName?.split('.').pop()?.toLowerCase() ?? 'jpg'
+  const localUri = `${FileSystem.cacheDirectory}import_${imageId}.${extension}`
+  const info = await FileSystem.getInfoAsync(localUri)
+  if (info.exists) return localUri
+  const { uri } = await FileSystem.downloadAsync(
+    `${API_URL}/import/image/${imageId}`,
+    localUri,
+    { headers: { Authorization: `Bearer ${token}` } },
+  )
+  return uri
 }
 
-function statusLabel(status: string) {
-  if (status === 'processed') return 'Processado'
-  if (status === 'failed') return 'Falhou'
-  if (status === 'pending') return 'Pendente'
-  return status
+function useGalleryUris(items: GalleryItem[] | undefined, token: string | null) {
+  const [uris, setUris] = useState<Record<string, string>>({})
+  useEffect(() => {
+    if (!items || !token) return
+    items.forEach(item => {
+      fetchAuthImage(item.imageId, token, item.fileName)
+        .then(uri => setUris(prev => ({ ...prev, [item.imageId]: uri })))
+        .catch(() => {})
+    })
+  }, [items, token])
+  return uris
 }
 
-// ─── Modal de detalhe da imagem ───────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Modal da galeria Ã¢â‚¬â€ seleciona banco e data Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
-function ImageDetailModal({
-  item, visible, selectedValidator, onClose, onReanalyze,
+function GalleryItemModal({
+  item,
+  visible,
+  selectedBank,
+  token,
+  onClose,
+  onExtract,
+  isExtracting,
 }: {
-  item: ImportHistoryItem | null
+  item: GalleryItem | null
   visible: boolean
-  selectedValidator: ValidationStrategy
+  selectedBank: BankId
+  token: string | null
   onClose: () => void
-  onReanalyze: (imageId: string) => void
+  onExtract: (imageId: string, bank: BankId, date: string) => void
+  isExtracting: boolean
 }) {
+  const now = new Date()
+  const [calMonth, setCalMonth] = useState(now.getMonth())
+  const [calYear, setCalYear] = useState(now.getFullYear())
+  const [selectedDay, setSelectedDay] = useState(now.getDate())
+  const [imgUri, setImgUri] = useState<string | null>(null)
+  const [viewerVisible, setViewerVisible] = useState(false)
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions()
+
+  // Carrega a imagem via download autenticado para cache local e usa URI local
+  useEffect(() => {
+    if (!item || !token || !visible) return
+    setImgUri(null)
+    fetchAuthImage(item.imageId, token, item.fileName)
+      .then((uri) => setImgUri(uri))
+      .catch(() => setImgUri(null))
+  }, [item?.imageId, token, visible])
+
+  // Reseta o calendÃƒÂ¡rio para o mÃƒÂªs atual ao abrir
+  useEffect(() => {
+    setViewerVisible(false)
+    if (visible) {
+      const d = new Date()
+      setCalMonth(d.getMonth())
+      setCalYear(d.getFullYear())
+      setSelectedDay(d.getDate())
+    }
+  }, [visible])
+
   if (!item) return null
 
-  const dateStr = formatDateLong(item.createdAt.slice(0, 10))
-  const isProcessed = item.status === 'processed'
-  const isFailed = item.status === 'failed'
+  const daysInMonth = getDaysInMonth(calYear, calMonth)
+  const firstDow = getFirstDayOfWeek(calYear, calMonth)
+  const cells: (number | null)[] = [
+    ...Array(firstDow).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ]
+  // Preenche atÃƒÂ© completar a ÃƒÂºltima linha
+  while (cells.length % 7 !== 0) cells.push(null)
+
+  function prevMonth() {
+    if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1) }
+    else setCalMonth(m => m - 1)
+    setSelectedDay(1)
+  }
+  function nextMonth() {
+    if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1) }
+    else setCalMonth(m => m + 1)
+    setSelectedDay(1)
+  }
+
+  const dateParam = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <>
+      <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable
         style={{ flex: 1, backgroundColor: 'rgba(21,21,26,0.5)', justifyContent: 'flex-end' }}
         onPress={onClose}
@@ -143,129 +218,228 @@ function ImageDetailModal({
               backgroundColor: colors.hairline, alignSelf: 'center', marginBottom: 20,
             }} />
 
-            <View style={{ paddingHorizontal: 20, gap: 20 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                <View style={{ gap: 4, flex: 1 }}>
-                  <Text style={{ fontSize: 18, fontWeight: '600', color: colors.ink, letterSpacing: -0.4 }}>
-                    {bankLabel(item.bank)}
-                  </Text>
-                  <Text style={{ fontSize: 13, color: colors.muted }}>
-                    {dateStr} · {item.format.toUpperCase()}
-                  </Text>
-                </View>
-                <View style={{
-                  paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8,
-                  backgroundColor: isProcessed ? colors.accentSoft : isFailed ? colors.negSoft : colors.hairline,
-                }}>
-                  <Text style={{ fontSize: 12, fontWeight: '600', color: statusColor(item.status) }}>
-                    {statusLabel(item.status)}
-                  </Text>
-                </View>
-              </View>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={{ paddingHorizontal: 20, gap: 20, paddingBottom: 8 }}>
 
-              <View style={{ flexDirection: 'row', gap: 10 }}>
+                {/* Preview da imagem */}
                 <View style={{
-                  flex: 1, padding: 14, borderRadius: 14,
-                  backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.hairline,
-                  alignItems: 'center', gap: 2,
+                  borderRadius: 16, overflow: 'hidden',
+                  borderWidth: 1, borderColor: colors.hairline,
+                  height: 160, backgroundColor: colors.surface,
+                  alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <Text style={{ fontSize: 22, fontWeight: '700', color: colors.ink }}>{item.extractedCount}</Text>
-                  <Text style={{ fontSize: 11, color: colors.muted }}>transações</Text>
+                  {imgUri ? (
+                    <Pressable onPress={() => setViewerVisible(true)} style={{ width: '100%', height: '100%' }}>
+                      <Image source={{ uri: imgUri }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+                      <View style={{
+                        position: 'absolute', right: 10, bottom: 10,
+                        paddingHorizontal: 10, paddingVertical: 6,
+                        borderRadius: 999, backgroundColor: 'rgba(21,21,26,0.72)',
+                      }}>
+                        <Text style={{ fontSize: 11, fontWeight: '600', color: '#FBFAF6' }}>Toque para ampliar</Text>
+                      </View>
+                    </Pressable>
+                  ) : (
+                    <ActivityIndicator size="small" color={colors.muted} />
+                  )}
                 </View>
-                <View style={{
-                  flex: 1, padding: 14, borderRadius: 14,
-                  backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.hairline,
-                  alignItems: 'center', gap: 2,
-                }}>
-                  <Text style={{ fontSize: 22, fontWeight: '700', color: colors.ink }}>
-                    {item.format === 'screenshot' ? '📸' : '📄'}
-                  </Text>
-                  <Text style={{ fontSize: 11, color: colors.muted }}>{item.format}</Text>
-                </View>
-              </View>
 
-              {item.preview.length > 0 && (
+                {/* Banco */}
                 <View>
                   <Text style={{
                     fontSize: 11, fontWeight: '500', color: colors.muted,
                     textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8,
                   }}>
-                    Últimas transações extraídas
+                    Banco selecionado
                   </Text>
                   <View style={{
-                    borderRadius: 14, borderWidth: 1, borderColor: colors.hairline,
-                    backgroundColor: colors.surface, overflow: 'hidden',
+                    padding: 14, borderRadius: 14,
+                    backgroundColor: colors.ink,
+                    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
                   }}>
-                    {item.preview.map((t, i) => (
-                      <View key={t.id} style={{
-                        flexDirection: 'row', alignItems: 'center',
-                        paddingHorizontal: 14, paddingVertical: 11,
-                        borderBottomWidth: i < item.preview.length - 1 ? 1 : 0,
-                        borderBottomColor: colors.hairline,
-                      }}>
-                        <View style={{ flex: 1 }}>
-                          <Text style={{ fontSize: 13, fontWeight: '500', color: colors.ink }} numberOfLines={1}>
-                            {t.title}
-                          </Text>
-                          <Text style={{ fontSize: 11, color: colors.muted }}>{formatDate(t.date)}</Text>
-                        </View>
-                        <Text style={{ fontSize: 14, fontWeight: '600', color: t.type === 'income' ? colors.pos : colors.neg }}>
-                          {formatAmount(t.amount, t.type)}
-                        </Text>
-                      </View>
-                    ))}
-                    {item.extractedCount > 3 && (
-                      <View style={{ paddingHorizontal: 14, paddingVertical: 10, borderTopWidth: 1, borderTopColor: colors.hairline }}>
-                        <Text style={{ fontSize: 12, color: colors.muted }}>+ {item.extractedCount - 3} outras transações</Text>
-                      </View>
-                    )}
+                    <Text style={{ fontSize: 14, fontWeight: '500', color: '#FBFAF6' }}>
+                      {bankLabel(selectedBank)}
+                    </Text>
+                    <Icon.Check size={14} color="#FBFAF6" sw={2.5} />
                   </View>
                 </View>
-              )}
 
-              {item.extractedCount === 0 && isProcessed && (
-                <View style={{
-                  padding: 14, borderRadius: 14,
-                  backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.hairline,
-                  alignItems: 'center',
-                }}>
-                  <Text style={{ fontSize: 13, color: colors.muted }}>Nenhuma transação extraída</Text>
-                </View>
-              )}
-
-              {isFailed && (
-                <View style={{
-                  padding: 14, borderRadius: 14,
-                  backgroundColor: colors.negSoft, borderWidth: 1, borderColor: colors.neg,
-                }}>
-                  <Text style={{ fontSize: 13, color: colors.neg }}>
-                    Falha ao processar — a imagem pode não ter cabeçalho de data visível.
+                {/* CalendÃƒÂ¡rio */}
+                <View>
+                  <Text style={{
+                    fontSize: 11, fontWeight: '500', color: colors.muted,
+                    textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10,
+                  }}>
+                    Data do extrato
                   </Text>
-                </View>
-              )}
 
-              <Pressable
-                onPress={() => { onReanalyze(item.id); onClose() }}
-                style={{
-                  borderRadius: 16, paddingVertical: 14,
-                  backgroundColor: colors.ink,
-                  flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-                }}
-              >
-                <Icon.Refresh size={16} color="#FBFAF6" sw={2} />
-                <Text style={{ fontSize: 15, fontWeight: '500', color: '#FBFAF6' }}>
-                  Reanalisar com {selectedValidator === 'gemini' ? 'Gemini' : 'Tesseract'}
-                </Text>
-              </Pressable>
-            </View>
+                  <View style={{
+                    borderRadius: 18, borderWidth: 1, borderColor: colors.hairline,
+                    backgroundColor: colors.surface, overflow: 'hidden',
+                  }}>
+                    {/* CabeÃƒÂ§alho mÃƒÂªs/ano */}
+                    <View style={{
+                      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                      paddingHorizontal: 16, paddingVertical: 14,
+                      borderBottomWidth: 1, borderBottomColor: colors.hairline,
+                    }}>
+                      <Pressable onPress={prevMonth} hitSlop={12} style={{
+                        width: 32, height: 32, borderRadius: 8,
+                        backgroundColor: colors.hairline, alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <Icon.ChevL size={14} color={colors.ink} sw={2.5} />
+                      </Pressable>
+                      <Text style={{ fontSize: 15, fontWeight: '600', color: colors.ink, letterSpacing: -0.3 }}>
+                        {MONTHS[calMonth]} {calYear}
+                      </Text>
+                      <Pressable onPress={nextMonth} hitSlop={12} style={{
+                        width: 32, height: 32, borderRadius: 8,
+                        backgroundColor: colors.hairline, alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <Icon.ChevR size={14} color={colors.ink} sw={2.5} />
+                      </Pressable>
+                    </View>
+
+                    {/* Dias da semana */}
+                    <View style={{ flexDirection: 'row', paddingHorizontal: 8, paddingTop: 10, paddingBottom: 4 }}>
+                      {WEEKDAYS.map((d, i) => (
+                        <View key={i} style={{ flex: 1, alignItems: 'center' }}>
+                          <Text style={{ fontSize: 11, fontWeight: '600', color: colors.muted }}>{d}</Text>
+                        </View>
+                      ))}
+                    </View>
+
+                    {/* Grade de dias */}
+                    <View style={{ paddingHorizontal: 8, paddingBottom: 12 }}>
+                      {Array.from({ length: cells.length / 7 }, (_, row) => (
+                        <View key={row} style={{ flexDirection: 'row' }}>
+                          {cells.slice(row * 7, row * 7 + 7).map((day, col) => {
+                            const isSelected = day === selectedDay
+                            const isToday = day === now.getDate() && calMonth === now.getMonth() && calYear === now.getFullYear()
+                            return (
+                              <Pressable
+                                key={col}
+                                onPress={() => day && setSelectedDay(day)}
+                                disabled={!day}
+                                style={{
+                                  flex: 1, alignItems: 'center', justifyContent: 'center',
+                                  paddingVertical: 5,
+                                }}
+                              >
+                                <View style={{
+                                  width: 34, height: 34, borderRadius: 17,
+                                  alignItems: 'center', justifyContent: 'center',
+                                  backgroundColor: isSelected ? colors.ink : 'transparent',
+                                  borderWidth: isToday && !isSelected ? 1.5 : 0,
+                                  borderColor: colors.ink,
+                                }}>
+                                  {day ? (
+                                    <Text style={{
+                                      fontSize: 13,
+                                      fontWeight: isSelected ? '600' : '400',
+                                      color: isSelected ? '#FBFAF6' : isToday ? colors.ink : colors.ink,
+                                    }}>
+                                      {day}
+                                    </Text>
+                                  ) : null}
+                                </View>
+                              </Pressable>
+                            )
+                          })}
+                        </View>
+                      ))}
+                    </View>
+
+                    {/* Data selecionada resumida */}
+                    <View style={{
+                      borderTopWidth: 1, borderTopColor: colors.hairline,
+                      paddingHorizontal: 16, paddingVertical: 12,
+                      flexDirection: 'row', alignItems: 'center', gap: 6,
+                    }}>
+                      <Icon.Calendar size={13} color={colors.muted} sw={1.8} />
+                      <Text style={{ fontSize: 13, color: colors.muted }}>
+                        Selecionado:{' '}
+                        <Text style={{ fontWeight: '600', color: colors.ink }}>
+                          {selectedDay} de {MONTHS[calMonth]} de {calYear}
+                        </Text>
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* BotÃƒÂ£o extrair */}
+                <Pressable
+                  onPress={() => onExtract(item.imageId, selectedBank, dateParam)}
+                  disabled={isExtracting}
+                  style={{
+                    borderRadius: 18, paddingVertical: 16,
+                    backgroundColor: colors.ink,
+                    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  }}
+                >
+                  {isExtracting
+                    ? <ActivityIndicator size="small" color="#FBFAF6" />
+                    : <Icon.ArrowDn size={16} color="#FBFAF6" sw={2} />
+                  }
+                  <Text style={{ fontSize: 15, fontWeight: '500', color: '#FBFAF6' }}>
+                    {isExtracting ? 'Extraindo transaÃƒÂ§ÃƒÂµes...' : 'Extrair transaÃƒÂ§ÃƒÂµes'}
+                  </Text>
+                </Pressable>
+
+              </View>
+            </ScrollView>
           </View>
         </Pressable>
       </Pressable>
     </Modal>
+
+      <Modal visible={viewerVisible && !!imgUri} transparent animationType="fade" onRequestClose={() => setViewerVisible(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(7,7,10,0.96)' }}>
+          <StatusBar barStyle="light-content" />
+          <Pressable
+            onPress={() => setViewerVisible(false)}
+            style={{
+              position: 'absolute', top: (StatusBar.currentHeight ?? 0) + 16, right: 16,
+              width: 42, height: 42, borderRadius: 21,
+              backgroundColor: 'rgba(255,255,255,0.12)',
+              alignItems: 'center', justifyContent: 'center', zIndex: 2,
+            }}
+          >
+            <Icon.X size={18} color="#FBFAF6" sw={2.4} />
+          </Pressable>
+
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center' }}
+            maximumZoomScale={4}
+            minimumZoomScale={1}
+            showsHorizontalScrollIndicator={false}
+            showsVerticalScrollIndicator={false}
+            bouncesZoom
+            centerContent
+            pinchGestureEnabled
+          >
+            {imgUri ? (
+              <Image
+                source={{ uri: imgUri }}
+                style={{ width: screenWidth, height: screenHeight * 0.82 }}
+                resizeMode="contain"
+              />
+            ) : null}
+          </ScrollView>
+
+          <View style={{ paddingBottom: 24, alignItems: 'center' }}>
+            <Text style={{ fontSize: 12, color: 'rgba(251,250,246,0.78)' }}>
+              Use dois dedos para ampliar e arrastar
+            </Text>
+          </View>
+        </View>
+      </Modal>
+    </>
   )
 }
 
-// ─── Tela principal ───────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Tela principal Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 export default function ImportExtractScreen() {
   const router = useRouter()
@@ -277,25 +451,32 @@ export default function ImportExtractScreen() {
   const [selectedValidator, setSelectedValidator] = useState<ValidationStrategy>('tesseract')
   const [uploads, setUploads] = useState<ExtractUploadPayload[]>([])
   const [selectionError, setSelectionError] = useState<string | null>(null)
-  const [modalItem, setModalItem] = useState<ImportHistoryItem | null>(null)
 
-  // Etapa 1: validação
+  // Galeria
+  const [galleryModalItem, setGalleryModalItem] = useState<GalleryItem | null>(null)
+  const [galleryExtractResults, setGalleryExtractResults] = useState<ExtractedTransaction[] | null>(null)
+
+  // Etapa 1: validaÃƒÂ§ÃƒÂ£o de novos uploads
   const [validatedFiles, setValidatedFiles] = useState<ValidatedFile[] | null>(null)
   const [validationErrors, setValidationErrors] = useState<(string | null)[]>([])
 
-  // Etapa 2: extração
+  // Etapa 2: extraÃƒÂ§ÃƒÂ£o de novos uploads
   const [extractResults, setExtractResults] = useState<ExtractResult[] | null>(null)
 
-  const historyQuery = useQuery({
-    queryKey: queryKeys.importHistory(),
-    queryFn: () => getImportHistory(token!),
+  const galleryQuery = useQuery({
+    queryKey: queryKeys.importGallery(),
+    queryFn: () => getImportGallery(token!),
     enabled: !!token,
   })
+  const galleryUris = useGalleryUris(galleryQuery.data, token)
 
-  const reanalyzeMutation = useMutation({
-    mutationFn: ({ imageId }: { imageId: string }) =>
-      reanalyzeImage(imageId, token!, selectedValidator),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.importHistory() }),
+  const galleryExtractMutation = useMutation({
+    mutationFn: ({ imageId, bank, date }: { imageId: string; bank: BankId; date: string }) =>
+      extractByImageId(imageId, bank, token!, date),
+    onSuccess: (res) => {
+      setGalleryExtractResults(res.transactions.filter(t => !t.skipped))
+      setGalleryModalItem(null)
+    },
   })
 
   function resetAll() {
@@ -304,6 +485,7 @@ export default function ImportExtractScreen() {
     setValidationErrors([])
     setExtractResults(null)
     setSelectionError(null)
+    setGalleryExtractResults(null)
     validateMutation.reset()
     extractMutation.reset()
   }
@@ -314,6 +496,7 @@ export default function ImportExtractScreen() {
     setValidatedFiles(null)
     setValidationErrors([])
     setExtractResults(null)
+    setGalleryExtractResults(null)
     validateMutation.reset()
   }
 
@@ -327,7 +510,7 @@ export default function ImportExtractScreen() {
 
   async function pickImage() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync()
-    if (!permission.granted) { setSelectionError('Permita acesso à galeria para selecionar imagens.'); return }
+    if (!permission.granted) { setSelectionError('Permita acesso ÃƒÂ  galeria para selecionar imagens.'); return }
     const picked = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'], base64: true, quality: 0.8, allowsMultipleSelection: true,
     })
@@ -338,7 +521,7 @@ export default function ImportExtractScreen() {
       format: 'screenshot' as const,
       mimeType: a.mimeType,
     }))
-    if (!valid.length) { setSelectionError('Não foi possível ler as imagens.'); return }
+    if (!valid.length) { setSelectionError('NÃƒÂ£o foi possÃƒÂ­vel ler as imagens.'); return }
     addUploads(valid)
   }
 
@@ -353,15 +536,15 @@ export default function ImportExtractScreen() {
         const fileBase64 = await FileSystem.readAsStringAsync(asset.uri, { encoding: FileSystem.EncodingType.Base64 })
         valid.push({ fileBase64, fileName: asset.name, format, mimeType: asset.mimeType })
       }
-      if (!valid.length) { setSelectionError('Formato não suportado. Use PDF, CSV, XLS ou XLSX.'); return }
+      if (!valid.length) { setSelectionError('Formato nÃƒÂ£o suportado. Use PDF, CSV, XLS ou XLSX.'); return }
       addUploads(valid)
-    } catch { setSelectionError('Não foi possível ler o arquivo.') }
+    } catch { setSelectionError('NÃƒÂ£o foi possÃƒÂ­vel ler o arquivo.') }
   }
 
-  // Etapa 1 — valida data
+  // Etapa 1 Ã¢â‚¬â€ valida data
   const validateMutation = useMutation({
     mutationFn: async () => {
-      if (!token) throw new Error('Não autenticado')
+      if (!token) throw new Error('NÃƒÂ£o autenticado')
       const results: (ValidatedFile | null)[] = []
       const errors: (string | null)[] = []
 
@@ -372,12 +555,11 @@ export default function ImportExtractScreen() {
           errors.push(null)
         } catch (err) {
           if (err instanceof DuplicateImageError) {
-            // Duplicata: trata como válido, usa o imageId existente para extração
             results.push({ upload, imageId: err.imageId!, detectedDate: null })
-            errors.push('Imagem já enviada anteriormente — será reanalisada')
+            errors.push('Imagem jÃƒÂ¡ enviada anteriormente Ã¢â‚¬â€ serÃƒÂ¡ reanalisada')
           } else if (err instanceof HeaderNotFoundError) {
             results.push(null)
-            errors.push('Nenhum cabeçalho de data encontrado')
+            errors.push('Nenhum cabeÃƒÂ§alho de data encontrado')
           } else {
             results.push(null)
             errors.push(err instanceof Error ? err.message : 'Erro ao validar')
@@ -389,13 +571,15 @@ export default function ImportExtractScreen() {
     onSuccess: ({ results, errors }) => {
       setValidatedFiles(results.filter((r): r is ValidatedFile => r !== null))
       setValidationErrors(errors)
+      // Atualiza galeria pois novas imagens foram salvas
+      queryClient.invalidateQueries({ queryKey: queryKeys.importGallery() })
     },
   })
 
-  // Etapa 2 — extrai transações
+  // Etapa 2 Ã¢â‚¬â€ extrai transaÃƒÂ§ÃƒÂµes dos novos uploads
   const extractMutation = useMutation({
     mutationFn: async () => {
-      if (!token || !validatedFiles) throw new Error('Não autenticado')
+      if (!token || !validatedFiles) throw new Error('NÃƒÂ£o autenticado')
       const results: ExtractResult[] = []
       for (const vf of validatedFiles) {
         try {
@@ -409,7 +593,6 @@ export default function ImportExtractScreen() {
     },
     onSuccess: (results) => {
       setExtractResults(results)
-      queryClient.invalidateQueries({ queryKey: queryKeys.importHistory() })
     },
   })
 
@@ -424,6 +607,11 @@ export default function ImportExtractScreen() {
   const validFiles = validatedFiles?.filter(v => v.imageId) ?? []
   const hasValidFiles = validFiles.length > 0
   const extractDone = extractResults !== null
+
+  // TransaÃƒÂ§ÃƒÂµes resultantes de uma imagem da galeria
+  const activeTransactions = galleryExtractResults ?? allTransactions
+  const activeSkippedCount = galleryExtractResults ? 0 : skippedCount
+  const showResults = galleryExtractResults !== null || extractDone
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: statusBarHeight }}>
@@ -505,10 +693,10 @@ export default function ImportExtractScreen() {
             </View>
           </View>
 
-          {/* Arquivos */}
+          {/* Novos arquivos */}
           <View>
             <Text style={{ fontSize: 11, fontWeight: '500', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8, paddingLeft: 4 }}>
-              Arquivos do extrato
+              Enviar novo arquivo
             </Text>
 
             {uploads.length > 0 && (
@@ -611,7 +799,7 @@ export default function ImportExtractScreen() {
             <Text style={{ fontSize: 13, color: colors.neg, textAlign: 'center' }}>{selectionError}</Text>
           )}
 
-          {/* Botão Etapa 1 — Validar data */}
+          {/* BotÃƒÂ£o Etapa 1 Ã¢â‚¬â€ Validar data */}
           {!validateMutation.isSuccess && (
             <Pressable
               onPress={() => validateMutation.mutate()}
@@ -632,7 +820,7 @@ export default function ImportExtractScreen() {
             </Pressable>
           )}
 
-          {/* Resultado da validação + Botão Etapa 2 */}
+          {/* Resultado da validaÃƒÂ§ÃƒÂ£o + BotÃƒÂ£o Etapa 2 */}
           {validateMutation.isSuccess && !extractDone && (
             <View style={{ gap: 12 }}>
               {hasValidFiles && (
@@ -642,7 +830,7 @@ export default function ImportExtractScreen() {
                   gap: 4,
                 }}>
                   <Text style={{ fontSize: 13, fontWeight: '600', color: colors.accent }}>
-                    {validFiles.length === 1 ? 'Data encontrada' : `${validFiles.length} arquivos com data válida`}
+                    {validFiles.length === 1 ? 'Data encontrada' : `${validFiles.length} arquivos com data vÃƒÂ¡lida`}
                   </Text>
                   {validFiles.map((vf, i) => vf.detectedDate && (
                     <Text key={i} style={{ fontSize: 13, color: colors.ink }}>
@@ -658,7 +846,7 @@ export default function ImportExtractScreen() {
                   backgroundColor: colors.negSoft, borderWidth: 1, borderColor: colors.neg,
                 }}>
                   <Text style={{ fontSize: 13, color: colors.neg }}>
-                    Nenhuma imagem com data válida. Tente outro validador ou outra imagem.
+                    Nenhuma imagem com data vÃƒÂ¡lida. Tente outro validador ou outra imagem.
                   </Text>
                 </View>
               )}
@@ -678,9 +866,7 @@ export default function ImportExtractScreen() {
                     : <Icon.ArrowDn size={16} color="#FBFAF6" sw={2} />
                   }
                   <Text style={{ fontSize: 15, fontWeight: '500', color: '#FBFAF6' }}>
-                    {extractMutation.isPending
-                      ? 'Extraindo transações...'
-                      : `Próximo: extrair transações`}
+                    {extractMutation.isPending ? 'Extraindo transaÃƒÂ§ÃƒÂµes...' : 'Extrair transaÃƒÂ§ÃƒÂµes'}
                   </Text>
                 </Pressable>
               )}
@@ -694,23 +880,23 @@ export default function ImportExtractScreen() {
             </View>
           )}
 
-          {/* Transações extraídas */}
-          {extractDone && allTransactions.length > 0 && (
+          {/* TransaÃƒÂ§ÃƒÂµes extraÃƒÂ­das */}
+          {showResults && activeTransactions.length > 0 && (
             <View>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, paddingLeft: 4 }}>
                 <Text style={{ fontSize: 11, fontWeight: '500', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.8 }}>
-                  Transações encontradas
+                  TransaÃƒÂ§ÃƒÂµes encontradas
                 </Text>
                 <Text style={{ fontSize: 11, color: colors.muted }}>
-                  {allTransactions.length}{skippedCount > 0 ? ` · ${skippedCount} ignoradas` : ''}
+                  {activeTransactions.length}{activeSkippedCount > 0 ? ` Ã‚Â· ${activeSkippedCount} ignoradas` : ''}
                 </Text>
               </View>
               <View style={{ borderRadius: 16, borderWidth: 1, borderColor: colors.hairline, backgroundColor: colors.surface, overflow: 'hidden' }}>
-                {allTransactions.map((t, i) => (
+                {activeTransactions.map((t, i) => (
                   <View key={i} style={{
                     flexDirection: 'row', alignItems: 'center',
                     paddingHorizontal: 16, paddingVertical: 13,
-                    borderBottomWidth: i < allTransactions.length - 1 ? 1 : 0,
+                    borderBottomWidth: i < activeTransactions.length - 1 ? 1 : 0,
                     borderBottomColor: colors.hairline,
                   }}>
                     <View style={{ flex: 1, gap: 2 }}>
@@ -723,9 +909,9 @@ export default function ImportExtractScreen() {
                         )}
                       </View>
                       <Text style={{ fontSize: 12, color: colors.muted }} numberOfLines={1}>
-                        {t.description}{t.payment_method ? ` · ${t.payment_method}` : ''}
+                        {t.description}{t.payment_method ? ` Ã‚Â· ${t.payment_method}` : ''}
                       </Text>
-                      <Text style={{ fontSize: 11, color: colors.muted }}>{formatDate(t.date)} · {t.time}</Text>
+                      <Text style={{ fontSize: 11, color: colors.muted }}>{formatDate(t.date)} Ã‚Â· {t.time}</Text>
                     </View>
                     <Text style={{ fontSize: 15, fontWeight: '600', color: t.type === 'income' ? colors.pos : colors.neg }}>
                       {formatAmount(t.amount, t.type)}
@@ -736,20 +922,20 @@ export default function ImportExtractScreen() {
             </View>
           )}
 
-          {extractDone && allTransactions.length === 0 && (
+          {showResults && activeTransactions.length === 0 && (
             <View style={{
               borderRadius: 16, padding: 24,
               backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.hairline,
               alignItems: 'center', gap: 8,
             }}>
-              <Text style={{ fontSize: 14, fontWeight: '500', color: colors.ink }}>Nenhuma transação encontrada</Text>
+              <Text style={{ fontSize: 14, fontWeight: '500', color: colors.ink }}>Nenhuma transaÃƒÂ§ÃƒÂ£o encontrada</Text>
               <Text style={{ fontSize: 12, color: colors.muted, textAlign: 'center' }}>
-                Verifique se a imagem mostra a lista de atividades com datas visíveis.
+                Verifique se a imagem mostra a lista de atividades com datas visÃƒÂ­veis.
               </Text>
             </View>
           )}
 
-          {extractDone && (
+          {showResults && (
             <Pressable onPress={resetAll} style={{
               borderRadius: 18, paddingVertical: 14,
               borderWidth: 1.5, borderColor: colors.hairline, alignItems: 'center',
@@ -758,78 +944,57 @@ export default function ImportExtractScreen() {
             </Pressable>
           )}
 
-          {/* Galeria de envios anteriores */}
+          {/* Ã¢â€â‚¬Ã¢â€â‚¬ Galeria de imagens da pasta Ã¢â€â‚¬Ã¢â€â‚¬ */}
           <View style={{ marginTop: 8 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, paddingLeft: 4 }}>
               <Text style={{ fontSize: 11, fontWeight: '500', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.8 }}>
-                Envios anteriores
+                Imagens disponÃƒÂ­veis
               </Text>
-              {historyQuery.isFetching && <ActivityIndicator size="small" color={colors.muted} />}
+              {galleryQuery.isFetching && <ActivityIndicator size="small" color={colors.muted} />}
             </View>
 
-            {historyQuery.data && historyQuery.data.length === 0 && (
+            {galleryQuery.data && galleryQuery.data.length === 0 && (
               <View style={{
                 borderRadius: 16, padding: 20, borderWidth: 1, borderStyle: 'dashed',
                 borderColor: colors.hairline, backgroundColor: colors.surface,
                 alignItems: 'center', gap: 6,
               }}>
                 <Icon.Image size={22} color={colors.muted} sw={1.6} />
-                <Text style={{ fontSize: 13, color: colors.muted }}>Nenhum envio anterior</Text>
+                <Text style={{ fontSize: 13, color: colors.muted }}>Nenhuma imagem na pasta</Text>
               </View>
             )}
 
-            {historyQuery.data && historyQuery.data.length > 0 && (
-              <View style={{ gap: 8 }}>
-                {historyQuery.data.map((item) => {
-                  const isProcessed = item.status === 'processed'
-                  const isFailed = item.status === 'failed'
-                  const isReanalyzing = reanalyzeMutation.isPending && reanalyzeMutation.variables?.imageId === item.id
-
-                  return (
-                    <Pressable
-                      key={item.id}
-                      onPress={() => setModalItem(item)}
-                      style={{
-                        flexDirection: 'row', alignItems: 'center',
-                        padding: 14, borderRadius: 16,
-                        backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.hairline,
-                        gap: 12,
-                      }}
-                    >
-                      <View style={{
-                        width: 42, height: 42, borderRadius: 12,
-                        backgroundColor: isProcessed ? colors.accentSoft : isFailed ? colors.negSoft : colors.hairline,
-                        alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        {isReanalyzing
-                          ? <ActivityIndicator size="small" color={colors.muted} />
-                          : isProcessed
-                            ? <Icon.Check size={18} color={colors.accent} sw={2.5} />
-                            : isFailed
-                              ? <Icon.X size={18} color={colors.neg} sw={2.5} />
-                              : <Icon.Image size={18} color={colors.muted} sw={1.8} />
-                        }
+            {galleryQuery.data && galleryQuery.data.length > 0 && (
+              <View style={{
+                flexDirection: 'row', flexWrap: 'wrap', gap: 8,
+              }}>
+                {galleryQuery.data.map((item) => (
+                  <Pressable
+                    key={item.imageId}
+                    onPress={() => { setGalleryExtractResults(null); setGalleryModalItem(item) }}
+                    style={{
+                      width: '31%',
+                      aspectRatio: 1,
+                      borderRadius: 12,
+                      overflow: 'hidden',
+                      borderWidth: 1,
+                      borderColor: colors.hairline,
+                      backgroundColor: colors.surface,
+                    }}
+                  >
+                    {galleryUris[item.imageId] ? (
+                      <Image
+                        source={{ uri: galleryUris[item.imageId] }}
+                        style={{ width: '100%', height: '100%' }}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                        <ActivityIndicator size="small" color={colors.muted} />
                       </View>
-                      <View style={{ flex: 1, gap: 2 }}>
-                        <Text style={{ fontSize: 14, fontWeight: '500', color: colors.ink }}>
-                          {bankLabel(item.bank)}
-                        </Text>
-                        <Text style={{ fontSize: 12, color: colors.muted }}>
-                          {formatDateLong(item.createdAt.slice(0, 10))}
-                        </Text>
-                        {isProcessed && item.extractedCount > 0 && (
-                          <Text style={{ fontSize: 11, color: colors.accent, fontWeight: '500', marginTop: 1 }}>
-                            {item.extractedCount} {item.extractedCount === 1 ? 'transação' : 'transações'}
-                          </Text>
-                        )}
-                        {isFailed && (
-                          <Text style={{ fontSize: 11, color: colors.neg, marginTop: 1 }}>Falhou</Text>
-                        )}
-                      </View>
-                      <Icon.ChevR size={14} color={colors.muted} sw={1.8} />
-                    </Pressable>
-                  )
-                })}
+                    )}
+                  </Pressable>
+                ))}
               </View>
             )}
           </View>
@@ -837,13 +1002,19 @@ export default function ImportExtractScreen() {
         </View>
       </ScrollView>
 
-      <ImageDetailModal
-        item={modalItem}
-        visible={!!modalItem}
-        selectedValidator={selectedValidator}
-        onClose={() => setModalItem(null)}
-        onReanalyze={(imageId) => reanalyzeMutation.mutate({ imageId })}
+      <GalleryItemModal
+        item={galleryModalItem}
+        visible={!!galleryModalItem}
+        selectedBank={selectedBank}
+        token={token}
+        onClose={() => setGalleryModalItem(null)}
+        onExtract={(imageId, bank, date) => galleryExtractMutation.mutate({ imageId, bank, date })}
+        isExtracting={galleryExtractMutation.isPending}
       />
     </View>
   )
 }
+
+
+
+

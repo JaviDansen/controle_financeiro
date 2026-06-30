@@ -39,6 +39,14 @@ export interface ValidateResponse {
   detectedDate: string | null
 }
 
+export interface GalleryItem {
+  imageId: string
+  fileName: string
+  filePath: string
+  createdAt: string
+  sizeBytes: number
+}
+
 export async function validateExtractFile(
   file: ExtractUploadPayload,
   bank: string,
@@ -105,6 +113,7 @@ export async function extractByImageId(
   imageId: string,
   bank: string,
   token: string,
+  referenceDate?: string,
 ): Promise<ImportResponse> {
   const res = await fetch(`${API_URL}/import/extract`, {
     method: 'POST',
@@ -112,58 +121,20 @@ export async function extractByImageId(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ imageId, bank, format: 'screenshot' }),
+    body: JSON.stringify({ imageId, bank, format: 'screenshot', referenceDate }),
   })
 
   const json = await res.json()
-  if (!res.ok) throw new Error(json.error ?? 'Erro ao extrair transações')
+  if (!res.ok) throw new Error(json.error ?? 'Erro ao extrair transacoes')
   return json.data
 }
 
-export interface HistoryPreviewTransaction {
-  id: string
-  title: string
-  amount: string
-  type: 'income' | 'expense'
-  date: string
-}
-
-export interface ImportHistoryItem {
-  id: string
-  bank: string
-  format: string
-  status: string
-  filePath: string | null
-  createdAt: string
-  extractedCount: number
-  preview: HistoryPreviewTransaction[]
-}
-
-export async function getImportHistory(token: string): Promise<ImportHistoryItem[]> {
-  const res = await fetch(`${API_URL}/import/history`, {
+export async function getImportGallery(token: string): Promise<GalleryItem[]> {
+  const res = await fetch(`${API_URL}/import/gallery`, {
     headers: { Authorization: `Bearer ${token}` },
   })
   const json = await res.json()
-  if (!res.ok) throw new Error(json.error ?? 'Erro ao buscar histórico')
-  return json.data
-}
-
-export async function reanalyzeImage(
-  imageId: string,
-  token: string,
-  validationStrategy: ValidationStrategy = 'tesseract',
-): Promise<{ imageId: string; transactions: ExtractedTransaction[] }> {
-  const res = await fetch(`${API_URL}/import/reanalyze/${imageId}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ validationStrategy }),
-  })
-  const json = await res.json()
-  if (res.status === 400 && json.error === 'header_not_found') throw new HeaderNotFoundError()
-  if (!res.ok) throw new Error(json.error ?? 'Erro ao reanalisar imagem')
+  if (!res.ok) throw new Error(json.error ?? 'Erro ao buscar galeria')
   return json.data
 }
 

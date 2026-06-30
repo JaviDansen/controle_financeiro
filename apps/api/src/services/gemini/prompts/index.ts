@@ -1,11 +1,10 @@
 import { ImportFormat, SupportedBank } from '../types'
-import { mercadopagoPrompt } from './banks/mercadopago'
+import { buildMercadopagoPrompt } from './banks/mercadopago'
 
-export function getPrompt(bank: SupportedBank, format: ImportFormat): string {
+export function getPrompt(bank: SupportedBank, format: ImportFormat, referenceDate?: string): string {
   if (format === 'screenshot') {
-    if (bank === 'mercadopago') return mercadopagoPrompt
+    if (bank === 'mercadopago') return buildMercadopagoPrompt(referenceDate)
   }
 
-  // fallback genérico — a ser implementado quando necessário
-  throw new Error(`Prompt não disponível para banco="${bank}" format="${format}"`)
+  throw new Error(`Prompt nao disponivel para banco="${bank}" format="${format}"`)
 }
