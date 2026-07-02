@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { ScreenContainer } from '../../src/components/ui/ScreenContainer';
 import { Icon } from '../../src/components/ui/Icon';
 import { colors } from '../../src/theme/colors';
+import { useCards } from '../../hooks/useCards';
 import { useAuthStore } from '../../store/auth.store';
 import * as authService from '../../services/auth.service';
 
@@ -65,6 +66,7 @@ function SectionTitle({ children }: { children: string }) {
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { allCards, isLoading: isCardsLoading } = useCards();
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
   const logout = useAuthStore((state) => state.logout);
@@ -85,6 +87,13 @@ export default function ProfileScreen() {
       initials,
     };
   }, [user]);
+
+  const cardsSummary = useMemo(() => {
+    if (isCardsLoading) return 'Carregando...';
+
+    const count = allCards.length;
+    return count === 1 ? '1 cadastrado' : `${count} cadastrados`;
+  }, [allCards.length, isCardsLoading]);
 
   const handleLogout = () => {
     if (isLoggingOut) return;
@@ -191,7 +200,8 @@ export default function ProfileScreen() {
             <ProfileRow
               icon={<Icon.Card size={16} color={colors.ink2} />}
               label="Cartões"
-              value="3 cadastrados"
+              value={cardsSummary}
+              onPress={() => router.push('/cards')}
             />
             <View style={{ height: 1, backgroundColor: colors.hairline, marginHorizontal: -14 }} />
             <ProfileRow
