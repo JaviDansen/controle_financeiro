@@ -69,6 +69,29 @@ export default function ProfileScreen() {
   const token = useAuthStore((state) => state.token);
   const logout = useAuthStore((state) => state.logout);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+
+  const handleResetPassword = async () => {
+    if (!user?.email) {
+      Alert.alert('Erro', 'E-mail do usuário não encontrado.');
+      return;
+    }
+    if (isResettingPassword) return;
+
+    setIsResettingPassword(true);
+    try {
+      await authService.forgotPassword(user.email);
+      router.push({
+        pathname: '/(auth)/verify-code',
+        params: { email: user.email, fromProfile: 'true' },
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro ao iniciar alteração de senha';
+      Alert.alert('Erro', message);
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
 
   const profile = useMemo(() => {
     const displayName = user?.name?.trim() || 'Usuário';
@@ -172,7 +195,8 @@ export default function ProfileScreen() {
             <View style={{ height: 1, backgroundColor: colors.hairline, marginHorizontal: -14 }} />
             <ProfileRow
               icon={<Icon.Lock size={16} color={colors.ink2} />}
-              label="Alterar senha"
+              label={isResettingPassword ? "Enviando..." : "Alterar senha"}
+              onPress={handleResetPassword}
             />
             <View style={{ height: 1, backgroundColor: colors.hairline, marginHorizontal: -14 }} />
             <ProfileRow

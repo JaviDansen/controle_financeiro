@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams, Link } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { z } from 'zod';
 import * as authService from '../../services/auth.service';
+import { useAuthStore } from '../../store/auth.store';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 
@@ -17,7 +18,8 @@ const schema = z.object({
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
-  const { token } = useLocalSearchParams<{ token: string }>();
+  const { token, fromProfile } = useLocalSearchParams<{ token: string; fromProfile?: string }>();
+  const logout = useAuthStore((state) => state.logout);
 
   const [newPassword, setNewPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -25,6 +27,13 @@ export default function ResetPasswordScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+
+  const handleFinish = async () => {
+    if (fromProfile === 'true') {
+      await logout();
+    }
+    router.replace('/(auth)/login');
+  };
 
   const submit = async () => {
     try {
@@ -84,10 +93,12 @@ export default function ResetPasswordScreen() {
                 Sua nova senha foi salva com sucesso.
               </Text>
               <TouchableOpacity
-                onPress={() => router.replace('/(auth)/login')}
+                onPress={handleFinish}
                 className="h-14 w-full rounded-2xl bg-[#15151A] flex-row items-center justify-center gap-2"
               >
-                <Text className="text-white text-base font-medium">Fazer login</Text>
+                <Text className="text-white text-base font-medium">
+                  {fromProfile === 'true' ? 'Ir para o Login' : 'Fazer login'}
+                </Text>
                 <Feather name="chevron-right" size={16} color="#fff" />
               </TouchableOpacity>
             </View>
@@ -145,12 +156,22 @@ export default function ResetPasswordScreen() {
               </TouchableOpacity>
 
               <View className="flex-row justify-center items-center mt-auto pt-4 pb-4">
-                <Link href="/(auth)/login" asChild>
-                  <TouchableOpacity className="flex-row items-center gap-1.5">
+                {fromProfile === 'true' ? (
+                  <TouchableOpacity
+                    onPress={() => router.replace('/(tabs)/profile')}
+                    className="flex-row items-center gap-1.5"
+                  >
                     <Feather name="arrow-left" size={14} color="#15151A" />
-                    <Text className="text-[13px] text-[#15151A] font-medium underline">Voltar para o login</Text>
+                    <Text className="text-[13px] text-[#15151A] font-medium underline">Cancelar e voltar</Text>
                   </TouchableOpacity>
-                </Link>
+                ) : (
+                  <Link href="/(auth)/login" asChild>
+                    <TouchableOpacity className="flex-row items-center gap-1.5">
+                      <Feather name="arrow-left" size={14} color="#15151A" />
+                      <Text className="text-[13px] text-[#15151A] font-medium underline">Voltar para o login</Text>
+                    </TouchableOpacity>
+                  </Link>
+                )}
               </View>
             </>
           )}

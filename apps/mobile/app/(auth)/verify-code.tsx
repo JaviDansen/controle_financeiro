@@ -6,7 +6,7 @@ import * as authService from '../../services/auth.service';
 
 export default function VerifyCodeScreen() {
   const router = useRouter();
-  const { email } = useLocalSearchParams<{ email: string }>();
+  const { email, fromProfile } = useLocalSearchParams<{ email: string; fromProfile?: string }>();
 
   const [code, setCode] = useState<string[]>(Array(6).fill(''));
   const [loading, setLoading] = useState(false);
@@ -38,7 +38,7 @@ export default function VerifyCodeScreen() {
       // Avança para a tela de resetar a senha passando o token real
       router.push({
         pathname: '/(auth)/reset-password',
-        params: { token: result.token },
+        params: { token: result.token, fromProfile },
       });
     } catch (err) {
       if (err instanceof Error) {
@@ -205,14 +205,26 @@ export default function VerifyCodeScreen() {
 
           {/* Footer - Voltar */}
           <View className="flex-row justify-center items-center mt-auto pt-4 pb-4">
-            <Link href="/(auth)/forgot-password" asChild>
-              <TouchableOpacity className="flex-row items-center gap-1.5">
+            {fromProfile === 'true' ? (
+              <TouchableOpacity
+                onPress={() => router.replace('/(tabs)/profile')}
+                className="flex-row items-center gap-1.5"
+              >
                 <Feather name="arrow-left" size={14} color="#15151A" />
                 <Text className="text-[13px] text-[#15151A] font-medium underline">
-                  Alterar e-mail informado
+                  Cancelar e voltar
                 </Text>
               </TouchableOpacity>
-            </Link>
+            ) : (
+              <Link href="/(auth)/forgot-password" asChild>
+                <TouchableOpacity className="flex-row items-center gap-1.5">
+                  <Feather name="arrow-left" size={14} color="#15151A" />
+                  <Text className="text-[13px] text-[#15151A] font-medium underline">
+                    Alterar e-mail informado
+                  </Text>
+                </TouchableOpacity>
+              </Link>
+            )}
           </View>
         </View>
       </View>
