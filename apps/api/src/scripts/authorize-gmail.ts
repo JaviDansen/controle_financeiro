@@ -6,9 +6,13 @@
 import { google } from 'googleapis'
 import * as http from 'http'
 import * as url from 'url'
+import { resolve } from 'path'
 
-const CLIENT_ID = '143135229242-oogo3a9bitgvkudht1rdlcuednt8loqm.apps.googleusercontent.com'
-const CLIENT_SECRET = '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'
+// Carrega o .env antes de definir as constantes
+require('dotenv').config({ path: resolve(__dirname, '../../../../.env') })
+
+const CLIENT_ID = process.env.GMAIL_CLIENT_ID || '143135229242-oogo3a9bitgvkudht1rdlcuednt8loqm.apps.googleusercontent.com'
+const CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET || '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'
 const REDIRECT_URI = 'http://localhost:3001'
 const SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 
