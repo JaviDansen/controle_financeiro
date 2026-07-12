@@ -173,7 +173,7 @@ export default function VerifyCodeScreen() {
                   keyboardType="number-pad"
                   maxLength={6} // permite 6 para o caso de colagem completa
                   selectTextOnFocus
-                  disabled={loading}
+                  editable={!loading}
                 />
               ))}
           </View>

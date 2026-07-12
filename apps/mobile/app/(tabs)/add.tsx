@@ -158,9 +158,15 @@ export default function AddCardScreen() {
     setLastFour(editingCard.last4 ?? '');
     setHolder(editingCard.holder ?? '');
     setExpiry(editingCard.expiry ?? '');
-    setCreditLimit(editingCard.limit !== null ? String(editingCard.limit) : '');
-    setClosingDay(editingCard.closingDay !== null ? String(editingCard.closingDay) : '');
-    setDueDay(editingCard.dueDay !== null ? String(editingCard.dueDay) : '');
+    if (editingCard.type === 'credit') {
+      setCreditLimit(editingCard.limit !== null ? String(editingCard.limit) : '');
+      setClosingDay(editingCard.closingDay !== null ? String(editingCard.closingDay) : '');
+      setDueDay(editingCard.dueDay !== null ? String(editingCard.dueDay) : '');
+    } else {
+      setCreditLimit('');
+      setClosingDay('');
+      setDueDay('');
+    }
     setErrors({});
   }, [editingCard]);
 
