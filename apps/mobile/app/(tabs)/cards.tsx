@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { ScreenContainer } from '../../src/components/ui/ScreenContainer';
 import { CardsHeader } from '../../src/components/cards/CardsHeader';
 import { CardsEmptyState } from '../../src/components/cards/CardsEmptyState';
+import { CardsSkeletonList } from '../../src/components/cards/CardsSkeletonList';
 import { CardsCarousel } from '../../src/components/cards/CardsCarousel';
 import { CardDetailPanel } from '../../src/components/cards/CardDetailPanel';
 import { CardActionsSheet } from '../../src/components/cards/CardActionsSheet';
@@ -35,12 +36,12 @@ export default function CardsScreen() {
     if (activeCard) router.push({ pathname: '/(tabs)/add', params: { id: activeCard.id } });
   }
 
-  if (isLoading) return null;
-
   return (
     <>
       <ScreenContainer>
-        {allCards.length === 0 ? (
+        {isLoading ? (
+          <CardsSkeletonList />
+        ) : allCards.length === 0 ? (
           <CardsEmptyState onNewPress={() => router.push('/(tabs)/add')} />
         ) : (
           <>
