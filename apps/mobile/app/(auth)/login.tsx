@@ -185,7 +185,7 @@ export default function LoginScreen() {
           </TouchableOpacity>
 
           {/* Footer - Criar conta */}
-          <View className="flex-row justify-center items-center mt-auto pt-4 pb-4">
+          <View className="flex-row justify-center items-center mt-auto pt-4 pb-12">
             <Text className="text-[13px] text-[#3B3B43]">Não tem conta? </Text>
             <Link href="/(auth)/register" asChild>
               <TouchableOpacity>
