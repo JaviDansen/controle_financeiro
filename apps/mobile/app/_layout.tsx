@@ -14,7 +14,11 @@ export default function RootLayout() {
     () =>
       new QueryClient({
         defaultOptions: {
-          queries: { retry: false },
+          queries: {
+            retry: false,
+            staleTime: 30_000,
+            gcTime: 5 * 60_000,
+          },
           mutations: { retry: false },
         },
       })
@@ -26,8 +30,12 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (!hydrated) return;
+    // Ao trocar de usuário (logout ou login), limpa o cache do React Query —
+    // sem isso, dados do usuário anterior (transactions, cards, categories)
+    // ficam servidos do cache até o staleTime expirar.
+    queryClient.clear();
     router.replace(isAuthenticated ? '/(tabs)' : '/(auth)/login');
-  }, [hydrated, isAuthenticated, router]);
+  }, [hydrated, isAuthenticated, router, queryClient]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
