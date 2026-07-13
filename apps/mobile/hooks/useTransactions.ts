@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/auth.store'
 import {
   getTransactions,
   deleteTransaction,
+  deleteTransactionsForMonth,
   updateTransaction,
   Transaction,
   MonthSummary,
@@ -61,6 +62,19 @@ export function useDeleteTransaction(month: string) {
 
   return useMutation({
     mutationFn: (txId: string) => deleteTransaction(txId, token!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions', month] })
+      queryClient.invalidateQueries({ queryKey: ['cards'] })
+    },
+  })
+}
+
+export function useDeleteAllTransactions(month: string) {
+  const token = useAuthStore(state => state.token)
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () => deleteTransactionsForMonth(month, token!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions', month] })
       queryClient.invalidateQueries({ queryKey: ['cards'] })

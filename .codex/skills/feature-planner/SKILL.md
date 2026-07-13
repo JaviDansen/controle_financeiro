@@ -19,6 +19,8 @@ Perguntas obrigatórias:
 2. Existe algum campo ou fluxo que já faz parcialmente o que a feature precisa?
 3. A feature toca billing? Se sim, mapear quais passos da cadeia de sincronia serão afetados.
 4. A feature toca dados de empresa? Se sim, verificar como o `companyId` será resolvido.
+5. Quais riscos sistêmicos esta feature cria ou agrava em performance, confiabilidade, segurança e arquitetura?
+6. Existe risco de N+1, race condition, memory leak, falha parcial ou validação/autorização incompleta?
 
 ### Passo 2 — Criar o documento de planejamento
 
@@ -66,6 +68,26 @@ Sempre verificar no código — nunca escrever de memória.]
 
 ---
 
+## Guardrails Sistêmicos
+
+### Performance
+
+[Explicar risco de N+1, custo de render, hot paths, cache, filas ou memória.]
+
+### Confiabilidade
+
+[Explicar concorrência, idempotência, rollback, falha parcial e invariantes.]
+
+### Segurança
+
+[Explicar validação, autorização, segredos, dependências e superfície de ataque.]
+
+### Arquitetura e trade-offs
+
+[Explicar o que a solução ganha, o que deixa na mesa e por que o trade-off foi aceito.]
+
+---
+
 ## Banco de dados
 
 [SQL de migration. Incluir índices, constraints e checks.]
@@ -106,8 +128,12 @@ Se tocar billing, detalhar quais métodos da cadeia de sincronia são chamados e
 [ ] Rota e controller
 [ ] Frontend
 [ ] Testes dos casos principais
+[ ] Risco de N+1 revisado
 [ ] Race condition verificado (se aplicável)
 [ ] Property-based test (se houver cálculo financeiro)
+[ ] Cenário de falha parcial mapeado
+[ ] Estratégia contra memory leak documentada
+[ ] Revisão básica de segurança e dependências
 [ ] Log estruturado nos pontos críticos
 ```
 

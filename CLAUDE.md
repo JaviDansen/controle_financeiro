@@ -133,6 +133,39 @@ API_URL=http://localhost:3000
 4. O mobile nunca acessa o banco diretamente — sempre via API REST
 5. Categorias padrão são inseridas via seed no banco — não hardcoded no mobile
 
+## Guardrails Sistêmicos — obrigatórios em qualquer mudança
+
+Toda implementação, revisão, plano e commit deve considerar o sistema como um todo pelas quatro lentes abaixo:
+
+### 1. Performance
+
+- Evite N+1: nunca faça query por item dentro de loop se batch, join ou agregação resolverem.
+- Em mobile, trate listas grandes como caso de virtualização por padrão; `ScrollView` só para conteúdo pequeno.
+- Evite trabalho síncrono caro em clique, navegação, filtro e render frequente.
+- Cache precisa de política explícita: TTL, `staleTime`, invalidação específica e limites claros de crescimento.
+- Filas, mapas e caches em memória precisam de estratégia de limpeza; nunca crescer indefinidamente.
+
+### 2. Confiabilidade
+
+- Toda rotina crítica deve ser pensada para concorrência, repetição de requisição e falha parcial.
+- Sempre considerar o que acontece se duas ações iguais chegam ao mesmo tempo.
+- Em fluxos com dinheiro, saldo, importação, confirmação ou escrita múltipla, priorizar testes de race condition e invariantes.
+- Sempre pensar no comportamento quando banco, API externa ou rede falham no meio da operação.
+
+### 3. Segurança
+
+- Validar input, autenticação e autorização em toda borda de entrada.
+- Nunca logar segredo, token, credencial, payload sensível ou dado bancário sem necessidade explícita.
+- Dependências novas devem ser adicionadas com versão fixa e avaliação mínima de risco.
+- Sempre presumir que código gerado por IA pode introduzir secret leak, supply chain risk e validação incompleta.
+
+### 4. Arquitetura
+
+- Toda solução deve registrar o trade-off principal: o que ela simplifica e o que ela piora.
+- Evite duplicar regra de negócio entre mobile, API e banco.
+- Prefira fluxos observáveis, testáveis e fáceis de manter; complexidade implícita é dívida.
+- Se uma decisão sacrifica performance, confiabilidade ou segurança por velocidade de entrega, isso precisa estar explícito.
+
 ## Deploy
 
 | Serviço | O que hospeda | Como fazer deploy |
@@ -155,6 +188,8 @@ API_URL=http://localhost:3000
 ## Regra de Commits — OBRIGATÓRIO
 
 **Nunca execute `git commit` diretamente.** Sempre acione o agente `commit-writer` para gerar e executar o commit. Ele analisa o diff real, classifica o tipo correto (`[FEAT]`, `[FIX]`, `[CHORE]`, etc.) e verifica coesão das mudanças.
+
+O agente está definido em `.claude/agents/commit-writer.md`. Como a lista de agentes disponíveis é carregada uma vez no início de cada sessão do Claude Code, criar ou alterar esse arquivo só tem efeito a partir da **próxima** sessão — não é possível acioná-lo como agente na mesma sessão em que ele foi criado/editado.
 
 Fluxo correto ao final de qualquer implementação:
 1. Implementação concluída
@@ -295,7 +330,7 @@ npm run test:watch  # Modo watch
 - `apps/api/jest.config.ts` — configuração do Jest (preset ts-jest, testMatch, globalSetup)
 - `apps/api/tests/helpers/global-setup.ts` — carrega `.env` e aponta `DATABASE_URL` para o banco de teste
 - `apps/api/tests/helpers/global-teardown.ts` — encerra conexões após todos os testes
-- `apps/api/tests/helpers/db.ts` — exporta `testDb` (instância Drizzle no banco de teste) e `clearTables()`
+- `apps/api/tests/helpers/db.ts` — exporta `testDb` (instância Drizzle no banco de teste)
 - `apps/api/tests/helpers/app.ts` — exporta `api()` com supertest apontando para a instância Express
 
 **Convenção de nomenclatura dos testes:**
@@ -309,15 +344,19 @@ DATABASE_URL_TEST=postgres://usuario:senha@host:porta/finapp-test?sslmode=disabl
 **Como usar os helpers em um teste:**
 ```typescript
 import { api } from './helpers/app'
-import { clearTables } from './helpers/db'
-
-beforeEach(async () => { await clearTables() })
-
 it('GET /health retorna ok', async () => {
   const res = await api().get('/health')
   expect(res.status).toBe(200)
 })
 ```
+
+### Cobertura adicional obrigatória por tipo de risco
+
+- **N+1 e performance de backend**: em endpoints críticos, considerar instrumentação ou teste que detecte explosão de queries por requisição.
+- **Race condition**: em fluxos financeiros, concorrentes ou de confirmação em lote, considerar testes de concorrência e, quando viável, property-based testing com invariantes claras.
+- **Memory leak**: em filas, polling, cache local, listeners e processos long-lived, verificar se há estratégia de descarte, unsubscribe, TTL ou cleanup.
+- **Falha parcial**: testar cenários em que banco ou integração externa falham no meio da operação para garantir rollback, erro consistente ou retry seguro.
+- **Segurança**: para mudanças sensíveis, incluir no fluxo revisão de secrets, validação/autorização e checagem de dependências.
 
 ## O Que NÃO Fazer
 
