@@ -26,7 +26,7 @@ export const importExtractedTransactions = pgTable('import_extracted_transaction
   // Revisão pelo usuário
   status: varchar('status', { length: 20 }).notNull().default('pending'), // 'pending' | 'confirmed' | 'discarded'
   categoryId: uuid('category_id').references(() => categories.id),        // sugerido ou escolhido pelo usuário
-  transactionId: uuid('transaction_id').references(() => transactions.id), // preenchido após confirmação
+  transactionId: uuid('transaction_id').references(() => transactions.id, { onDelete: 'set null' }), // preenchido após confirmação
 
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })

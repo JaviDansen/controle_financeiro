@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken'
+import { eq } from 'drizzle-orm'
 import { api } from './helpers/app'
 import { testDb } from './helpers/db'
 import * as schema from '@finapp/db'
@@ -479,6 +480,139 @@ describe('DELETE /transactions/:id', () => {
         .delete(`/transactions/${txId}`)
         .set('Authorization', `Bearer ${token1}`)
       expect(res.status).toBe(404)
+    })
+  })
+})
+
+// ─────────────────────────────────────────────────────
+// DELETE /transactions?month= (exclusão em massa)
+// ─────────────────────────────────────────────────────
+
+describe('DELETE /transactions (bulk por mês)', () => {
+  it('401: sem token', async () => {
+    const res = await api().delete('/transactions').query({ month: '2026-07' })
+    expect(res.status).toBe(401)
+  })
+
+  describe('usuário autenticado', () => {
+    let token: string
+    let userId: string
+    let categoryId: string
+
+    beforeAll(async () => {
+      token = await registerAndLogin()
+      userId = userIdFromToken(token)
+      categoryId = await createCategory(userId)
+    })
+
+    it('400: month em formato inválido', async () => {
+      const res = await api()
+        .delete('/transactions')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ month: '2026-7' })
+      expect(res.status).toBe(400)
+    })
+
+    it('200: exclui apenas as transações do mês informado', async () => {
+      await testDb.insert(schema.transactions).values([
+        { userId, categoryId, title: 'Julho 1', amount: '10.00', type: 'expense', date: '2026-07-05', isRecurring: false },
+        { userId, categoryId, title: 'Julho 2', amount: '20.00', type: 'expense', date: '2026-07-20', isRecurring: false },
+        { userId, categoryId, title: 'Agosto', amount: '30.00', type: 'expense', date: '2026-08-01', isRecurring: false },
+      ])
+
+      const res = await api()
+        .delete('/transactions')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ month: '2026-07' })
+
+      expect(res.status).toBe(200)
+      expect(res.body.data.deletedCount).toBe(2)
+
+      const remaining = await testDb
+        .select({ title: schema.transactions.title })
+        .from(schema.transactions)
+        .where(eq(schema.transactions.userId, userId))
+      expect(remaining.map(r => r.title)).toEqual(['Agosto'])
+
+      // limpa para não afetar os próximos casos
+      await testDb.delete(schema.transactions).where(eq(schema.transactions.userId, userId))
+    })
+
+    // Regressão: transações confirmadas via import ficam vinculadas em
+    // import_extracted_transactions.transactionId. Sem onDelete: 'set null'
+    // nessa FK, o bulk delete falhava com 500 (violação de constraint) ao
+    // encontrar qualquer transação nesse estado.
+    it('200: exclui transação vinculada a um import confirmado sem violar FK', async () => {
+      const [image] = await testDb
+        .insert(schema.importImages)
+        .values({ userId, imageHash: `hash-bulk-${Date.now()}`, bank: 'mercadopago', format: 'screenshot', status: 'processed' })
+        .returning()
+
+      const [tx] = await testDb
+        .insert(schema.transactions)
+        .values({ userId, categoryId, title: 'Vinda de import', amount: '75.00', type: 'expense', date: '2026-07-10', isRecurring: false })
+        .returning({ id: schema.transactions.id })
+
+      await testDb.insert(schema.importExtractedTransactions).values({
+        imageId: image.id,
+        userId,
+        title: 'Vinda de import',
+        amount: '75.00',
+        type: 'expense',
+        date: '2026-07-10',
+        status: 'confirmed',
+        transactionId: tx.id,
+      })
+
+      const res = await api()
+        .delete('/transactions')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ month: '2026-07' })
+
+      expect(res.status).toBe(200)
+      expect(res.body.data.deletedCount).toBe(1)
+
+      const [extracted] = await testDb
+        .select({ transactionId: schema.importExtractedTransactions.transactionId })
+        .from(schema.importExtractedTransactions)
+        .where(eq(schema.importExtractedTransactions.imageId, image.id))
+      expect(extracted.transactionId).toBeNull()
+    })
+
+    it('200: deletedCount 0 quando não há transações no mês', async () => {
+      const res = await api()
+        .delete('/transactions')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ month: '2020-01' })
+      expect(res.status).toBe(200)
+      expect(res.body.data.deletedCount).toBe(0)
+    })
+  })
+
+  describe('isolamento entre usuários', () => {
+    it('não exclui transações de outro usuário', async () => {
+      const token1 = await registerAndLogin()
+      const token2 = await registerAndLogin({ name: 'Pedro Silva', email: 'pedro-bulk@teste.com' })
+      const userId2 = userIdFromToken(token2)
+      const categoryId2 = await createCategory(userId2)
+
+      await testDb.insert(schema.transactions).values({
+        userId: userId2, categoryId: categoryId2, title: 'Do Pedro', amount: '99.00', type: 'expense', date: '2026-07-15', isRecurring: false,
+      })
+
+      const res = await api()
+        .delete('/transactions')
+        .set('Authorization', `Bearer ${token1}`)
+        .query({ month: '2026-07' })
+
+      expect(res.status).toBe(200)
+      expect(res.body.data.deletedCount).toBe(0)
+
+      const stillThere = await testDb
+        .select({ title: schema.transactions.title })
+        .from(schema.transactions)
+        .where(eq(schema.transactions.userId, userId2))
+      expect(stillThere).toHaveLength(1)
     })
   })
 })
