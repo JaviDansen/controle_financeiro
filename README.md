@@ -55,7 +55,7 @@ O FinApp é um aplicativo mobile de controle financeiro pessoal construído em f
 | Módulo | Status |
 |---|---|
 | Monorepo e estrutura base | ✅ Concluído |
-| Schema do banco (5 tabelas) | ✅ Concluído |
+| Schema do banco (9 tabelas) | ✅ Concluído |
 | API Express + health endpoint | ✅ Concluído |
 | Verificação de conexão ao banco no startup | ✅ Concluído |
 | Integração Google Docs/Drive | ✅ Concluído |
@@ -328,6 +328,10 @@ Todas as tabelas usam UUID como PK e registram `created_at` / `updated_at` autom
 | `cards` | belongs to `users` |
 | `transactions` | belongs to `users`, `categories`, `cards` |
 | `goals` | belongs to `users` |
+| `password_resets` | belongs to `users` |
+| `import_sessions` | belongs to `users` |
+| `import_images` | belongs to `import_sessions` |
+| `import_extracted_transactions` | belongs to `import_sessions`, `transactions`, `cards`, `categories` |
 
 ### Campos — `users`
 
@@ -391,7 +395,7 @@ apps/api/
 │   │   ├── setup-env.ts       # Sobrescreve DATABASE_URL com DATABASE_URL_TEST nos workers
 │   │   ├── db.ts              # testDb
 │   │   └── app.ts             # api() com supertest
-│   ├── auth_integration_test.ts        # 21 testes de /auth/*
+│   ├── auth_integration_test.ts        # 28 testes de /auth/*
 │   ├── api_health_integration_test.ts  # 5 testes de /health e /hello
 │   ├── database_migration_integration_test.ts  # 6 testes de migrations
 │   ├── connection_unit_test.ts         # 9 testes de buildConnectionString
@@ -406,14 +410,16 @@ apps/api/
 
 | Grupo | Testes | Status |
 |---|---|---|
-| `POST /auth/register` | 9/9 | ✅ Passando |
+| `POST /auth/register` | 10/10 | ✅ Passando |
 | Health / Hello | 5/5 | ✅ Passando |
 | Schema Drizzle | 11/11 | ✅ Passando |
 | Connection string | 9/9 | ✅ Passando |
 | Migrations | 6/6 | ✅ Passando |
 | `GET /cards` + `POST` + `PATCH` + `DELETE` | 15/15 | ✅ Passando |
-| `POST /auth/login` e `/logout` | 9/9 | ✅ Passando |
-| `POST /auth/forgot-password` e `/reset` | 4/4 | ✅ Passando |
+| `POST /auth/login` | 9/9 | ✅ Passando |
+| `POST /auth/forgot-password` | 4/4 | ✅ Passando |
+| `POST /auth/verify-code` | 3/3 | ✅ Passando |
+| `POST /auth/reset-password` | 2/2 | ✅ Passando |
 
 ### 6.2 Mobile — jest-expo + Testing Library
 
@@ -623,4 +629,4 @@ npm run test:mobile:watch   # Modo watch
 
 ---
 
-*FinApp · Documentação Técnica v1.3 · Atualizado em 19 mai 2026*
+*FinApp · Documentação Técnica v1.4 · Atualizado em 13 jul 2026*
