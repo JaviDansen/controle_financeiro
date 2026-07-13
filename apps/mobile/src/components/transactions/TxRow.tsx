@@ -19,7 +19,7 @@ interface TxRowProps {
   onPress?: () => void;
 }
 
-export function TxRow({ tx, last = false, onPress }: TxRowProps) {
+function TxRowBase({ tx, last = false, onPress }: TxRowProps) {
   const isPos = tx.type === 'income';
   const catColor = tx.categoryColor || '#8B8B92';
   const LucideIcon = getCategoryIcon(tx.categoryIcon);
@@ -85,3 +85,10 @@ export function TxRow({ tx, last = false, onPress }: TxRowProps) {
     </Pressable>
   );
 }
+
+// Comparação rasa nas props relevantes evita re-render quando o array de
+// transações filtradas muda de identidade (ex.: trocar de aba) mas o item
+// em si é o mesmo objeto — React.memo por si só já cobre isso, mas o
+// comparador explícito documenta a intenção e evita comparar `onPress`
+// por referência (estabilizado no chamador).
+export const TxRow = React.memo(TxRowBase);
