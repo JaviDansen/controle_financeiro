@@ -1,9 +1,9 @@
 import { ImportFormat, SupportedBank } from '../types'
 import { buildMercadopagoPrompt } from './banks/mercadopago'
 
-export function getPrompt(bank: SupportedBank, format: ImportFormat, referenceDate?: string): string {
+export function getPrompt(bank: SupportedBank, format: ImportFormat, referenceDate?: string, ignoreKeywords?: string[]): string {
   if (format === 'screenshot') {
-    if (bank === 'mercadopago') return buildMercadopagoPrompt(referenceDate)
+    if (bank === 'mercadopago') return buildMercadopagoPrompt(referenceDate, ignoreKeywords)
   }
 
   throw new Error(`Prompt nao disponivel para banco="${bank}" format="${format}"`)

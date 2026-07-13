@@ -404,6 +404,56 @@
       font-weight: 600;
     }
 
+    /* ── REGRAS DE EXTRAÇÃO ─────────────────────────────────── */
+    .rules-card {
+      border: 1.5px solid var(--hairline);
+      border-radius: var(--radius-card);
+      background-color: var(--surface);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .rules-input-row {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .rules-input-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .rules-input {
+      width: 100%;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid var(--hairline);
+      background-color: var(--surface);
+      color: var(--ink);
+      padding: 0 12px;
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+      transition: var(--transition-base);
+    }
+
+    .rules-input:focus {
+      border-color: var(--ink);
+      box-shadow: 0 0 0 2px rgba(21, 21, 26, 0.05);
+    }
+
+    .rules-help-text {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
     /* ── UPLOAD AREA ───────────────────────────────────────── */
     .upload-buttons {
       display: flex;
@@ -478,6 +528,7 @@
       font-size: 14px;
       font-weight: 600;
       color: var(--ink);
+      transition: var(--transition-base);
     }
 
     .dashed-subtitle {
@@ -487,111 +538,83 @@
       line-height: 1.4;
     }
 
-    /* ── FILE CARD ───────────────────────────────────────── */
-    .file-card {
-      display: none; /* Controlled by state */
+    /* ── HORIZONTAL FILES QUEUE ───────────────────────────────────── */
+    .files-queue {
+      display: none; /* Controlled by JS */
+      flex-direction: row;
       align-items: center;
-      padding: 14px 16px;
-      border-radius: var(--radius-card);
+      gap: 8px;
+      margin-top: 14px;
+      margin-bottom: 8px;
+      padding: 6px 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      height: 64px; /* Fixed height to prevent collapsing and overlapping */
+      flex-shrink: 0; /* Prevents height compression by flex layout */
+    }
+    
+    .files-queue::-webkit-scrollbar {
+      display: none;
+    }
+
+    .file-queue-item {
+      position: relative;
+      width: 52px;
+      height: 52px;
+      border-radius: 10px;
       border: 1px solid var(--hairline);
       background-color: var(--surface);
-      gap: 12px;
-      transition: var(--transition-base);
-    }
-
-    .file-card-icon-container {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background-color: rgba(21, 21, 26, 0.05);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--ink);
-      transition: var(--transition-base);
+      color: var(--muted);
       flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(21, 21, 26, 0.03);
+      animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .file-card-info {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      min-width: 0;
+    @keyframes popIn {
+      from { transform: scale(0.85); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
     }
 
-    .file-card-name {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--ink);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .file-card-sub {
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    .file-card-remove {
-      background: none;
-      border: none;
-      width: 24px;
-      height: 24px;
+    .file-queue-item-remove {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background-color: var(--ink);
+      color: #FBFAF6;
+      border: 1.5px solid var(--surface);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--muted);
       cursor: pointer;
-      border-radius: 50%;
+      font-size: 8px;
+      font-weight: 700;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
       transition: var(--transition-base);
     }
-
-    .file-card-remove:hover {
-      background-color: rgba(21, 21, 26, 0.05);
-      color: var(--ink);
-    }
-
-    /* Validated Success State */
-    .file-card.success {
-      border-color: var(--accent);
-      background-color: var(--accentSoft);
-    }
     
-    .file-card.success .file-card-icon-container {
-      background-color: var(--accent);
-      color: #FBFAF6;
-    }
-    
-    .file-card.success .file-card-name {
-      color: var(--accent);
-    }
-    
-    .file-card.success .file-card-sub {
-      color: var(--accent);
-      font-weight: 500;
-      font-size: 12px;
-    }
-
-    /* Error State */
-    .file-card.error {
-      border-color: var(--neg);
-      background-color: var(--negSoft);
-    }
-    
-    .file-card.error .file-card-icon-container {
+    .file-queue-item-remove:hover {
       background-color: var(--neg);
-      color: #FBFAF6;
     }
-    
-    .file-card.error .file-card-name {
-      color: var(--neg);
-    }
-    
-    .file-card.error .file-card-sub {
-      color: var(--neg);
-      font-weight: 500;
+
+    .file-queue-more {
+      width: 52px;
+      height: 52px;
+      border-radius: 10px;
+      border: 1.5px dashed var(--muted);
+      background-color: rgba(21, 21, 26, 0.03);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      flex-shrink: 0;
     }
 
     /* ── DUPLICATE BANNER ───────────────────────────────────────── */
@@ -720,6 +743,13 @@
       margin-top: 24px;
     }
 
+    .transactions-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
     .transactions-counter {
       font-size: 11px;
       color: var(--muted);
@@ -796,6 +826,35 @@
       font-size: 11px;
       color: var(--muted);
       margin-top: 2px;
+    }
+
+    .transaction-category-select-row {
+      margin-top: 6px;
+    }
+
+    .category-select {
+      font-family: inherit;
+      font-size: 11px;
+      color: var(--muted);
+      background-color: var(--surface);
+      border: 1px solid var(--hairline);
+      border-radius: 8px;
+      padding: 4px 8px;
+      cursor: pointer;
+      outline: none;
+      transition: var(--transition-base);
+      font-weight: 500;
+      max-width: 140px;
+    }
+
+    .category-select:hover {
+      border-color: var(--ink);
+      color: var(--ink);
+    }
+
+    .category-select:focus {
+      border-color: var(--ink);
+      color: var(--ink);
     }
 
     .transaction-value {
@@ -924,7 +983,6 @@
       flex: 1;
     }
 
-    /* Hide scrollbars on bottom sheet */
     .bottom-sheet-content::-webkit-scrollbar {
       display: none;
     }
@@ -1005,6 +1063,289 @@
     .gallery-bank-card .bank-checkmark {
       opacity: 1;
       transform: scale(1);
+    }
+
+    /* ── CONFIRMATION MODAL OVERLAY ── */
+    .confirm-modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(21, 21, 26, 0.0);
+      z-index: 1100;
+      opacity: 0;
+      pointer-events: none;
+      transition: background-color 0.3s ease, opacity 0.3s ease;
+      border-radius: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .confirm-modal-overlay.active {
+      background-color: rgba(21, 21, 26, 0.6);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .confirm-modal {
+      background-color: var(--surface);
+      border-radius: 24px;
+      width: 100%;
+      max-height: 90%;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+      display: flex;
+      flex-direction: column;
+      transform: scale(0.9);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+
+    .confirm-modal-overlay.active .confirm-modal {
+      transform: scale(1);
+    }
+
+    .confirm-modal-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--hairline);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .confirm-modal-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .confirm-modal-close-btn {
+      background: none;
+      border: none;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      cursor: pointer;
+      border-radius: 50%;
+      transition: var(--transition-base);
+    }
+
+    .confirm-modal-close-btn:hover {
+      background-color: var(--hairline);
+      color: var(--ink);
+    }
+
+    .confirm-modal-body {
+      padding: 16px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .confirm-modal-body::-webkit-scrollbar {
+      display: none;
+    }
+    .confirm-modal-body {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Metadata summary grid */
+    .meta-summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      background-color: rgba(21, 21, 26, 0.02);
+      border: 1px solid var(--hairline);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .meta-summary-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .meta-summary-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .meta-summary-value {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Confirm transactions list */
+    .confirm-transactions-list {
+      border: 1px solid var(--hairline);
+      border-radius: 12px;
+      background-color: var(--surface);
+      padding: 8px 12px;
+    }
+
+    .confirm-tx-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      font-size: 12px;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--hairline);
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+    .confirm-tx-cat-badge {
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .confirm-tx-item span.neg {
+      color: var(--neg);
+      font-weight: 600;
+    }
+
+    .confirm-tx-item span.pos {
+      color: var(--pos);
+      font-weight: 600;
+    }
+
+    .confirm-tx-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      padding-top: 8px;
+      padding-bottom: 4px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .confirm-tx-total span.pos {
+      color: var(--pos);
+    }
+
+    /* Saldo Histórico styling */
+    .confirm-balance-card {
+      border: 1px solid var(--hairline);
+      border-radius: 12px;
+      background-color: rgba(21, 21, 26, 0.01);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    
+    .balance-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--ink);
+      font-weight: 500;
+    }
+    
+    .balance-label {
+      color: var(--muted);
+    }
+    
+    .balance-val {
+      font-weight: 600;
+    }
+    
+    .balance-row.inline-arrow {
+      display: flex;
+      justify-content: flex-end;
+      font-size: 11px;
+      color: var(--pos);
+      font-weight: 600;
+      border-bottom: 1px dashed var(--hairline);
+      padding-bottom: 6px;
+    }
+    
+    .balance-arrow-icon {
+      margin-right: 4px;
+    }
+    
+    .balance-row.final-balance {
+      font-size: 13px;
+      font-weight: 700;
+      padding-top: 2px;
+    }
+    
+    .balance-row.final-balance .balance-val.pos {
+      color: var(--pos);
+    }
+
+    /* Suggestion Card styling */
+    .suggestion-card {
+      margin-top: 16px;
+      background-color: var(--accentSoft);
+      border: 1px dashed var(--accent);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .suggestion-title-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .suggestion-emoji {
+      font-size: 14px;
+    }
+
+    .suggestion-card-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #1E5229;
+    }
+
+    .suggestion-card-text {
+      font-size: 11px;
+      line-height: 1.4;
+      color: #3D8B4E;
+      margin-bottom: 8px;
+    }
+
+    .suggestion-list {
+      font-size: 11px;
+      line-height: 1.4;
+      color: #1E5229;
+      padding-left: 16px;
+    }
+
+    .suggestion-list li {
+      margin-bottom: 4px;
+    }
+
+    .suggestion-list li strong {
+      color: #15151A;
+    }
+
+    .confirm-modal-footer {
+      padding: 16px;
+      border-top: 1px solid var(--hairline);
+      display: flex;
+      gap: 12px;
     }
 
     /* ── SIMULATION CONTROL PANEL ───────────────────────────────────────── */
@@ -1188,12 +1529,29 @@
           </div>
         </div>
 
+        <!-- Regras de extração Section -->
+        <div class="section-label-row">
+          <span class="section-label">Regras de extração</span>
+        </div>
+        <div class="rules-card">
+          <div class="rules-input-row">
+            <span class="rules-input-label">Ignorar movimentações internas (Cofrinhos / Reservas)</span>
+            <input type="text" class="rules-input" id="rules-ignore-keywords" 
+                   value="reserva, guardar ao gastar" 
+                   placeholder="Ex: cofrinho, poupança, reserva" 
+                   oninput="handleKeywordsChange()">
+          </div>
+          <div class="rules-help-text">
+            Digite palavras ou frases separadas por vírgula. Lançamentos com esses nomes (como guardar dinheiro automaticamente no Mercado Pago) serão ocultados e não afetarão seu saldo final, pois o dinheiro apenas mudou de lugar dentro da sua própria conta.
+          </div>
+        </div>
+
         <!-- 5. Enviar novo arquivo Section -->
         <div class="section-label-row">
           <span class="section-label">Enviar novo arquivo</span>
         </div>
         
-        <!-- Upload Buttons (Empty State only, disappear on Validation step onwards) -->
+        <!-- Upload Buttons (Empty State only, disappear on Extraction step onwards) -->
         <div class="upload-buttons" id="upload-buttons">
           <button class="upload-btn" onclick="handleSimulateSelect('image')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1225,30 +1583,18 @@
           <div class="dashed-subtitle">Aceita imagens, PDF, CSV, XLS e XLSX</div>
         </div>
 
-        <!-- File Card item (Selected, Success, Error states) -->
-        <div class="file-card" id="file-card">
-          <div class="file-card-icon-container" id="file-card-icon">
-            <!-- Icon rendered dynamically -->
-          </div>
-          <div class="file-card-info">
-            <div class="file-card-name" id="file-card-name">extrato-junho.pdf</div>
-            <div class="file-card-sub" id="file-card-sub">PDF · 1.2 MB</div>
-          </div>
-          <button class="file-card-remove" id="file-card-remove-btn" onclick="handleRemoveFile(event)">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
+        <!-- Horizontal files queue (visible only when files are selected) -->
+        <div class="files-queue" id="files-queue">
+          <!-- Small square cards rendered here dynamically -->
         </div>
 
         <!-- 6. Principal Button -->
         <button class="primary-btn" id="primary-btn" onclick="handlePrimaryAction()" disabled>
           <span class="btn-spinner" id="btn-spinner"></span>
           <span class="btn-icon-wrapper" id="btn-icon-wrapper">
-            <!-- Calendar Icon by default -->
+            <!-- Arrow Down Icon -->
           </span>
-          <span class="btn-text" id="btn-text">Validar data</span>
+          <span class="btn-text" id="btn-text">Extrair transações</span>
         </button>
 
         <!-- 7. Seção Transações Encontradas (pós-extração) -->
@@ -1257,42 +1603,20 @@
             <span class="section-label">Transações encontradas</span>
             <span class="transactions-counter" id="transactions-counter">6 · 2 ignoradas</span>
           </div>
-          <div class="transactions-list-card">
-            <!-- Item 1 -->
-            <div class="transaction-item">
-              <div class="transaction-item-left">
-                <div class="transaction-title-row">
-                  <span class="transaction-title">Extra Farma 7037</span>
-                </div>
-                <div class="transaction-desc">Pagamento com Pix · Visa crédito</div>
-                <div class="transaction-date">19 jun · 14h06</div>
-              </div>
-              <div class="transaction-value neg">-R$ 33,16</div>
-            </div>
-            <!-- Item 2 -->
-            <div class="transaction-item">
-              <div class="transaction-item-left">
-                <div class="transaction-title-row">
-                  <span class="transaction-title">Jacqueline Vidigal Leao</span>
-                  <span class="badge-data">DATA?</span>
-                </div>
-                <div class="transaction-desc">Pix recebido</div>
-                <div class="transaction-date">19 jun · 09h22</div>
-              </div>
-              <div class="transaction-value pos">+R$ 150,00</div>
-            </div>
-            <!-- Item 3 -->
-            <div class="transaction-item">
-              <div class="transaction-item-left">
-                <div class="transaction-title-row">
-                  <span class="transaction-title">iFood</span>
-                </div>
-                <div class="transaction-desc">Pagamento com Pix</div>
-                <div class="transaction-date">18 jun · 20h45</div>
-              </div>
-              <div class="transaction-value neg">-R$ 47,90</div>
-            </div>
+          
+          <div class="transactions-list-card" id="transactions-list-container">
+            <!-- Rendered dynamically by javascript -->
           </div>
+
+          <!-- Confirmation Button after transactions -->
+          <button class="primary-btn enabled" id="confirm-transactions-btn" onclick="openConfirmModal()" style="margin-top: 16px;">
+            <span class="btn-icon-wrapper">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </span>
+            <span class="btn-text">Confirmar transações</span>
+          </button>
         </div>
 
         <!-- 8. Botão Analisar Outras Imagens (pós-extração) -->
@@ -1430,6 +1754,93 @@
         </div>
       </div>
 
+      <!-- CONFIRMATION MODAL -->
+      <div class="confirm-modal-overlay" id="confirm-modal" onclick="closeConfirmModal()">
+        <div class="confirm-modal" onclick="event.stopPropagation()">
+          <div class="confirm-modal-header">
+            <h3 class="confirm-modal-title">Confirmar Importação</h3>
+            <button class="confirm-modal-close-btn" onclick="closeConfirmModal()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          
+          <div class="confirm-modal-body">
+            <!-- 1. Metadata Grid -->
+            <div class="meta-summary-grid">
+              <div class="meta-summary-item">
+                <span class="meta-summary-label">Banco</span>
+                <span class="meta-summary-value" id="confirm-meta-bank">💳 Mercado Pago</span>
+              </div>
+              <div class="meta-summary-item">
+                <span class="meta-summary-label">Arquivos</span>
+                <span class="meta-summary-value" id="confirm-meta-filename">extrato_mp.pdf</span>
+              </div>
+              <div class="meta-summary-item" style="grid-column: span 2;">
+                <span class="meta-summary-label">Data do Comprovante</span>
+                <span class="meta-summary-value" id="confirm-meta-docdate">30 de Junho de 2026</span>
+              </div>
+              <div class="meta-summary-item" style="grid-column: span 2; border-top: 1px solid rgba(21, 21, 26, 0.05); padding-top: 6px;">
+                <span class="meta-summary-label">Data da Extração</span>
+                <span class="meta-summary-value" id="confirm-meta-extractdate">30/06/2026 às 19:12</span>
+              </div>
+            </div>
+            
+            <!-- 2. Transactions Summary -->
+            <div class="section-label" style="margin-top: 16px; margin-bottom: 8px;">Transações Extraídas</div>
+            <div class="confirm-transactions-list" id="confirm-tx-list-container">
+              <!-- Rendered dynamically -->
+            </div>
+
+            <!-- 3. Saldo Histórico -->
+            <div class="section-label" style="margin-top: 16px; margin-bottom: 8px;">Saldo Histórico</div>
+            <div class="confirm-balance-card">
+              <div class="balance-row">
+                <span class="balance-label">Saldo Atual (Antes)</span>
+                <span class="balance-val">R$ 1.250,00</span>
+              </div>
+              <div class="balance-row inline-arrow">
+                <span class="balance-arrow-icon">↓</span>
+                <span class="balance-delta-val">+R$ 68,94 (Conciliado)</span>
+              </div>
+              <div class="balance-row final-balance">
+                <span class="balance-label">Novo Saldo (Projetado)</span>
+                <span class="balance-val pos">R$ 1.318,94</span>
+              </div>
+            </div>
+            
+            <!-- 4. Suggestion for future analyses -->
+            <div class="suggestion-card">
+              <div class="suggestion-title-row">
+                <span class="suggestion-emoji">💡</span>
+                <span class="suggestion-card-title">Para Análises Futuras:</span>
+              </div>
+              <p class="suggestion-card-text">
+                Que outras informações precisaríamos para análises futuras? Visando robustez e auditoria, sugerimos integrar:
+              </p>
+              <ul class="suggestion-list">
+                <li><strong>ID da Transação (NSU)</strong>: Impede conciliações duplicadas em lançamentos de mesmo valor e data.</li>
+                <li><strong>Classificação / Categoria</strong>: Lógica automática (ex: Alimentação, Saúde) facilitando a geração de gráficos.</li>
+                <li><strong>CNPJ / Identificação do Recipiente</strong>: Permite consolidar gastos exatos por estabelecimento ou fornecedor.</li>
+                <li><strong>Saldo Histórico</strong>: Para conciliação contínua e exatidão da conta do usuário.</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="confirm-modal-footer">
+            <button class="primary-btn enabled" id="confirm-save-btn" onclick="handleFinalSave()" style="margin-top: 0; flex: 1;">
+              <span class="btn-spinner" id="confirm-save-spinner"></span>
+              <span class="btn-text" id="confirm-save-text">Salvar Lançamentos</span>
+            </button>
+            <button class="outline-btn" onclick="closeConfirmModal()" style="margin-top: 0; flex: 1; display: flex; height: 52px; border-radius: var(--radius-btn);">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- RIGHT: STATE SIMULATION CONTROLS -->
@@ -1446,16 +1857,6 @@
         <span class="control-btn-indicator"></span>
       </button>
       
-      <button class="control-btn" id="sim-btn-validating" onclick="setScreenState('validating')">
-        <span>Validando...</span>
-        <span class="control-btn-indicator"></span>
-      </button>
-      
-      <button class="control-btn" id="sim-btn-validated_success" onclick="setScreenState('validated_success')">
-        <span>Validado ✓</span>
-        <span class="control-btn-indicator"></span>
-      </button>
-      
       <button class="control-btn" id="sim-btn-extracting" onclick="setScreenState('extracting')">
         <span>Extraindo...</span>
         <span class="control-btn-indicator"></span>
@@ -1465,11 +1866,6 @@
         <span>Transações extraídas</span>
         <span class="control-btn-indicator"></span>
       </button>
-      
-      <button class="control-btn" id="sim-btn-error" onclick="setScreenState('error')">
-        <span>Erro de data</span>
-        <span class="control-btn-indicator"></span>
-      </button>
 
       <button class="control-btn" id="sim-btn-duplicate" onclick="setScreenState('duplicate')">
         <span>Duplicata</span>
@@ -1477,6 +1873,11 @@
       </button>
 
       <div class="divider"></div>
+
+      <button class="control-btn" style="border-color: var(--ink);" onclick="openConfirmModal()">
+        <span>Abrir Modal Confirmação</span>
+        <span style="font-size: 16px;">↗</span>
+      </button>
 
       <button class="control-btn" style="border-color: var(--ink);" onclick="openGalleryModal(1)">
         <span>Abrir Modal Galeria</span>
@@ -1494,15 +1895,24 @@
   <script>
     // ── STATE DEFINITIONS ─────────────────────────────────────────
     const state = {
-      currentScreenState: 'empty', // empty, file_selected, validating, validated_success, extracting, extracted, error, duplicate
+      currentScreenState: 'empty', // empty, file_selected, extracting, extracted, duplicate
       
-      // Selected file details
+      // Selected files list (Supports multiple selection)
+      selectedFiles: [],
+      
       fileName: 'extrato_mercadopago_junho.pdf',
       fileSize: '1.2 MB',
       fileType: 'PDF',
       
       // Active Bank Account
       isBankActive: true,
+      
+      // Category selections map
+      txCategories: {
+        0: '',
+        1: '',
+        2: ''
+      },
       
       // Calendar State configs
       inline: {
@@ -1520,27 +1930,26 @@
     // Constant date boundary reference (Local: 2026-06-30)
     const TODAY_DATE = new Date(2026, 5, 30); 
 
-    // ── SVG ICONS BUILDERS ─────────────────────────────────────────
-    function getCalendarIconSVG() {
-      return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`;
-    }
+    // Mock Files Database for simulating select
+    const mockFilesDatabase = [
+      { name: 'extrato_mercadopago_junho.pdf', type: 'PDF', size: '1.2 MB' },
+      { name: 'comprovante_pix_01.png', type: 'PNG', size: '2.4 MB' },
+      { name: 'extrato_banco.xlsx', type: 'XLSX', size: '840 KB' },
+      { name: 'comprovante_refeicao.jpg', type: 'JPG', size: '1.5 MB' },
+      { name: 'documento_financeiro.pdf', type: 'PDF', size: '3.1 MB' },
+      { name: 'extrato_nubank.csv', type: 'CSV', size: '140 KB' },
+      { name: 'recibo_aluguel.png', type: 'PNG', size: '1.9 MB' }
+    ];
 
+    let mockFileIndex = 0;
+
+    // ── SVG ICONS BUILDERS ─────────────────────────────────────────
     function getArrowDownIconSVG() {
       return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>`;
     }
 
     function getDocumentIconSVG() {
       return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`;
-    }
-
-    // Check Icon SVG
-    function getCheckIconSVG() {
-      return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-    }
-
-    // Error Icon SVG
-    function getErrorIconSVG() {
-      return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
     }
 
     // Image Icon SVG
@@ -1606,11 +2015,6 @@
           calState.selectedDate = new Date(calState.year, calState.month, day);
           renderCalendar(calendarId);
           updateCalendarFooter(calendarId);
-          
-          // If we updated inline calendar, let's sync file card date (if in validated state)
-          if (calendarId === 'inline' && state.currentScreenState === 'validated_success') {
-            updateFileCardSubtext(calState.selectedDate);
-          }
         };
 
         container.appendChild(cell);
@@ -1679,6 +2083,68 @@
       }
     }
 
+    // ── DYNAMIC CATEGORY ASSIGNMENT ─────────────────────────────────────
+    function updateTxCategory(txIndex, value) {
+      state.txCategories[txIndex] = value;
+    }
+
+    // ── FILES QUEUE RENDERER ───────────────────────────────────────────
+    function renderFilesQueue() {
+      const queueContainer = document.getElementById('files-queue');
+      if (!queueContainer) return;
+      
+      const files = state.selectedFiles;
+      
+      if (files.length === 0) {
+        queueContainer.style.display = 'none';
+        return;
+      }
+      
+      queueContainer.style.display = 'flex';
+      queueContainer.innerHTML = '';
+      
+      const isExtracting = state.currentScreenState === 'extracting';
+      const maxVisible = 5;
+      const visibleCount = Math.min(files.length, maxVisible);
+      
+      for (let i = 0; i < visibleCount; i++) {
+        const file = files[i];
+        const item = document.createElement('div');
+        item.className = 'file-queue-item';
+        
+        const iconSVG = file.type === 'PNG' || file.type === 'JPG' ? getImageIconSVG() : getDocumentIconSVG();
+        
+        item.innerHTML = `
+          ${iconSVG}
+          ${isExtracting ? '' : `<div class="file-queue-item-remove" onclick="handleRemoveFileAt(${i}, event)">×</div>`}
+        `;
+        
+        item.title = `${file.name} (${file.type} · ${file.size})`;
+        queueContainer.appendChild(item);
+      }
+      
+      // If more than 5, render "+ N" card
+      if (files.length > maxVisible) {
+        const remaining = files.length - maxVisible;
+        const moreCard = document.createElement('div');
+        moreCard.className = 'file-queue-more';
+        moreCard.textContent = `+${remaining}`;
+        moreCard.title = `${remaining} mais arquivos selecionados`;
+        queueContainer.appendChild(moreCard);
+      }
+    }
+
+    function handleRemoveFileAt(index, event) {
+      if (event) event.stopPropagation();
+      state.selectedFiles.splice(index, 1);
+      
+      if (state.selectedFiles.length === 0) {
+        setScreenState('empty');
+      } else {
+        setScreenState('file_selected');
+      }
+    }
+
     // ── STATE CONTROLLER MACHINE ─────────────────────────────────────────
     function setScreenState(newState) {
       state.currentScreenState = newState;
@@ -1695,22 +2161,19 @@
       // DOM Target Selectors
       const uploadButtons = document.getElementById('upload-buttons');
       const dashedArea = document.getElementById('dashed-area');
-      const fileCard = document.getElementById('file-card');
+      const filesQueue = document.getElementById('files-queue');
       const duplicateBanner = document.getElementById('duplicate-banner');
       const primaryBtn = document.getElementById('primary-btn');
       const transactionsSection = document.getElementById('transactions-section');
       const analyzeOtherBtn = document.getElementById('analyze-other-btn');
-      const fileCardRemoveBtn = document.getElementById('file-card-remove-btn');
-      const fileCardIcon = document.getElementById('file-card-icon');
-      const fileCardName = document.getElementById('file-card-name');
-      const fileCardSub = document.getElementById('file-card-sub');
       const btnTextElement = document.getElementById('btn-text');
       const btnIconWrapper = document.getElementById('btn-icon-wrapper');
+      const dashedTitle = document.querySelector('.dashed-title');
 
       // Default Resets
       uploadButtons.style.display = 'none';
       dashedArea.style.display = 'none';
-      fileCard.style.display = 'none';
+      filesQueue.style.display = 'none';
       duplicateBanner.style.display = 'none';
       transactionsSection.style.display = 'none';
       analyzeOtherBtn.style.display = 'none';
@@ -1719,50 +2182,31 @@
       // Clean up dynamic button and card styles
       primaryBtn.className = 'primary-btn';
       primaryBtn.disabled = true;
-      fileCard.className = 'file-card';
-      fileCardRemoveBtn.style.display = 'flex';
+
+      // Update upload container titles based on selections count
+      if (dashedTitle) {
+        dashedTitle.textContent = state.selectedFiles.length > 0 ? "Adicionar outro arquivo" : "Nenhum arquivo selecionado";
+      }
 
       switch (newState) {
         case 'empty':
+          state.selectedFiles = [];
           uploadButtons.style.display = 'flex';
           dashedArea.style.display = 'flex';
           
-          btnTextElement.textContent = 'Validar data';
-          btnIconWrapper.innerHTML = getCalendarIconSVG();
+          btnTextElement.textContent = 'Extrair transações';
+          btnIconWrapper.innerHTML = getArrowDownIconSVG();
           break;
 
         case 'file_selected':
           uploadButtons.style.display = 'flex';
-          fileCard.style.display = 'flex';
-          fileCardIcon.innerHTML = state.fileType === 'PNG' || state.fileType === 'JPG' ? getImageIconSVG() : getDocumentIconSVG();
+          dashedArea.style.display = 'flex';
           
-          fileCardName.textContent = state.fileName;
-          fileCardSub.textContent = `${state.fileType} · ${state.fileSize}`;
-
-          primaryBtn.classList.add('enabled');
-          primaryBtn.disabled = false;
-          btnTextElement.textContent = 'Validar data';
-          btnIconWrapper.innerHTML = getCalendarIconSVG();
-          break;
-
-        case 'validating':
-          fileCard.style.display = 'flex';
-          fileCardIcon.innerHTML = state.fileType === 'PNG' || state.fileType === 'JPG' ? getImageIconSVG() : getDocumentIconSVG();
-          fileCardName.textContent = state.fileName;
-          fileCardSub.textContent = `${state.fileType} · ${state.fileSize}`;
-
-          primaryBtn.classList.add('loading');
-          btnTextElement.textContent = 'Verificando data...';
-          break;
-
-        case 'validated_success':
-          fileCard.style.display = 'flex';
-          fileCard.classList.add('success');
-          fileCardRemoveBtn.style.display = 'none'; // hide remove button
-          fileCardIcon.innerHTML = getCheckIconSVG();
-
-          fileCardName.textContent = state.fileName;
-          updateFileCardSubtext(state.inline.selectedDate);
+          if (state.selectedFiles.length === 0) {
+            state.selectedFiles.push({ name: 'extrato_mercadopago_junho.pdf', type: 'PDF', size: '1.2 MB' });
+          }
+          
+          renderFilesQueue();
 
           primaryBtn.classList.add('enabled');
           primaryBtn.disabled = false;
@@ -1771,28 +2215,26 @@
           break;
 
         case 'extracting':
-          fileCard.style.display = 'flex';
-          fileCard.classList.add('success');
-          fileCardRemoveBtn.style.display = 'none';
-          fileCardIcon.innerHTML = getCheckIconSVG();
-          fileCardName.textContent = state.fileName;
-          updateFileCardSubtext(state.inline.selectedDate);
+          uploadButtons.style.display = 'none';
+          dashedArea.style.display = 'none';
+          
+          renderFilesQueue();
 
           primaryBtn.classList.add('loading');
           btnTextElement.textContent = 'Extraindo transações...';
           break;
 
         case 'extracted':
-          fileCard.style.display = 'flex';
-          fileCard.classList.add('success');
-          fileCardRemoveBtn.style.display = 'none';
-          fileCardIcon.innerHTML = getCheckIconSVG();
-          fileCardName.textContent = state.fileName;
-          updateFileCardSubtext(state.inline.selectedDate);
+          uploadButtons.style.display = 'none';
+          dashedArea.style.display = 'none';
+          filesQueue.style.display = 'none';
 
           primaryBtn.style.display = 'none';
           transactionsSection.style.display = 'block';
           analyzeOtherBtn.style.display = 'flex';
+          
+          // Render dynamic consolidated transaction list based on files selected
+          renderTransactionsList();
           
           // Auto scroll phone layout down to transactions
           setTimeout(() => {
@@ -1801,44 +2243,23 @@
           }, 150);
           break;
 
-        case 'error':
-          uploadButtons.style.display = 'flex';
-          fileCard.style.display = 'flex';
-          fileCard.classList.add('error');
-          fileCardIcon.innerHTML = getErrorIconSVG();
-
-          fileCardName.textContent = state.fileName;
-          fileCardSub.textContent = 'Nenhum cabeçalho de data encontrado';
-
-          // Keep main button disabled as we are in error state
-          btnTextElement.textContent = 'Validar data';
-          btnIconWrapper.innerHTML = getCalendarIconSVG();
-          break;
-
         case 'duplicate':
           uploadButtons.style.display = 'flex';
-          fileCard.style.display = 'flex';
+          dashedArea.style.display = 'flex';
           duplicateBanner.style.display = 'flex';
-          fileCardIcon.innerHTML = state.fileType === 'PNG' || state.fileType === 'JPG' ? getImageIconSVG() : getDocumentIconSVG();
-
-          fileCardName.textContent = state.fileName;
-          fileCardSub.textContent = `${state.fileType} · ${state.fileSize}`;
+          
+          if (state.selectedFiles.length === 0) {
+            state.selectedFiles.push({ name: 'extrato_mercadopago_junho.pdf', type: 'PDF', size: '1.2 MB' });
+          }
+          
+          renderFilesQueue();
 
           primaryBtn.classList.add('enabled');
           primaryBtn.disabled = false;
-          btnTextElement.textContent = 'Validar data';
-          btnIconWrapper.innerHTML = getCalendarIconSVG();
+          btnTextElement.textContent = 'Extrair transações';
+          btnIconWrapper.innerHTML = getArrowDownIconSVG();
           break;
       }
-    }
-
-    function updateFileCardSubtext(dateObj) {
-      const months = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
-      document.getElementById('file-card-sub').textContent = `Data: ${dateObj.getDate()} de ${months[dateObj.getMonth()]} de ${dateObj.getFullYear()}`;
-    }
-
-    function hideDuplicateBanner() {
-      document.getElementById('duplicate-banner').style.display = 'none';
     }
 
     // ── MAIN BUTTON INTERACTION FLOW ─────────────────────────────────────────
@@ -1846,13 +2267,6 @@
       const currentState = state.currentScreenState;
       
       if (currentState === 'file_selected' || currentState === 'duplicate') {
-        // Step 1: Validating
-        setScreenState('validating');
-        setTimeout(() => {
-          setScreenState('validated_success');
-        }, 1500);
-      } else if (currentState === 'validated_success') {
-        // Step 2: Extracting
         setScreenState('extracting');
         setTimeout(() => {
           setScreenState('extracted');
@@ -1861,25 +2275,22 @@
     }
 
     function handleSimulateSelect(type) {
-      if (type === 'image') {
-        state.fileName = 'extrato_mercadopago_junho.png';
-        state.fileType = 'PNG';
-        state.fileSize = '2.4 MB';
-      } else {
-        state.fileName = 'extrato_banco.xlsx';
-        state.fileType = 'XLSX';
-        state.fileSize = '840 KB';
-      }
+      // Pick a mock file to append
+      const baseFile = mockFilesDatabase[mockFileIndex % mockFilesDatabase.length];
+      mockFileIndex++;
+      
+      const newFile = {
+        name: type === 'image' ? `imagem_extrato_0${state.selectedFiles.length + 1}.png` : baseFile.name,
+        type: type === 'image' ? 'PNG' : baseFile.type,
+        size: baseFile.size
+      };
+      
+      state.selectedFiles.push(newFile);
       setScreenState('file_selected');
     }
 
-    function handleRemoveFile(e) {
-      if (e) e.stopPropagation();
-      setScreenState('empty');
-    }
-
     function handleReset() {
-      // Re-initialize dates
+      // Re-initialize dates and categories
       state.inline.month = 5;
       state.inline.year = 2026;
       state.inline.selectedDate = new Date(2026, 5, 30);
@@ -1887,9 +2298,35 @@
       state.gallery.year = 2026;
       state.gallery.selectedDate = new Date(2026, 5, 30);
       
+      state.txCategories = {
+        0: '',
+        1: '',
+        2: ''
+      };
+      
+      state.selectedFiles = [];
+
+      // Reset selects in UI
+      document.querySelectorAll('.category-select').forEach(select => {
+        select.value = '';
+      });
+      
       renderCalendar('inline');
       renderCalendar('gallery');
+      
+      // Reset rules input to default
+      const kwInput = document.getElementById('rules-ignore-keywords');
+      if (kwInput) {
+        kwInput.value = "reserva, guardar ao gastar";
+      }
+
       setScreenState('empty');
+    }
+
+    function handleKeywordsChange() {
+      if (state.currentScreenState === 'extracted') {
+        renderTransactionsList();
+      }
     }
 
     // ── GALLERY BOTTOM SHEET MODAL INTERACTIONS ───────────────────────
@@ -1946,10 +2383,240 @@
         
         renderCalendar('inline');
         
-        // Complete extraction on parent screen
+        // Mock files list initialization for gallery extraction
+        state.selectedFiles = [{ name: `extrato_galeria_01.png`, type: 'PNG', size: '1.9 MB' }];
+        
         closeGalleryModal();
         setScreenState('extracted');
       }, 2000);
+    }
+
+    // ── FINAL CONFIRMATION MODAL ACTIONS ───────────────────────────────────
+    function formatExtractionDate() {
+      const d = new Date();
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      return `${day}/${month}/${year} às ${hours}:${minutes}`;
+    }
+
+    function getActiveTransactions() {
+      const baseList = [
+        { title: "Extra Farma 7037", desc: "Pagamento com Pix · Visa crédito", date: "19 jun · 14h06", amount: -33.16, id: "994273819034", type: "expense" },
+        { title: "Jacqueline Vidigal Leao", desc: "Pix recebido", date: "19 jun · 09h22", amount: 150.00, id: "881273901239", type: "income", badge: "DATA?" },
+        { title: "iFood", desc: "Pagamento com Pix", date: "18 jun · 20h45", amount: -47.90, id: "554901829031", type: "expense" }
+      ];
+      
+      const extraList = [
+        { title: "Posto Ipiranga", desc: "Débito automático", date: "17 jun · 11h30", amount: -120.00, id: "441029384712", type: "expense" },
+        { title: "Padaria Central", desc: "Pagamento com Pix", date: "17 jun · 08h15", amount: -18.50, id: "332910482710", type: "expense" },
+        { title: "Netflix Assinatura", desc: "Cartão de Crédito", date: "16 jun · 23h01", amount: -55.90, id: "112093847561", type: "expense" },
+        { title: "Uber Trip", desc: "Pagamento com Pix", date: "15 jun · 18h40", amount: -24.90, id: "223948571029", type: "expense" },
+        { title: "Google Cloud", desc: "Cartão de Crédito", date: "14 jun · 03h12", amount: -45.00, id: "773948102938", type: "expense" }
+      ];
+      
+      const count = state.selectedFiles.length;
+      const result = [...baseList];
+      
+      // Add more items based on count (starting from 2 selected files)
+      const itemsToAdd = Math.min(count - 1, extraList.length);
+      for (let i = 0; i < itemsToAdd; i++) {
+        result.push(extraList[i]);
+      }
+      
+      return result;
+    }
+
+    function renderTransactionsList() {
+      const container = document.getElementById('transactions-list-container');
+      const counter = document.getElementById('transactions-counter');
+      if (!container) return;
+
+      const activeTxs = getActiveTransactions();
+      
+      // Dynamic header counter
+      const totalFound = activeTxs.length + 2; 
+      const ignoredCount = 2;
+      if (counter) {
+        counter.textContent = `${totalFound} · ${ignoredCount} ignoradas`;
+      }
+
+      container.innerHTML = '';
+      
+      activeTxs.forEach((tx, index) => {
+        const item = document.createElement('div');
+        item.className = 'transaction-item';
+        
+        const badge = tx.badge ? `<span class="badge-data">${tx.badge}</span>` : '';
+        const valClass = tx.type === 'income' ? 'pos' : 'neg';
+        const valSign = tx.type === 'income' ? '+' : '';
+        const valFormatted = `${valSign}R$ ${Math.abs(tx.amount).toFixed(2).replace('.', ',')}`;
+        
+        // Select category dropdown options
+        const categoryOptions = [
+          { val: "", text: "Categoria (Opcional)" },
+          { val: "Alimentação", text: "Alimentação" },
+          { val: "Saúde", text: "Saúde" },
+          { val: "Lazer", text: "Lazer" },
+          { val: "Serviços", text: "Serviços" },
+          { val: "Outros", text: "Outros" }
+        ];
+        
+        const optionsHTML = categoryOptions.map(opt => {
+          const selected = state.txCategories[index] === opt.val ? 'selected' : '';
+          return `<option value="${opt.val}" ${selected}>${opt.text}</option>`;
+        }).join('');
+
+        item.innerHTML = `
+          <div class="transaction-item-left">
+            <div class="transaction-title-row">
+              <span class="transaction-title">${tx.title}</span>
+              ${badge}
+            </div>
+            <div class="transaction-desc">${tx.desc} · <span style="font-family: monospace; font-size: 11px;">ID: ${tx.id}</span></div>
+            <div class="transaction-date">${tx.date}</div>
+            <div class="transaction-category-select-row">
+              <select class="category-select" onchange="updateTxCategory(${index}, this.value)">
+                ${optionsHTML}
+              </select>
+            </div>
+          </div>
+          <div class="transaction-value ${valClass}">${valFormatted}</div>
+        `;
+        
+        container.appendChild(item);
+      });
+    }
+
+    function openConfirmModal() {
+      const modal = document.getElementById('confirm-modal');
+      
+      // Sync parameters to UI
+      document.getElementById('confirm-meta-bank').textContent = state.isBankActive ? "💳 Mercado Pago" : "💳 Nenhum";
+      
+      // Display first filename + extra count dynamically
+      const files = state.selectedFiles;
+      let filenameDisplay = "Nenhum";
+      if (files.length === 1) {
+        filenameDisplay = files[0].name;
+      } else if (files.length > 1) {
+        filenameDisplay = `${files[0].name} (+${files.length - 1} outros)`;
+      }
+      document.getElementById('confirm-meta-filename').textContent = filenameDisplay;
+      
+      // Document selection date
+      const docDate = state.inline.selectedDate;
+      const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+      document.getElementById('confirm-meta-docdate').textContent = `${docDate.getDate()} de ${monthNames[docDate.getMonth()]} de ${docDate.getFullYear()}`;
+      
+      // Extraction Timestamp
+      document.getElementById('confirm-meta-extractdate').textContent = formatExtractionDate();
+      
+      // Get current dynamic list of transactions
+      const activeTxs = getActiveTransactions();
+      
+      // Calculate dynamic sum
+      let sum = 0;
+      activeTxs.forEach(tx => sum += tx.amount);
+      const sumClass = sum >= 0 ? 'pos' : 'neg';
+      const sumSign = sum >= 0 ? '+' : '';
+      const sumFormatted = `${sumSign}R$ ${Math.abs(sum).toFixed(2).replace('.', ',')}`;
+
+      // Update Saldo Histórico card dynamically
+      const startBalance = 1250.00;
+      const projectedBalance = startBalance + sum;
+      const projectedClass = projectedBalance >= 0 ? 'pos' : 'neg';
+      
+      const balanceCard = document.querySelector('.confirm-balance-card');
+      if (balanceCard) {
+        balanceCard.innerHTML = `
+          <div class="balance-row">
+            <span class="balance-label">Saldo Atual (Antes)</span>
+            <span class="balance-val">R$ 1.250,00</span>
+          </div>
+          <div class="balance-row inline-arrow">
+            <span class="balance-arrow-icon">${sum >= 0 ? '↑' : '↓'}</span>
+            <span class="balance-delta-val ${sumClass}">${sumFormatted} (Conciliado)</span>
+          </div>
+          <div class="balance-row final-balance">
+            <span class="balance-label">Novo Saldo (Projetado)</span>
+            <span class="balance-val ${projectedClass}">R$ ${projectedBalance.toFixed(2).replace('.', ',')}</span>
+          </div>
+        `;
+      }
+      
+      // Render dynamic transaction list with category tags and transaction IDs inside modal
+      const txContainer = document.getElementById('confirm-tx-list-container');
+      if (txContainer) {
+        let listHTML = '';
+        activeTxs.forEach((tx, index) => {
+          const valClass = tx.type === 'income' ? 'pos' : 'neg';
+          const valSign = tx.type === 'income' ? '+' : '';
+          const valFormatted = `${valSign}R$ ${Math.abs(tx.amount).toFixed(2).replace('.', ',')}`;
+          
+          listHTML += `
+            <div class="confirm-tx-item">
+              <div style="display: flex; flex-direction: column;">
+                <span style="font-weight: 600;">${tx.title}</span>
+                <span style="font-size: 10px; color: var(--muted); margin-top: 1px; font-family: monospace;">ID: ${tx.id}</span>
+                <span class="confirm-tx-cat-badge">${state.txCategories[index] ? '🏷️ ' + state.txCategories[index] : 'Sem categoria (Opcional)'}</span>
+              </div>
+              <span class="${valClass}">${valFormatted}</span>
+            </div>
+          `;
+        });
+        
+        listHTML += `
+          <div class="confirm-tx-total">
+            <span>Total Conciliado</span>
+            <span class="${sumClass}">${sumFormatted}</span>
+          </div>
+        `;
+        
+        txContainer.innerHTML = listHTML;
+      }
+      
+      modal.classList.add('active');
+    }
+
+    function closeConfirmModal() {
+      const modal = document.getElementById('confirm-modal');
+      modal.classList.remove('active');
+
+      // Reset Confirm Button state
+      const btn = document.getElementById('confirm-save-btn');
+      const spinner = document.getElementById('confirm-save-spinner');
+      const text = document.getElementById('confirm-save-text');
+      
+      btn.classList.remove('loading');
+      btn.disabled = false;
+      spinner.style.display = 'none';
+      text.textContent = 'Salvar Lançamentos';
+    }
+
+    function handleFinalSave() {
+      const btn = document.getElementById('confirm-save-btn');
+      const spinner = document.getElementById('confirm-save-spinner');
+      const text = document.getElementById('confirm-save-text');
+
+      btn.classList.add('loading');
+      btn.disabled = true;
+      spinner.style.display = 'block';
+      text.textContent = 'Salvando transações...';
+
+      setTimeout(() => {
+        spinner.style.display = 'none';
+        text.textContent = '✓ Transações Salvas!';
+        btn.style.backgroundColor = 'var(--accent)';
+        
+        setTimeout(() => {
+          btn.style.backgroundColor = '';
+          closeConfirmModal();
+          handleReset(); // reset phone to empty state
+        }, 1200);
+      }, 1500);
     }
 
     // ── INIT INITIALIZATION ─────────────────────────────────────────

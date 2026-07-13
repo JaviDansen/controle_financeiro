@@ -1,7 +1,15 @@
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000'
 
+export class DuplicateImageError extends Error {
+  imageId?: string
+  constructor(imageId?: string) {
+    super('Arquivo ja processado anteriormente')
+    this.name = 'DuplicateImageError'
+    this.imageId = imageId
+  }
+}
+
 export type ImportFormat = 'screenshot' | 'csv' | 'pdf' | 'xls' | 'xlsx'
-export type ValidationStrategy = 'gemini' | 'tesseract'
 
 export interface ExtractUploadPayload {
   fileBase64: string
@@ -11,6 +19,7 @@ export interface ExtractUploadPayload {
 }
 
 export interface ExtractedTransaction {
+  extractedId: string | null
   title: string
   description: string
   amount: number
@@ -25,18 +34,9 @@ export interface ExtractedTransaction {
 
 export interface ImportResponse {
   imageId: string
-  imageHash: string
   bank: string
   format: string
-  fileName?: string
-  mimeType?: string
   transactions: ExtractedTransaction[]
-}
-
-export interface ValidateResponse {
-  imageId: string
-  valid: true
-  detectedDate: string | null
 }
 
 export interface GalleryItem {
@@ -47,42 +47,23 @@ export interface GalleryItem {
   sizeBytes: number
 }
 
-export async function validateExtractFile(
-  file: ExtractUploadPayload,
-  bank: string,
-  token: string,
-  validationStrategy: ValidationStrategy = 'tesseract',
-): Promise<ValidateResponse> {
-  const res = await fetch(`${API_URL}/import/validate`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      bank,
-      format: file.format,
-      fileBase64: file.fileBase64,
-      fileName: file.fileName,
-      mimeType: file.mimeType,
-      validationStrategy,
-    }),
-  })
-
-  const json = await res.json()
-
-  if (res.status === 409) throw new DuplicateImageError(json.imageId)
-  if (res.status === 400 && json.error === 'header_not_found') throw new HeaderNotFoundError()
-  if (!res.ok) throw new Error(json.error ?? 'Erro ao validar extrato')
-
-  return json.data
+export interface ConfirmItem {
+  id: string
+  categoryId: string
+  discard?: boolean
 }
 
-export async function sendExtractFile(
+export interface ConfirmResponse {
+  confirmed: number
+  discarded: number
+}
+
+export async function extractFile(
   file: ExtractUploadPayload,
   bank: string,
   token: string,
-  validationStrategy: ValidationStrategy = 'tesseract',
+  referenceDate: string,
+  sessionToken?: string,
 ): Promise<ImportResponse> {
   const res = await fetch(`${API_URL}/import/extract`, {
     method: 'POST',
@@ -96,14 +77,14 @@ export async function sendExtractFile(
       fileBase64: file.fileBase64,
       fileName: file.fileName,
       mimeType: file.mimeType,
-      validationStrategy,
+      referenceDate,
+      sessionToken,
     }),
   })
 
   const json = await res.json()
 
   if (res.status === 409) throw new DuplicateImageError(json.imageId)
-  if (res.status === 400 && json.error === 'header_not_found') throw new HeaderNotFoundError()
   if (!res.ok) throw new Error(json.error ?? 'Erro ao enviar extrato')
 
   return json.data
@@ -138,18 +119,29 @@ export async function getImportGallery(token: string): Promise<GalleryItem[]> {
   return json.data
 }
 
-export class DuplicateImageError extends Error {
-  imageId?: string
-  constructor(imageId?: string) {
-    super('Arquivo ja processado anteriormente')
-    this.name = 'DuplicateImageError'
-    this.imageId = imageId
-  }
+export async function confirmImport(
+  items: ConfirmItem[],
+  token: string,
+): Promise<ConfirmResponse> {
+  const res = await fetch(`${API_URL}/import/confirm`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ transactions: items }),
+  })
+
+  const json = await res.json()
+  if (!res.ok) throw new Error(json.error ?? 'Erro ao confirmar transações')
+  return json.data
 }
 
-export class HeaderNotFoundError extends Error {
-  constructor() {
-    super('Nenhum cabecalho de data encontrado na imagem')
-    this.name = 'HeaderNotFoundError'
-  }
+export async function deleteImage(imageId: string, token: string): Promise<void> {
+  const res = await fetch(`${API_URL}/import/image/${imageId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  const json = await res.json()
+  if (!res.ok) throw new Error(json.error ?? 'Erro ao excluir imagem')
 }

@@ -24,14 +24,15 @@ export async function extractFromImage(params: {
   bank: SupportedBank
   format: ImportFormat
   referenceDate?: string
+  ignoreKeywords?: string[]
 }): Promise<ExtractionResult> {
-  const { filePath, bank, format, referenceDate } = params
+  const { filePath, bank, format, referenceDate, ignoreKeywords } = params
 
   const absolutePath = join(API_ROOT, filePath)
   const imageBuffer = await readFile(absolutePath)
   const imageBase64 = imageBuffer.toString('base64')
 
-  const prompt = getPrompt(bank, format, referenceDate)
+  const prompt = getPrompt(bank, format, referenceDate, ignoreKeywords)
   const model = geminiClient.getGenerativeModel({ model: GEMINI_MODEL })
 
   const result = await model.generateContent([
