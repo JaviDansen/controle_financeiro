@@ -8,7 +8,7 @@ interface SwipeableRowProps {
   onDelete: () => void
 }
 
-export function SwipeableRow({ children, onDelete }: SwipeableRowProps) {
+function SwipeableRowBase({ children, onDelete }: SwipeableRowProps) {
   const swipeRef = useRef<Swipeable>(null)
 
   function handleOpen() {
@@ -43,3 +43,5 @@ export function SwipeableRow({ children, onDelete }: SwipeableRowProps) {
     </Swipeable>
   )
 }
+
+export const SwipeableRow = React.memo(SwipeableRowBase);

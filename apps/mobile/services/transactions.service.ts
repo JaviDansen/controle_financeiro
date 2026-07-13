@@ -53,7 +53,7 @@ export async function getTransactions(month: string, token: string): Promise<Tra
     headers: { Authorization: `Bearer ${token}` },
   })
   const json = await res.json()
-  if (!res.ok) throw new Error(json.error ?? 'Erro ao buscar transações')
+  if (!res.ok) throw new Error(json.error ?? 'Erro ao buscar transacoes')
   return json.data
 }
 
@@ -70,7 +70,7 @@ export async function createTransaction(
     body: JSON.stringify(payload),
   })
   const json = await res.json()
-  if (!res.ok) throw new Error(json.error ?? 'Erro ao criar transação')
+  if (!res.ok) throw new Error(json.error ?? 'Erro ao criar transacao')
   return json.data
 }
 
@@ -88,7 +88,7 @@ export async function updateTransaction(
     body: JSON.stringify(payload),
   })
   const json = await res.json()
-  if (!res.ok) throw new Error(json.error ?? 'Erro ao atualizar transação')
+  if (!res.ok) throw new Error(json.error ?? 'Erro ao atualizar transacao')
   return json.data
 }
 
@@ -99,6 +99,19 @@ export async function deleteTransaction(id: string, token: string): Promise<void
   })
   if (!res.ok) {
     const json = await res.json()
-    throw new Error(json.error ?? 'Erro ao deletar transação')
+    throw new Error(json.error ?? 'Erro ao deletar transacao')
   }
+}
+
+export async function deleteTransactionsForMonth(
+  month: string,
+  token: string
+): Promise<{ deletedCount: number; month: string }> {
+  const res = await fetch(`${API_URL}/transactions?month=${month}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  const json = await res.json()
+  if (!res.ok) throw new Error(json.error ?? 'Erro ao excluir transacoes')
+  return json.data
 }

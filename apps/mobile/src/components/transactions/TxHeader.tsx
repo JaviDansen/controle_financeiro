@@ -6,9 +6,11 @@ import { colors } from '../../theme/colors'
 
 interface TxHeaderProps {
   currentMonth: string
+  onDeleteAll?: () => void
+  disableDeleteAll?: boolean
 }
 
-export function TxHeader({ currentMonth }: TxHeaderProps) {
+export function TxHeader({ currentMonth, onDeleteAll, disableDeleteAll = false }: TxHeaderProps) {
   const router = useRouter()
 
   return (
@@ -50,6 +52,19 @@ export function TxHeader({ currentMonth }: TxHeaderProps) {
           }}
         >
           <Icon.Upload size={17} color="#FBFAF6" sw={1.8} />
+        </Pressable>
+        <Pressable
+          onPress={onDeleteAll}
+          disabled={disableDeleteAll}
+          style={{
+            width: 38, height: 38, borderRadius: 19,
+            backgroundColor: disableDeleteAll ? colors.hairline : '#FBE3E3',
+            borderWidth: 1, borderColor: disableDeleteAll ? colors.hairline : '#E8B8B8',
+            alignItems: 'center', justifyContent: 'center',
+            opacity: disableDeleteAll ? 0.45 : 1,
+          }}
+        >
+          <Icon.Trash size={17} color={disableDeleteAll ? colors.muted : '#B42318'} sw={1.8} />
         </Pressable>
       </View>
     </View>

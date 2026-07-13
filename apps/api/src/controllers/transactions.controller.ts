@@ -271,3 +271,42 @@ export const deleteTransaction: RequestHandler = async (req, res) => {
   logRequestEvent(req, 'transactions.delete.success', { userId, txId })
   res.status(204).send()
 }
+
+export const deleteTransactionsByMonth: RequestHandler = async (req, res) => {
+  const userId = (req as AuthenticatedRequest).userId
+  logRequestEvent(req, 'transactions.bulk_delete.started', { userId })
+
+  const monthParsed = monthQuerySchema.safeParse(req.query.month)
+  if (!monthParsed.success) {
+    logRequestEvent(req, 'transactions.bulk_delete.invalid_month', { userId, month: req.query.month })
+    res.status(400).json({ error: monthParsed.error.errors[0].message })
+    return
+  }
+
+  const month = monthParsed.data
+  const { start, end } = monthRange(month)
+
+  const deleted = await db
+    .delete(transactions)
+    .where(
+      and(
+        eq(transactions.userId, userId),
+        gte(transactions.date, start),
+        lt(transactions.date, end)
+      )
+    )
+    .returning({ id: transactions.id })
+
+  logRequestEvent(req, 'transactions.bulk_delete.success', {
+    userId,
+    month,
+    deletedCount: deleted.length,
+  })
+
+  res.json({
+    data: {
+      deletedCount: deleted.length,
+      month,
+    },
+  })
+}

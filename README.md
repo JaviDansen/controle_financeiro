@@ -389,7 +389,7 @@ apps/api/
 │   ├── helpers/
 │   │   ├── global-setup.ts    # Carrega .env antes dos testes
 │   │   ├── setup-env.ts       # Sobrescreve DATABASE_URL com DATABASE_URL_TEST nos workers
-│   │   ├── db.ts              # testDb + clearTables()
+│   │   ├── db.ts              # testDb
 │   │   └── app.ts             # api() com supertest
 │   ├── auth_integration_test.ts        # 21 testes de /auth/*
 │   ├── api_health_integration_test.ts  # 5 testes de /health e /hello

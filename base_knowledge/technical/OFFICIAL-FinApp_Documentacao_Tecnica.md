@@ -814,7 +814,7 @@ apps/api/
 │   ├── helpers/
 │   │   ├── global-setup.ts        — carrega .env, aponta DATABASE_URL para banco de teste
 │   │   ├── global-teardown.ts     — encerra conexões após todos os testes
-│   │   ├── db.ts                  — instância testDb + helper clearTables()
+│   │   ├── db.ts                  — instância testDb
 │   │   └── app.ts                 — helper api() com supertest para integração
 │   └── <módulo>_<tipo>_test.ts    — ex: auth_integration_test.ts
 
@@ -829,15 +829,11 @@ Exemplos: auth_integration_test.ts, transactions_unit_test.ts, goals_integration
 Os testes de integração exigem um banco PostgreSQL separado apontado por DATABASE_URL_TEST no .env.
 O banco de teste (finapp-test) deve ser criado manualmente na mesma VPS:
 CREATE DATABASE "finapp-test";
-O helper clearTables() trunca todas as tabelas entre testes para garantir isolamento.
+Os testes devem criar dados unicos por caso de teste para garantir isolamento sem apagar tabelas inteiras.
 
 
 10.5.5 Como Usar os Helpers em um Teste
 import { api } from './helpers/app'
-import { clearTables } from './helpers/db'
-
-beforeEach(async () => { await clearTables() })
-
 it('GET /health retorna ok', async () => {
   const res = await api().get('/health')
   expect(res.status).toBe(200)

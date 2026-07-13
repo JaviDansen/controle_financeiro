@@ -1,534 +1,2633 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Importar Extrato — FinApp</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Importar Extrato — FinApp Sandbox</title>
+  <style>
+    /* ── DESIGN SYSTEM & CONSTANTS ───────────────────────────────────────── */
+    :root {
+      --bg: #ECE7DC;
+      --surface: #FBFAF6;
+      --ink: #15151A;
+      --muted: #8B8B92;
+      --hairline: rgba(21, 21, 26, 0.10);
+      --accent: #3D8B4E;
+      --accentSoft: #DDF0E4;
+      --neg: #B85732;
+      --negSoft: #F7E8E0;
+      --pos: #3D8B4E;
 
-  body {
-    background: #ECE7DC;
-    font-family: -apple-system, 'Segoe UI', sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    min-height: 100vh;
-    padding: 40px 16px;
-    gap: 32px;
-  }
+      --radius-card: 16px;
+      --radius-btn: 18px;
+      --radius-small: 14px;
+      
+      --transition-base: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
 
-  /* ── Phone frame ───────────────────────────────────── */
-  .phone {
-    width: 375px;
-    background: #ECE7DC;
-    border-radius: 44px;
-    box-shadow: 0 32px 80px rgba(0,0,0,0.18), 0 0 0 10px #15151A;
-    overflow: hidden;
-    position: relative;
-    flex-shrink: 0;
-  }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-  .status-bar {
-    background: #ECE7DC;
-    padding: 14px 24px 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .status-bar span { font-size: 12px; font-weight: 600; color: #15151A; }
+    body {
+      font-family: -apple-system, 'Segoe UI', sans-serif;
+      background-color: #F3EFE6;
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
 
-  .screen { padding: 0 0 40px; }
+    /* ── DASHBOARD LAYOUT ───────────────────────────────────────── */
+    .dashboard-header {
+      margin-bottom: 32px;
+      text-align: center;
+    }
+    
+    .dashboard-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: -0.5px;
+    }
+    
+    .dashboard-subtitle {
+      font-size: 14px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
 
-  /* ── Header ───────────────────────────────────────── */
-  .header {
-    padding: 8px 22px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .btn-back {
-    width: 36px; height: 36px; border-radius: 18px;
-    background: #FBFAF6;
-    border: 1px solid rgba(21,21,26,0.10);
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-  }
-  .header-center { text-align: center; }
-  .header-title { font-size: 17px; font-weight: 500; color: #15151A; letter-spacing: -0.3px; }
-  .header-sub { font-size: 11px; color: #8B8B92; margin-top: 2px; }
-  .header-spacer { width: 36px; }
+    .sandbox-container {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 40px;
+      flex-wrap: wrap;
+      max-width: 900px;
+      width: 100%;
+    }
 
-  /* ── Section label ────────────────────────────────── */
-  .section-label {
-    font-size: 11px;
-    font-weight: 500;
-    color: #8B8B92;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    margin-bottom: 8px;
-    padding-left: 4px;
-  }
+    /* ── IPHONE CONTAINER ───────────────────────────────────────── */
+    .phone-container {
+      position: relative;
+      width: 375px;
+      height: 812px;
+      border-radius: 44px;
+      background-color: var(--bg);
+      box-shadow: 
+        0 0 0 12px var(--ink), 
+        0 20px 50px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
 
-  /* ── Banco selector ───────────────────────────────── */
-  .section { margin: 0 16px 20px; }
+    /* Dynamic Island */
+    .dynamic-island {
+      position: absolute;
+      top: 11px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 95px;
+      height: 22px;
+      background-color: var(--ink);
+      border-radius: 11px;
+      z-index: 1000;
+    }
 
-  .bank-option {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px;
-    border-radius: 16px;
-    border: 1.5px solid rgba(21,21,26,0.10);
-    background: #FBFAF6;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    margin-bottom: 8px;
-  }
-  .bank-option.active {
-    border-color: #15151A;
-    background: #15151A;
-  }
-  .bank-option-left { display: flex; align-items: center; gap: 12px; }
-  .bank-logo {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
-    background: rgba(21,21,26,0.06);
-  }
-  .bank-option.active .bank-logo { background: rgba(251,250,246,0.12); }
-  .bank-name { font-size: 14px; font-weight: 500; color: #15151A; }
-  .bank-option.active .bank-name { color: #FBFAF6; }
-  .bank-tag {
-    font-size: 10px;
-    font-weight: 500;
-    color: #8B8B92;
-    background: rgba(21,21,26,0.06);
-    padding: 3px 8px;
-    border-radius: 999px;
-    letter-spacing: 0.4px;
-  }
-  .bank-option.active .bank-tag { background: rgba(251,250,246,0.12); color: rgba(251,250,246,0.6); }
+    /* Status Bar */
+    .status-bar {
+      height: 44px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 0 24px 8px;
+      background-color: var(--bg);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: -0.2px;
+      z-index: 999;
+      user-select: none;
+    }
 
-  .check-icon {
-    width: 20px; height: 20px; border-radius: 10px;
-    background: #FBFAF6;
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0;
-    transition: opacity 0.15s;
-  }
-  .bank-option.active .check-icon { opacity: 1; }
+    .status-dots {
+      letter-spacing: 1px;
+      font-size: 9px;
+    }
 
-  /* ── Upload area ──────────────────────────────────── */
-  .upload-area {
-    margin: 0 16px;
-    border: 1.5px dashed rgba(21,21,26,0.20);
-    border-radius: 16px;
-    background: #FBFAF6;
-    padding: 28px 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-  .upload-area:hover { border-color: #15151A; }
-  .upload-area.has-file { border-color: #15151A; border-style: solid; }
+    /* Scrollable Phone Content */
+    .phone-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 16px 24px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
 
-  .upload-icon-wrap {
-    width: 52px; height: 52px; border-radius: 15px;
-    background: rgba(21,21,26,0.06);
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.15s;
-  }
-  .upload-area.has-file .upload-icon-wrap { background: #15151A; }
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    .phone-content::-webkit-scrollbar {
+      display: none;
+    }
+    /* Hide scrollbar for IE, Edge and Firefox */
+    .phone-content {
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
+    }
 
-  .upload-title { font-size: 14px; font-weight: 500; color: #15151A; }
-  .upload-sub { font-size: 12px; color: #8B8B92; }
+    /* ── HEADER SECTION ───────────────────────────────────────── */
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
 
-  /* ── Preview badge ────────────────────────────────── */
-  .file-badge {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(21,21,26,0.06);
-    border-radius: 10px;
-    padding: 8px 12px;
-    margin-top: 4px;
-    display: none;
-  }
-  .file-badge.visible { display: flex; }
-  .file-badge-name { font-size: 12px; color: #15151A; font-weight: 500; }
-  .file-badge-remove {
-    width: 18px; height: 18px; border-radius: 9px;
-    background: rgba(21,21,26,0.10);
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; font-size: 11px; color: #8B8B92;
-  }
+    .btn-back {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background-color: var(--surface);
+      border: 1px solid var(--hairline);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink);
+      cursor: pointer;
+      transition: var(--transition-base);
+    }
 
-  /* ── Feedback banners ─────────────────────────────── */
-  .feedback {
-    margin: 16px 16px 0;
-    border-radius: 16px;
-    padding: 14px 16px;
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    display: none;
-  }
-  .feedback.visible { display: flex; }
-  .feedback.success { background: #DDF0E4; border: 1px solid #3D8B4E; }
-  .feedback.duplicate { background: #F5F0DC; border: 1px solid #9A8030; }
-  .feedback.error { background: #F7E8E0; border: 1px solid #B85732; }
+    .btn-back:hover {
+      background-color: #F1EFE9;
+    }
 
-  .feedback-icon {
-    width: 32px; height: 32px; border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-  .feedback.success .feedback-icon { background: rgba(61,139,78,0.15); }
-  .feedback.duplicate .feedback-icon { background: rgba(154,128,48,0.15); }
-  .feedback.error .feedback-icon { background: rgba(184,87,50,0.15); }
+    .btn-back:active {
+      transform: scale(0.95);
+    }
 
-  .feedback-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
-  .feedback.success .feedback-title { color: #1E5229; }
-  .feedback.duplicate .feedback-title { color: #5A4A10; }
-  .feedback.error .feedback-title { color: #7A2F10; }
+    .header-center {
+      text-align: center;
+      flex: 1;
+      padding: 0 8px;
+    }
 
-  .feedback-desc { font-size: 12px; line-height: 1.5; }
-  .feedback.success .feedback-desc { color: #3D8B4E; }
-  .feedback.duplicate .feedback-desc { color: #9A8030; }
-  .feedback.error .feedback-desc { color: #B85732; }
+    .header-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1.2;
+    }
 
-  /* ── Botões ───────────────────────────────────────── */
-  .actions { margin: 16px 16px 0; display: flex; flex-direction: column; gap: 10px; }
+    .header-subtitle {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+      line-height: 1.3;
+    }
 
-  .btn-primary {
-    width: 100%;
-    background: #15151A;
-    color: #FBFAF6;
-    border: none;
-    border-radius: 18px;
-    padding: 16px;
-    font-size: 15px;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: opacity 0.15s;
-    font-family: inherit;
-  }
-  .btn-primary:disabled { background: rgba(21,21,26,0.12); color: #8B8B92; cursor: default; }
-  .btn-primary:not(:disabled):hover { opacity: 0.88; }
-  .btn-primary:not(:disabled):active { transform: scale(0.97); }
+    .header-spacer {
+      width: 36px;
+    }
 
-  .btn-secondary {
-    width: 100%;
-    background: transparent;
-    color: #8B8B92;
-    border: 1.5px solid rgba(21,21,26,0.10);
-    border-radius: 18px;
-    padding: 14px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    font-family: inherit;
-    transition: opacity 0.15s;
-    display: none;
-  }
-  .btn-secondary.visible { display: block; }
-  .btn-secondary:hover { opacity: 0.7; }
+    /* ── SECTION LABELS ───────────────────────────────────────── */
+    .section-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      margin-top: 20px;
+    }
 
-  /* ── Loading spinner ──────────────────────────────── */
-  .spinner {
-    width: 18px; height: 18px;
-    border: 2px solid rgba(251,250,246,0.3);
-    border-top-color: #FBFAF6;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    display: none;
-  }
-  .btn-primary.loading .spinner { display: block; }
-  .btn-primary.loading .btn-icon { display: none; }
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding-left: 2px;
+    }
 
-  @keyframes spin { to { transform: rotate(360deg); } }
+    /* ── BANCO SECTOR ───────────────────────────────────────── */
+    .bank-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      border-radius: var(--radius-card);
+      border: 1.5px solid var(--hairline);
+      background-color: var(--surface);
+      cursor: pointer;
+      transition: var(--transition-base);
+    }
 
-  /* ── Painel lateral de estados ────────────────────── */
-  .states-panel {
-    width: 220px;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding-top: 80px;
-  }
-  .state-btn {
-    background: #FBFAF6;
-    border: 1.5px solid rgba(21,21,26,0.10);
-    border-radius: 12px;
-    padding: 10px 14px;
-    font-size: 12px;
-    font-weight: 500;
-    color: #15151A;
-    cursor: pointer;
-    text-align: left;
-    font-family: inherit;
-    transition: all 0.12s;
-  }
-  .state-btn:hover { border-color: #15151A; background: #15151A; color: #FBFAF6; }
-  .states-title {
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #8B8B92;
-    padding-left: 2px;
-  }
-</style>
+    .bank-card-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .bank-emoji-box {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background-color: rgba(21, 21, 26, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      transition: var(--transition-base);
+    }
+
+    .bank-card.active {
+      border-color: var(--ink);
+      background-color: var(--ink);
+      color: #FBFAF6;
+    }
+
+    .bank-card.active .bank-emoji-box {
+      background-color: rgba(251, 250, 246, 0.15);
+    }
+
+    .bank-name {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .bank-checkmark {
+      opacity: 0;
+      transform: scale(0.8);
+      transition: var(--transition-base);
+      color: #FBFAF6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .bank-card.active .bank-checkmark {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* ── CALENDAR INLINE ───────────────────────────────────────── */
+    .calendar-container {
+      border: 1px solid var(--hairline);
+      border-radius: 18px;
+      background-color: var(--surface);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      user-select: none;
+    }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .calendar-nav-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background-color: var(--hairline);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink);
+      cursor: pointer;
+      transition: var(--transition-base);
+    }
+
+    .calendar-nav-btn:hover {
+      background-color: rgba(21, 21, 26, 0.18);
+    }
+
+    .calendar-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .calendar-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .calendar-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      row-gap: 6px;
+      text-align: center;
+    }
+
+    .calendar-day-cell {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: var(--ink);
+      cursor: pointer;
+      position: relative;
+    }
+
+    .calendar-day-inner {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition-base);
+    }
+
+    .calendar-day-cell:hover .calendar-day-inner {
+      background-color: var(--hairline);
+    }
+
+    /* Today state */
+    .calendar-day-cell.today .calendar-day-inner {
+      border: 1.5px solid var(--ink);
+    }
+
+    /* Selected state */
+    .calendar-day-cell.selected .calendar-day-inner {
+      background-color: var(--ink);
+      color: #FBFAF6;
+      font-weight: 600;
+      border-color: transparent !important;
+    }
+
+    /* Other month day state */
+    .calendar-day-cell.other-month {
+      color: var(--muted);
+      opacity: 0.45;
+    }
+
+    .calendar-footer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-top: 12px;
+      border-top: 1px solid var(--hairline);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .calendar-footer-icon {
+      flex-shrink: 0;
+      color: var(--muted);
+    }
+
+    .calendar-footer-text {
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .calendar-footer-text .bold {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    /* ── REGRAS DE EXTRAÇÃO ─────────────────────────────────── */
+    .rules-card {
+      border: 1.5px solid var(--hairline);
+      border-radius: var(--radius-card);
+      background-color: var(--surface);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .rules-input-row {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .rules-input-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .rules-input {
+      width: 100%;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid var(--hairline);
+      background-color: var(--surface);
+      color: var(--ink);
+      padding: 0 12px;
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+      transition: var(--transition-base);
+    }
+
+    .rules-input:focus {
+      border-color: var(--ink);
+      box-shadow: 0 0 0 2px rgba(21, 21, 26, 0.05);
+    }
+
+    .rules-help-text {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    /* ── UPLOAD AREA ───────────────────────────────────────── */
+    .upload-buttons {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .upload-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: var(--radius-small);
+      padding: 13px;
+      border: 1px solid var(--hairline);
+      background-color: var(--surface);
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition-base);
+    }
+
+    .upload-btn:hover {
+      background-color: #F5F4ED;
+      border-color: rgba(21, 21, 26, 0.2);
+    }
+
+    .upload-btn:active {
+      transform: scale(0.98);
+    }
+
+    .dashed-area {
+      border: 1.5px dashed var(--hairline);
+      border-radius: var(--radius-card);
+      padding: 28px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: var(--transition-base);
+      background-color: transparent;
+    }
+
+    .dashed-area:hover {
+      border-color: var(--ink);
+      background-color: rgba(21, 21, 26, 0.02);
+    }
+
+    .dashed-icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background-color: var(--surface);
+      border: 1px solid var(--hairline);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      transition: var(--transition-base);
+    }
+
+    .dashed-area:hover .dashed-icon-box {
+      color: var(--ink);
+      border-color: var(--ink);
+    }
+
+    .dashed-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      transition: var(--transition-base);
+    }
+
+    .dashed-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    /* ── HORIZONTAL FILES QUEUE ───────────────────────────────────── */
+    .files-queue {
+      display: none; /* Controlled by JS */
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      margin-bottom: 8px;
+      padding: 6px 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      height: 64px; /* Fixed height to prevent collapsing and overlapping */
+      flex-shrink: 0; /* Prevents height compression by flex layout */
+    }
+    
+    .files-queue::-webkit-scrollbar {
+      display: none;
+    }
+
+    .file-queue-item {
+      position: relative;
+      width: 52px;
+      height: 52px;
+      border-radius: 10px;
+      border: 1px solid var(--hairline);
+      background-color: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(21, 21, 26, 0.03);
+      animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.85); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .file-queue-item-remove {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background-color: var(--ink);
+      color: #FBFAF6;
+      border: 1.5px solid var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 8px;
+      font-weight: 700;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+      transition: var(--transition-base);
+    }
+    
+    .file-queue-item-remove:hover {
+      background-color: var(--neg);
+    }
+
+    .file-queue-more {
+      width: 52px;
+      height: 52px;
+      border-radius: 10px;
+      border: 1.5px dashed var(--muted);
+      background-color: rgba(21, 21, 26, 0.03);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    /* ── DUPLICATE BANNER ───────────────────────────────────────── */
+    .duplicate-banner {
+      background-color: #F5F0DC;
+      border: 1px solid rgba(154, 128, 48, 0.25);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: none;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 16px;
+      color: #9A8030;
+      animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .duplicate-banner-icon {
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .duplicate-banner-content {
+      flex: 1;
+    }
+
+    .duplicate-banner-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #5A4A10;
+    }
+
+    .duplicate-banner-desc {
+      font-size: 11px;
+      color: #9A8030;
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+
+    .duplicate-banner-close {
+      background: none;
+      border: none;
+      color: #9A8030;
+      cursor: pointer;
+      padding: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: var(--transition-base);
+    }
+
+    .duplicate-banner-close:hover {
+      background-color: rgba(154, 128, 48, 0.15);
+    }
+
+    /* ── PRIMARY ACTION BUTTON ───────────────────────────────────────── */
+    .primary-btn {
+      width: 100%;
+      height: 52px;
+      border-radius: var(--radius-btn);
+      background-color: var(--hairline);
+      color: var(--muted);
+      border: none;
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: not-allowed;
+      transition: var(--transition-base);
+      margin-top: 24px;
+    }
+
+    .primary-btn.enabled {
+      background-color: var(--ink);
+      color: #FBFAF6;
+      cursor: pointer;
+    }
+
+    .primary-btn.enabled:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
+
+    .primary-btn.enabled:active {
+      transform: translateY(0);
+    }
+
+    .btn-spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(251, 250, 246, 0.25);
+      border-top-color: #FBFAF6;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .primary-btn.loading {
+      background-color: var(--ink);
+      color: #FBFAF6;
+      cursor: wait;
+    }
+
+    .primary-btn.loading .btn-spinner {
+      display: block;
+    }
+
+    .primary-btn.loading .btn-icon-wrapper {
+      display: none;
+    }
+
+    /* ── TRANSACTIONS LIST (POST EXTRACTION) ──────────────────────────────── */
+    .transactions-section {
+      display: none;
+      margin-top: 24px;
+    }
+
+    .transactions-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .transactions-counter {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .transactions-list-card {
+      border: 1.5px solid var(--hairline);
+      background-color: var(--surface);
+      border-radius: var(--radius-card);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .transaction-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--hairline);
+      background-color: var(--surface);
+    }
+
+    .transaction-item:last-child {
+      border-bottom: none;
+    }
+
+    .transaction-item-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+      padding-right: 12px;
+      min-width: 0;
+    }
+
+    .transaction-title-row {
+      display: flex;
+      align-items: center;
+    }
+
+    .transaction-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .badge-data {
+      font-size: 9px;
+      font-weight: 700;
+      background-color: #F5F0DC;
+      color: #9A8030;
+      border-radius: 4px;
+      padding: 2px 5px;
+      margin-left: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.2px;
+      flex-shrink: 0;
+    }
+
+    .transaction-desc {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .transaction-date {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .transaction-category-select-row {
+      margin-top: 6px;
+    }
+
+    .category-select {
+      font-family: inherit;
+      font-size: 11px;
+      color: var(--muted);
+      background-color: var(--surface);
+      border: 1px solid var(--hairline);
+      border-radius: 8px;
+      padding: 4px 8px;
+      cursor: pointer;
+      outline: none;
+      transition: var(--transition-base);
+      font-weight: 500;
+      max-width: 140px;
+    }
+
+    .category-select:hover {
+      border-color: var(--ink);
+      color: var(--ink);
+    }
+
+    .category-select:focus {
+      border-color: var(--ink);
+      color: var(--ink);
+    }
+
+    .transaction-value {
+      font-size: 15px;
+      font-weight: 700;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .transaction-value.pos {
+      color: var(--pos);
+    }
+
+    .transaction-value.neg {
+      color: var(--neg);
+    }
+
+    /* Outline Button */
+    .outline-btn {
+      width: 100%;
+      height: 48px;
+      border-radius: var(--radius-btn);
+      border: 1.5px solid var(--hairline);
+      background-color: transparent;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      margin-top: 14px;
+      transition: var(--transition-base);
+    }
+
+    .outline-btn:hover {
+      background-color: rgba(21, 21, 26, 0.02);
+      color: var(--ink);
+      border-color: var(--ink);
+    }
+
+    /* ── GALLERY GRID SECTION ───────────────────────────────────────── */
+    .gallery-section {
+      margin-top: 24px;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .gallery-thumb {
+      aspect-ratio: 1;
+      border-radius: 12px;
+      border: 1.5px solid var(--hairline);
+      background-color: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      cursor: pointer;
+      transition: var(--transition-base);
+    }
+
+    .gallery-thumb:hover {
+      border-color: var(--ink);
+      color: var(--ink);
+      transform: scale(0.97);
+    }
+
+    /* ── GALLERY BOTTOM SHEET MODAL ───────────────────────────────────────── */
+    .bottom-sheet-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(21, 21, 26, 0.0);
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: background-color 0.3s ease, opacity 0.3s ease;
+      border-radius: 32px;
+      overflow: hidden;
+    }
+
+    .bottom-sheet-overlay.active {
+      background-color: rgba(21, 21, 26, 0.5);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .bottom-sheet {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--surface);
+      border-top-left-radius: 28px;
+      border-top-right-radius: 28px;
+      box-shadow: 0 -8px 30px rgba(21, 21, 26, 0.15);
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      max-height: 85%;
+    }
+
+    .bottom-sheet-overlay.active .bottom-sheet {
+      transform: translateY(0);
+    }
+
+    .bottom-sheet-drag-handle {
+      width: 36px;
+      height: 4px;
+      background-color: var(--hairline);
+      border-radius: 2px;
+      margin: 10px auto;
+      flex-shrink: 0;
+    }
+
+    .bottom-sheet-content {
+      padding: 0 16px 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .bottom-sheet-content::-webkit-scrollbar {
+      display: none;
+    }
+    .bottom-sheet-content {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .bottom-sheet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .bottom-sheet-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .bottom-sheet-close-btn {
+      background: none;
+      border: none;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      cursor: pointer;
+      border-radius: 50%;
+      transition: var(--transition-base);
+    }
+
+    .bottom-sheet-close-btn:hover {
+      background-color: var(--hairline);
+      color: var(--ink);
+    }
+
+    .bottom-sheet-preview {
+      height: 160px;
+      border: 1px solid var(--hairline);
+      border-radius: 16px;
+      background-color: var(--surface);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      border-style: dashed;
+    }
+
+    .preview-text {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .gallery-bank-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-radius: var(--radius-card);
+      background-color: var(--ink);
+      color: #FBFAF6;
+      margin-bottom: 16px;
+    }
+
+    .gallery-bank-card-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .gallery-bank-card .bank-checkmark {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* ── CONFIRMATION MODAL OVERLAY ── */
+    .confirm-modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(21, 21, 26, 0.0);
+      z-index: 1100;
+      opacity: 0;
+      pointer-events: none;
+      transition: background-color 0.3s ease, opacity 0.3s ease;
+      border-radius: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .confirm-modal-overlay.active {
+      background-color: rgba(21, 21, 26, 0.6);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .confirm-modal {
+      background-color: var(--surface);
+      border-radius: 24px;
+      width: 100%;
+      max-height: 90%;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+      display: flex;
+      flex-direction: column;
+      transform: scale(0.9);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+
+    .confirm-modal-overlay.active .confirm-modal {
+      transform: scale(1);
+    }
+
+    .confirm-modal-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--hairline);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .confirm-modal-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .confirm-modal-close-btn {
+      background: none;
+      border: none;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      cursor: pointer;
+      border-radius: 50%;
+      transition: var(--transition-base);
+    }
+
+    .confirm-modal-close-btn:hover {
+      background-color: var(--hairline);
+      color: var(--ink);
+    }
+
+    .confirm-modal-body {
+      padding: 16px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .confirm-modal-body::-webkit-scrollbar {
+      display: none;
+    }
+    .confirm-modal-body {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Metadata summary grid */
+    .meta-summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      background-color: rgba(21, 21, 26, 0.02);
+      border: 1px solid var(--hairline);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .meta-summary-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .meta-summary-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .meta-summary-value {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Confirm transactions list */
+    .confirm-transactions-list {
+      border: 1px solid var(--hairline);
+      border-radius: 12px;
+      background-color: var(--surface);
+      padding: 8px 12px;
+    }
+
+    .confirm-tx-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      font-size: 12px;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--hairline);
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+    .confirm-tx-cat-badge {
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .confirm-tx-item span.neg {
+      color: var(--neg);
+      font-weight: 600;
+    }
+
+    .confirm-tx-item span.pos {
+      color: var(--pos);
+      font-weight: 600;
+    }
+
+    .confirm-tx-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      padding-top: 8px;
+      padding-bottom: 4px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .confirm-tx-total span.pos {
+      color: var(--pos);
+    }
+
+    /* Saldo Histórico styling */
+    .confirm-balance-card {
+      border: 1px solid var(--hairline);
+      border-radius: 12px;
+      background-color: rgba(21, 21, 26, 0.01);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    
+    .balance-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--ink);
+      font-weight: 500;
+    }
+    
+    .balance-label {
+      color: var(--muted);
+    }
+    
+    .balance-val {
+      font-weight: 600;
+    }
+    
+    .balance-row.inline-arrow {
+      display: flex;
+      justify-content: flex-end;
+      font-size: 11px;
+      color: var(--pos);
+      font-weight: 600;
+      border-bottom: 1px dashed var(--hairline);
+      padding-bottom: 6px;
+    }
+    
+    .balance-arrow-icon {
+      margin-right: 4px;
+    }
+    
+    .balance-row.final-balance {
+      font-size: 13px;
+      font-weight: 700;
+      padding-top: 2px;
+    }
+    
+    .balance-row.final-balance .balance-val.pos {
+      color: var(--pos);
+    }
+
+    /* Suggestion Card styling */
+    .suggestion-card {
+      margin-top: 16px;
+      background-color: var(--accentSoft);
+      border: 1px dashed var(--accent);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .suggestion-title-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .suggestion-emoji {
+      font-size: 14px;
+    }
+
+    .suggestion-card-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #1E5229;
+    }
+
+    .suggestion-card-text {
+      font-size: 11px;
+      line-height: 1.4;
+      color: #3D8B4E;
+      margin-bottom: 8px;
+    }
+
+    .suggestion-list {
+      font-size: 11px;
+      line-height: 1.4;
+      color: #1E5229;
+      padding-left: 16px;
+    }
+
+    .suggestion-list li {
+      margin-bottom: 4px;
+    }
+
+    .suggestion-list li strong {
+      color: #15151A;
+    }
+
+    .confirm-modal-footer {
+      padding: 16px;
+      border-top: 1px solid var(--hairline);
+      display: flex;
+      gap: 12px;
+    }
+
+    /* ── SIMULATION CONTROL PANEL ───────────────────────────────────────── */
+    .control-panel {
+      width: 280px;
+      background-color: var(--surface);
+      border: 1px solid var(--hairline);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-self: flex-start;
+    }
+
+    .control-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      margin-bottom: 4px;
+    }
+
+    .control-btn {
+      background-color: var(--surface);
+      border: 1.5px solid var(--hairline);
+      color: var(--ink);
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      transition: var(--transition-base);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .control-btn:hover {
+      background-color: var(--ink);
+      color: #FBFAF6;
+      border-color: var(--ink);
+    }
+
+    .control-btn.active-sim {
+      background-color: var(--ink);
+      color: #FBFAF6;
+      border-color: var(--ink);
+    }
+
+    .control-btn-indicator {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: transparent;
+    }
+
+    .control-btn.active-sim .control-btn-indicator {
+      background-color: var(--accent);
+    }
+
+    .divider {
+      height: 1px;
+      background-color: var(--hairline);
+      margin: 8px 0;
+    }
+  </style>
 </head>
 <body>
 
-<div class="phone">
-  <div class="status-bar">
-    <span>9:41</span>
-    <span>●●●</span>
+  <div class="dashboard-header">
+    <h1 class="dashboard-title">Importar Extrato</h1>
+    <p class="dashboard-subtitle">Simulador de UI & Design System da Tela Mobile do FinApp</p>
   </div>
 
-  <div class="screen">
-
-    <!-- Header -->
-    <div class="header">
-      <div class="btn-back">
-        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-          <path d="M13 4l-6 6 6 6" stroke="#15151A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+  <div class="sandbox-container">
+    
+    <!-- LEFT: PHONE VIEWPORT FRAME -->
+    <div class="phone-container">
+      <div class="dynamic-island"></div>
+      
+      <!-- Status bar -->
+      <div class="status-bar">
+        <span>9:41</span>
+        <span class="status-dots">●●●</span>
       </div>
-      <div class="header-center">
-        <div class="header-title">Importar extrato</div>
-        <div class="header-sub">Envie uma screenshot do seu banco</div>
-      </div>
-      <div class="header-spacer"></div>
-    </div>
 
-    <!-- Seleção de banco -->
-    <div class="section">
-      <div class="section-label">Banco</div>
-      <div class="bank-option active" id="bank-mp" onclick="selectBank('mercadopago')">
-        <div class="bank-option-left">
-          <div class="bank-logo">💳</div>
-          <div>
-            <div class="bank-name">Mercado Pago</div>
+      <!-- Phone Inner Screen Content -->
+      <div class="phone-content" id="phone-content">
+        
+        <!-- Duplicate Warning Toast/Banner -->
+        <div class="duplicate-banner" id="duplicate-banner">
+          <div class="duplicate-banner-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
           </div>
-          <div class="bank-tag">FASE 1</div>
-        </div>
-        <div class="check-icon">
-          <svg width="11" height="11" viewBox="0 0 20 20" fill="none">
-            <path d="M4 10.5l4 4 8-9" stroke="#15151A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-      </div>
-
-      <div class="bank-option" id="bank-nu" onclick="selectBank('nubank')" style="opacity:0.45;pointer-events:none;">
-        <div class="bank-option-left">
-          <div class="bank-logo">💜</div>
-          <div>
-            <div class="bank-name">Nubank</div>
+          <div class="duplicate-banner-content">
+            <div class="duplicate-banner-title">Duplicata detectada</div>
+            <div class="duplicate-banner-desc">Este extrato já foi importado anteriormente na plataforma.</div>
           </div>
-          <div class="bank-tag">EM BREVE</div>
+          <button class="duplicate-banner-close" onclick="hideDuplicateBanner()">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
         </div>
-        <div class="check-icon">
-          <svg width="11" height="11" viewBox="0 0 20 20" fill="none">
-            <path d="M4 10.5l4 4 8-9" stroke="#15151A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+
+        <!-- 2. Header -->
+        <div class="app-header">
+          <button class="btn-back" onclick="handleReset()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+          <div class="header-center">
+            <h2 class="header-title">Importar extrato</h2>
+            <div class="header-subtitle">Envie imagem, PDF ou planilha do seu banco</div>
+          </div>
+          <div class="header-spacer"></div>
+        </div>
+
+        <!-- 3. Banco Section -->
+        <div class="section-label-row" style="margin-top: 0;">
+          <span class="section-label">Banco</span>
+        </div>
+        <div class="bank-card active" id="bank-card-mp" onclick="toggleBankCard()">
+          <div class="bank-card-left">
+            <div class="bank-emoji-box">💳</div>
+            <span class="bank-name">Mercado Pago</span>
+          </div>
+          <div class="bank-checkmark">
+            <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+              <path d="M1 5L4.5 8.5L11 1.5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- 4. Data de referência Section -->
+        <div class="section-label-row">
+          <span class="section-label">Data de referência</span>
+        </div>
+        
+        <!-- Dynamic Inline Calendar -->
+        <div class="calendar-container">
+          <div class="calendar-header">
+            <button class="calendar-nav-btn" onclick="handlePrevMonth('inline')">
+              <svg width="8" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+            <div class="calendar-title" id="inline-calendar-title">Junho 2026</div>
+            <button class="calendar-nav-btn" onclick="handleNextMonth('inline')">
+              <svg width="8" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+          <div class="calendar-weekdays">
+            <div>D</div><div>S</div><div>T</div><div>Q</div><div>Q</div><div>S</div><div>S</div>
+          </div>
+          <div class="calendar-days" id="inline-calendar-days">
+            <!-- Rendered dynamically by script -->
+          </div>
+          <div class="calendar-footer">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="calendar-footer-icon">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span class="calendar-footer-text" id="inline-calendar-footer-text">
+              Selecionado: <span class="bold">30 de Junho de 2026</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Regras de extração Section -->
+        <div class="section-label-row">
+          <span class="section-label">Regras de extração</span>
+        </div>
+        <div class="rules-card">
+          <div class="rules-input-row">
+            <span class="rules-input-label">Ignorar movimentações internas (Cofrinhos / Reservas)</span>
+            <input type="text" class="rules-input" id="rules-ignore-keywords" 
+                   value="reserva, guardar ao gastar" 
+                   placeholder="Ex: cofrinho, poupança, reserva" 
+                   oninput="handleKeywordsChange()">
+          </div>
+          <div class="rules-help-text">
+            Digite palavras ou frases separadas por vírgula. Lançamentos com esses nomes (como guardar dinheiro automaticamente no Mercado Pago) serão ocultados e não afetarão seu saldo final, pois o dinheiro apenas mudou de lugar dentro da sua própria conta.
+          </div>
+        </div>
+
+        <!-- 5. Enviar novo arquivo Section -->
+        <div class="section-label-row">
+          <span class="section-label">Enviar novo arquivo</span>
+        </div>
+        
+        <!-- Upload Buttons (Empty State only, disappear on Extraction step onwards) -->
+        <div class="upload-buttons" id="upload-buttons">
+          <button class="upload-btn" onclick="handleSimulateSelect('image')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span>+ Imagens</span>
+          </button>
+          <button class="upload-btn" onclick="handleSimulateSelect('file')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            <span>+ Arquivo</span>
+          </button>
+        </div>
+
+        <!-- Dashed Empty Upload Area -->
+        <div class="dashed-area" id="dashed-area" onclick="handleSimulateSelect('image')">
+          <div class="dashed-icon-box">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </div>
+          <div class="dashed-title">Nenhum arquivo selecionado</div>
+          <div class="dashed-subtitle">Aceita imagens, PDF, CSV, XLS e XLSX</div>
+        </div>
+
+        <!-- Horizontal files queue (visible only when files are selected) -->
+        <div class="files-queue" id="files-queue">
+          <!-- Small square cards rendered here dynamically -->
+        </div>
+
+        <!-- 6. Principal Button -->
+        <button class="primary-btn" id="primary-btn" onclick="handlePrimaryAction()" disabled>
+          <span class="btn-spinner" id="btn-spinner"></span>
+          <span class="btn-icon-wrapper" id="btn-icon-wrapper">
+            <!-- Arrow Down Icon -->
+          </span>
+          <span class="btn-text" id="btn-text">Extrair transações</span>
+        </button>
+
+        <!-- 7. Seção Transações Encontradas (pós-extração) -->
+        <div class="transactions-section" id="transactions-section">
+          <div class="transactions-header-row">
+            <span class="section-label">Transações encontradas</span>
+            <span class="transactions-counter" id="transactions-counter">6 · 2 ignoradas</span>
+          </div>
+          
+          <div class="transactions-list-card" id="transactions-list-container">
+            <!-- Rendered dynamically by javascript -->
+          </div>
+
+          <!-- Confirmation Button after transactions -->
+          <button class="primary-btn enabled" id="confirm-transactions-btn" onclick="openConfirmModal()" style="margin-top: 16px;">
+            <span class="btn-icon-wrapper">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </span>
+            <span class="btn-text">Confirmar transações</span>
+          </button>
+        </div>
+
+        <!-- 8. Botão Analisar Outras Imagens (pós-extração) -->
+        <button class="outline-btn" id="analyze-other-btn" onclick="handleReset()">
+          Analisar outras imagens
+        </button>
+
+        <!-- 9. Imagens Disponíveis Grid Section -->
+        <div class="gallery-section">
+          <div class="section-label-row">
+            <span class="section-label">Imagens disponíveis</span>
+          </div>
+          <div class="gallery-grid">
+            <div class="gallery-thumb" onclick="openGalleryModal(1)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+            </div>
+            <div class="gallery-thumb" onclick="openGalleryModal(2)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+            </div>
+            <div class="gallery-thumb" onclick="openGalleryModal(3)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+            </div>
+            <div class="gallery-thumb" onclick="openGalleryModal(4)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- GALLERY ITEM BOTTOM SHEET MODAL -->
+      <div class="bottom-sheet-overlay" id="gallery-modal" onclick="closeGalleryModal()">
+        <div class="bottom-sheet" onclick="event.stopPropagation()">
+          <div class="bottom-sheet-drag-handle"></div>
+          <div class="bottom-sheet-content">
+            
+            <div class="bottom-sheet-header">
+              <span class="bottom-sheet-title" id="gallery-sheet-title">Imagem da galeria</span>
+              <button class="bottom-sheet-close-btn" onclick="closeGalleryModal()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Preview image mock -->
+            <div class="bottom-sheet-preview">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color: var(--muted);">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+              <span class="preview-text" id="gallery-preview-filename">extrato_galeria_01.png</span>
+            </div>
+
+            <!-- Banco selecionado -->
+            <div class="section-label" style="margin-bottom: 8px;">Banco selecionado</div>
+            <div class="gallery-bank-card">
+              <div class="gallery-bank-card-left">
+                <div class="bank-emoji-box">💳</div>
+                <span class="bank-name" style="font-weight: 600;">Mercado Pago</span>
+              </div>
+              <div class="bank-checkmark">
+                <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+                  <path d="M1 5L4.5 8.5L11 1.5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Data do extrato -->
+            <div class="section-label" style="margin-bottom: 8px;">Data do extrato</div>
+            <div class="calendar-container">
+              <div class="calendar-header">
+                <button class="calendar-nav-btn" onclick="handlePrevMonth('gallery')">
+                  <svg width="8" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                  </svg>
+                </button>
+                <div class="calendar-title" id="gallery-calendar-title">Junho 2026</div>
+                <button class="calendar-nav-btn" onclick="handleNextMonth('gallery')">
+                  <svg width="8" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+              </div>
+              <div class="calendar-weekdays">
+                <div>D</div><div>S</div><div>T</div><div>Q</div><div>Q</div><div>S</div><div>S</div>
+              </div>
+              <div class="calendar-days" id="gallery-calendar-days">
+                <!-- Rendered dynamically -->
+              </div>
+              <div class="calendar-footer">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="calendar-footer-icon">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span class="calendar-footer-text" id="gallery-calendar-footer-text">
+                  Selecionado: <span class="bold">30 de Junho de 2026</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Botão "Extrair transações" -->
+            <button class="primary-btn enabled" id="gallery-extract-btn" onclick="handleGalleryExtractAction()" style="margin-top: 20px;">
+              <span class="btn-spinner" id="gallery-btn-spinner"></span>
+              <span class="btn-icon-wrapper" id="gallery-btn-icon-wrapper">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <polyline points="19 12 12 19 5 12"></polyline>
+                </svg>
+              </span>
+              <span class="btn-text" id="gallery-btn-text">Extrair transações</span>
+            </button>
+
+          </div>
         </div>
       </div>
+
+      <!-- CONFIRMATION MODAL -->
+      <div class="confirm-modal-overlay" id="confirm-modal" onclick="closeConfirmModal()">
+        <div class="confirm-modal" onclick="event.stopPropagation()">
+          <div class="confirm-modal-header">
+            <h3 class="confirm-modal-title">Confirmar Importação</h3>
+            <button class="confirm-modal-close-btn" onclick="closeConfirmModal()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          
+          <div class="confirm-modal-body">
+            <!-- 1. Metadata Grid -->
+            <div class="meta-summary-grid">
+              <div class="meta-summary-item">
+                <span class="meta-summary-label">Banco</span>
+                <span class="meta-summary-value" id="confirm-meta-bank">💳 Mercado Pago</span>
+              </div>
+              <div class="meta-summary-item">
+                <span class="meta-summary-label">Arquivos</span>
+                <span class="meta-summary-value" id="confirm-meta-filename">extrato_mp.pdf</span>
+              </div>
+              <div class="meta-summary-item" style="grid-column: span 2;">
+                <span class="meta-summary-label">Data do Comprovante</span>
+                <span class="meta-summary-value" id="confirm-meta-docdate">30 de Junho de 2026</span>
+              </div>
+              <div class="meta-summary-item" style="grid-column: span 2; border-top: 1px solid rgba(21, 21, 26, 0.05); padding-top: 6px;">
+                <span class="meta-summary-label">Data da Extração</span>
+                <span class="meta-summary-value" id="confirm-meta-extractdate">30/06/2026 às 19:12</span>
+              </div>
+            </div>
+            
+            <!-- 2. Transactions Summary -->
+            <div class="section-label" style="margin-top: 16px; margin-bottom: 8px;">Transações Extraídas</div>
+            <div class="confirm-transactions-list" id="confirm-tx-list-container">
+              <!-- Rendered dynamically -->
+            </div>
+
+            <!-- 3. Saldo Histórico -->
+            <div class="section-label" style="margin-top: 16px; margin-bottom: 8px;">Saldo Histórico</div>
+            <div class="confirm-balance-card">
+              <div class="balance-row">
+                <span class="balance-label">Saldo Atual (Antes)</span>
+                <span class="balance-val">R$ 1.250,00</span>
+              </div>
+              <div class="balance-row inline-arrow">
+                <span class="balance-arrow-icon">↓</span>
+                <span class="balance-delta-val">+R$ 68,94 (Conciliado)</span>
+              </div>
+              <div class="balance-row final-balance">
+                <span class="balance-label">Novo Saldo (Projetado)</span>
+                <span class="balance-val pos">R$ 1.318,94</span>
+              </div>
+            </div>
+            
+            <!-- 4. Suggestion for future analyses -->
+            <div class="suggestion-card">
+              <div class="suggestion-title-row">
+                <span class="suggestion-emoji">💡</span>
+                <span class="suggestion-card-title">Para Análises Futuras:</span>
+              </div>
+              <p class="suggestion-card-text">
+                Que outras informações precisaríamos para análises futuras? Visando robustez e auditoria, sugerimos integrar:
+              </p>
+              <ul class="suggestion-list">
+                <li><strong>ID da Transação (NSU)</strong>: Impede conciliações duplicadas em lançamentos de mesmo valor e data.</li>
+                <li><strong>Classificação / Categoria</strong>: Lógica automática (ex: Alimentação, Saúde) facilitando a geração de gráficos.</li>
+                <li><strong>CNPJ / Identificação do Recipiente</strong>: Permite consolidar gastos exatos por estabelecimento ou fornecedor.</li>
+                <li><strong>Saldo Histórico</strong>: Para conciliação contínua e exatidão da conta do usuário.</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="confirm-modal-footer">
+            <button class="primary-btn enabled" id="confirm-save-btn" onclick="handleFinalSave()" style="margin-top: 0; flex: 1;">
+              <span class="btn-spinner" id="confirm-save-spinner"></span>
+              <span class="btn-text" id="confirm-save-text">Salvar Lançamentos</span>
+            </button>
+            <button class="outline-btn" onclick="closeConfirmModal()" style="margin-top: 0; flex: 1; display: flex; height: 52px; border-radius: var(--radius-btn);">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div>
 
-    <!-- Área de upload -->
-    <div class="upload-area" id="upload-area" onclick="simulatePickImage()">
-      <div class="upload-icon-wrap" id="upload-icon-wrap">
-        <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
-          <path d="M10 13V4M6 8l4-4 4 4" stroke="#8B8B92" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" id="upload-svg-path"/>
-          <path d="M3 15h14" stroke="#8B8B92" stroke-width="1.8" stroke-linecap="round" id="upload-svg-line"/>
-        </svg>
-      </div>
-      <div class="upload-title" id="upload-title">Selecionar imagem</div>
-      <div class="upload-sub" id="upload-sub">Toque para abrir a galeria</div>
-      <div class="file-badge" id="file-badge">
-        <svg width="13" height="13" viewBox="0 0 20 20" fill="none">
-          <rect x="4" y="2" width="12" height="16" rx="2" stroke="#15151A" stroke-width="1.6"/>
-          <path d="M7 7h6M7 10h4" stroke="#15151A" stroke-width="1.4" stroke-linecap="round"/>
-        </svg>
-        <span class="file-badge-name" id="file-name">extrato-junho.jpg</span>
-        <div class="file-badge-remove" onclick="removeFile(event)">×</div>
-      </div>
-    </div>
-
-    <!-- Feedback -->
-    <div class="feedback success" id="feedback-success">
-      <div class="feedback-icon">
-        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-          <path d="M4 10.5l4 4 8-9" stroke="#1E5229" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-      <div>
-        <div class="feedback-title">Extrato recebido!</div>
-        <div class="feedback-desc">Imagem salva com sucesso. Em breve as transações serão extraídas.</div>
-      </div>
-    </div>
-
-    <div class="feedback duplicate" id="feedback-duplicate">
-      <div class="feedback-icon">
-        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-          <path d="M10 6v5M10 13.5v.5" stroke="#5A4A10" stroke-width="2" stroke-linecap="round"/>
-          <circle cx="10" cy="10" r="7.5" stroke="#9A8030" stroke-width="1.5"/>
-        </svg>
-      </div>
-      <div>
-        <div class="feedback-title">Imagem duplicada</div>
-        <div class="feedback-desc">Este extrato já foi enviado anteriormente. Selecione uma imagem diferente.</div>
-      </div>
-    </div>
-
-    <div class="feedback error" id="feedback-error">
-      <div class="feedback-icon">
-        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-          <path d="M10 6v5M10 13.5v.5" stroke="#7A2F10" stroke-width="2" stroke-linecap="round"/>
-          <circle cx="10" cy="10" r="7.5" stroke="#B85732" stroke-width="1.5"/>
-        </svg>
-      </div>
-      <div>
-        <div class="feedback-title">Erro ao enviar</div>
-        <div class="feedback-desc">Não foi possível processar a imagem. Tente novamente.</div>
-      </div>
-    </div>
-
-    <!-- Ações -->
-    <div class="actions">
-      <button class="btn-primary" id="btn-send" onclick="simulateSend()" disabled>
-        <div class="spinner"></div>
-        <svg class="btn-icon" width="16" height="16" viewBox="0 0 20 20" fill="none">
-          <path d="M10 13V4M6 8l4-4 4 4" stroke="#FBFAF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M3 15h14" stroke="#FBFAF6" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <span id="btn-label">Enviar extrato</span>
+    <!-- RIGHT: STATE SIMULATION CONTROLS -->
+    <div class="control-panel">
+      <div class="control-title">Simular Estado</div>
+      
+      <button class="control-btn active-sim" id="sim-btn-empty" onclick="setScreenState('empty')">
+        <span>Vazio (Inicial)</span>
+        <span class="control-btn-indicator"></span>
       </button>
-      <button class="btn-secondary" id="btn-back" onclick="resetState()">
-        Voltar para transações
+      
+      <button class="control-btn" id="sim-btn-file_selected" onclick="setScreenState('file_selected')">
+        <span>Arquivo selecionado</span>
+        <span class="control-btn-indicator"></span>
+      </button>
+      
+      <button class="control-btn" id="sim-btn-extracting" onclick="setScreenState('extracting')">
+        <span>Extraindo...</span>
+        <span class="control-btn-indicator"></span>
+      </button>
+      
+      <button class="control-btn" id="sim-btn-extracted" onclick="setScreenState('extracted')">
+        <span>Transações extraídas</span>
+        <span class="control-btn-indicator"></span>
+      </button>
+
+      <button class="control-btn" id="sim-btn-duplicate" onclick="setScreenState('duplicate')">
+        <span>Duplicata</span>
+        <span class="control-btn-indicator"></span>
+      </button>
+
+      <div class="divider"></div>
+
+      <button class="control-btn" style="border-color: var(--ink);" onclick="openConfirmModal()">
+        <span>Abrir Modal Confirmação</span>
+        <span style="font-size: 16px;">↗</span>
+      </button>
+
+      <button class="control-btn" style="border-color: var(--ink);" onclick="openGalleryModal(1)">
+        <span>Abrir Modal Galeria</span>
+        <span style="font-size: 16px;">↗</span>
+      </button>
+
+      <button class="control-btn" style="border-color: var(--neg); color: var(--neg);" onclick="handleReset()">
+        <span>Resetar</span>
+        <span style="font-size: 16px;">↺</span>
       </button>
     </div>
 
   </div>
-</div>
 
-<!-- Painel de estados para demonstração -->
-<div class="states-panel">
-  <div class="states-title">Simular estado</div>
-  <button class="state-btn" onclick="simulatePickImage()">📎 Selecionar imagem</button>
-  <button class="state-btn" onclick="simulateSend()">⬆ Enviar extrato</button>
-  <button class="state-btn" onclick="showState('success')">✅ Sucesso</button>
-  <button class="state-btn" onclick="showState('duplicate')">⚠️ Duplicata</button>
-  <button class="state-btn" onclick="showState('error')">❌ Erro</button>
-  <button class="state-btn" onclick="resetState()">↺ Resetar</button>
-</div>
+  <script>
+    // ── STATE DEFINITIONS ─────────────────────────────────────────
+    const state = {
+      currentScreenState: 'empty', // empty, file_selected, extracting, extracted, duplicate
+      
+      // Selected files list (Supports multiple selection)
+      selectedFiles: [],
+      
+      fileName: 'extrato_mercadopago_junho.pdf',
+      fileSize: '1.2 MB',
+      fileType: 'PDF',
+      
+      // Active Bank Account
+      isBankActive: true,
+      
+      // Category selections map
+      txCategories: {
+        0: '',
+        1: '',
+        2: ''
+      },
+      
+      // Calendar State configs
+      inline: {
+        year: 2026,
+        month: 5, // June (0-indexed)
+        selectedDate: new Date(2026, 5, 30) // June 30, 2026
+      },
+      gallery: {
+        year: 2026,
+        month: 5, // June (0-indexed)
+        selectedDate: new Date(2026, 5, 30) // June 30, 2026
+      }
+    };
 
-<script>
-  let hasFile = false
-  let isSending = false
-  let currentState = null // null | 'success' | 'duplicate' | 'error'
+    // Constant date boundary reference (Local: 2026-06-30)
+    const TODAY_DATE = new Date(2026, 5, 30); 
 
-  function selectBank(id) {
-    document.getElementById('bank-mp').classList.remove('active')
-    if (id === 'mercadopago') document.getElementById('bank-mp').classList.add('active')
-  }
+    // Mock Files Database for simulating select
+    const mockFilesDatabase = [
+      { name: 'extrato_mercadopago_junho.pdf', type: 'PDF', size: '1.2 MB' },
+      { name: 'comprovante_pix_01.png', type: 'PNG', size: '2.4 MB' },
+      { name: 'extrato_banco.xlsx', type: 'XLSX', size: '840 KB' },
+      { name: 'comprovante_refeicao.jpg', type: 'JPG', size: '1.5 MB' },
+      { name: 'documento_financeiro.pdf', type: 'PDF', size: '3.1 MB' },
+      { name: 'extrato_nubank.csv', type: 'CSV', size: '140 KB' },
+      { name: 'recibo_aluguel.png', type: 'PNG', size: '1.9 MB' }
+    ];
 
-  function simulatePickImage() {
-    if (isSending || currentState === 'success') return
-    hasFile = true
-    const area = document.getElementById('upload-area')
-    area.classList.add('has-file')
-    document.getElementById('upload-icon-wrap').style.background = '#15151A'
-    document.getElementById('upload-svg-path').setAttribute('stroke', '#FBFAF6')
-    document.getElementById('upload-svg-line').setAttribute('stroke', '#FBFAF6')
-    document.getElementById('upload-title').textContent = 'extrato-junho-2026.jpg'
-    document.getElementById('upload-sub').textContent = 'Toque para trocar'
-    document.getElementById('file-badge').classList.add('visible')
-    document.getElementById('btn-send').disabled = false
-    clearFeedback()
-    currentState = null
-  }
+    let mockFileIndex = 0;
 
-  function removeFile(e) {
-    e.stopPropagation()
-    resetState()
-  }
-
-  function simulateSend() {
-    if (!hasFile || isSending) return
-    isSending = true
-    const btn = document.getElementById('btn-send')
-    btn.classList.add('loading')
-    btn.disabled = true
-    document.getElementById('btn-label').textContent = 'Enviando...'
-    clearFeedback()
-
-    setTimeout(() => {
-      isSending = false
-      btn.classList.remove('loading')
-      // Alterna entre sucesso e duplicata para demonstração
-      if (!currentState) showState('success')
-    }, 1800)
-  }
-
-  function showState(state) {
-    clearFeedback()
-    isSending = false
-    currentState = state
-    const btn = document.getElementById('btn-send')
-    btn.classList.remove('loading')
-
-    if (state === 'success') {
-      document.getElementById('feedback-success').classList.add('visible')
-      btn.disabled = true
-      document.getElementById('btn-label').textContent = 'Extrato enviado!'
-      document.getElementById('btn-back').classList.add('visible')
-    } else if (state === 'duplicate') {
-      document.getElementById('feedback-duplicate').classList.add('visible')
-      btn.disabled = false
-      document.getElementById('btn-label').textContent = 'Enviar extrato'
-    } else if (state === 'error') {
-      document.getElementById('feedback-error').classList.add('visible')
-      btn.disabled = false
-      document.getElementById('btn-label').textContent = 'Tentar novamente'
+    // ── SVG ICONS BUILDERS ─────────────────────────────────────────
+    function getArrowDownIconSVG() {
+      return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>`;
     }
-  }
 
-  function clearFeedback() {
-    document.getElementById('feedback-success').classList.remove('visible')
-    document.getElementById('feedback-duplicate').classList.remove('visible')
-    document.getElementById('feedback-error').classList.remove('visible')
-    document.getElementById('btn-back').classList.remove('visible')
-  }
+    function getDocumentIconSVG() {
+      return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`;
+    }
 
-  function resetState() {
-    hasFile = false
-    isSending = false
-    currentState = null
-    const area = document.getElementById('upload-area')
-    area.classList.remove('has-file')
-    document.getElementById('upload-icon-wrap').style.background = ''
-    document.getElementById('upload-svg-path').setAttribute('stroke', '#8B8B92')
-    document.getElementById('upload-svg-line').setAttribute('stroke', '#8B8B92')
-    document.getElementById('upload-title').textContent = 'Selecionar imagem'
-    document.getElementById('upload-sub').textContent = 'Toque para abrir a galeria'
-    document.getElementById('file-badge').classList.remove('visible')
-    document.getElementById('btn-send').disabled = true
-    document.getElementById('btn-label').textContent = 'Enviar extrato'
-    clearFeedback()
-  }
-</script>
+    // Image Icon SVG
+    function getImageIconSVG() {
+      return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`;
+    }
+
+    // ── CALENDAR RENDER ENGINE ─────────────────────────────────────────
+    function renderCalendar(calendarId) {
+      const calState = state[calendarId];
+      const container = document.getElementById(`${calendarId}-calendar-days`);
+      const titleElement = document.getElementById(`${calendarId}-calendar-title`);
+      const footerText = document.getElementById(`${calendarId}-calendar-footer-text`);
+      
+      if (!container || !titleElement) return;
+
+      const monthNames = [
+        "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+      ];
+
+      // Update Calendar Header Title
+      titleElement.textContent = `${monthNames[calState.month]} ${calState.year}`;
+      
+      // Clear cells
+      container.innerHTML = '';
+
+      // Month calculations
+      const firstDayIndex = new Date(calState.year, calState.month, 1).getDay();
+      const totalDays = new Date(calState.year, calState.month + 1, 0).getDate();
+      const prevMonthTotalDays = new Date(calState.year, calState.month, 0).getDate();
+
+      // Render previous month days for padding
+      for (let i = firstDayIndex - 1; i >= 0; i--) {
+        const day = prevMonthTotalDays - i;
+        const cell = document.createElement('div');
+        cell.className = 'calendar-day-cell other-month';
+        cell.innerHTML = `<div class="calendar-day-inner">${day}</div>`;
+        container.appendChild(cell);
+      }
+
+      // Render current month days
+      for (let day = 1; day <= totalDays; day++) {
+        const cell = document.createElement('div');
+        cell.className = 'calendar-day-cell';
+
+        const isSelected = calState.selectedDate &&
+                          calState.selectedDate.getDate() === day &&
+                          calState.selectedDate.getMonth() === calState.month &&
+                          calState.selectedDate.getFullYear() === calState.year;
+
+        const isToday = TODAY_DATE.getDate() === day &&
+                        TODAY_DATE.getMonth() === calState.month &&
+                        TODAY_DATE.getFullYear() === calState.year;
+
+        if (isSelected) cell.classList.add('selected');
+        if (isToday) cell.classList.add('today');
+
+        cell.innerHTML = `<div class="calendar-day-inner">${day}</div>`;
+
+        // Selection Callback
+        cell.onclick = () => {
+          calState.selectedDate = new Date(calState.year, calState.month, day);
+          renderCalendar(calendarId);
+          updateCalendarFooter(calendarId);
+        };
+
+        container.appendChild(cell);
+      }
+
+      // Render next month padding to reach 42 grid cells
+      const cellsFilled = firstDayIndex + totalDays;
+      const nextPadding = 42 - cellsFilled;
+      for (let day = 1; day <= nextPadding; day++) {
+        const cell = document.createElement('div');
+        cell.className = 'calendar-day-cell other-month';
+        cell.innerHTML = `<div class="calendar-day-inner">${day}</div>`;
+        container.appendChild(cell);
+      }
+
+      updateCalendarFooter(calendarId);
+    }
+
+    function updateCalendarFooter(calendarId) {
+      const calState = state[calendarId];
+      const footerText = document.getElementById(`${calendarId}-calendar-footer-text`);
+      if (!footerText) return;
+
+      if (calState.selectedDate) {
+        const d = calState.selectedDate;
+        const monthNames = [
+          "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+          "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+        ];
+        footerText.innerHTML = `Selecionado: <span class="bold">${d.getDate()} de ${monthNames[d.getMonth()]} de ${d.getFullYear()}</span>`;
+      } else {
+        footerText.innerHTML = `Nenhum dia selecionado`;
+      }
+    }
+
+    function handlePrevMonth(calendarId) {
+      const calState = state[calendarId];
+      if (calState.month === 0) {
+        calState.month = 11;
+        calState.year--;
+      } else {
+        calState.month--;
+      }
+      renderCalendar(calendarId);
+    }
+
+    function handleNextMonth(calendarId) {
+      const calState = state[calendarId];
+      if (calState.month === 11) {
+        calState.month = 0;
+        calState.year++;
+      } else {
+        calState.month++;
+      }
+      renderCalendar(calendarId);
+    }
+
+    // ── BANK INTERACTION ─────────────────────────────────────────
+    function toggleBankCard() {
+      state.isBankActive = !state.isBankActive;
+      const card = document.getElementById('bank-card-mp');
+      if (state.isBankActive) {
+        card.classList.add('active');
+      } else {
+        card.classList.remove('active');
+      }
+    }
+
+    // ── DYNAMIC CATEGORY ASSIGNMENT ─────────────────────────────────────
+    function updateTxCategory(txIndex, value) {
+      state.txCategories[txIndex] = value;
+    }
+
+    // ── FILES QUEUE RENDERER ───────────────────────────────────────────
+    function renderFilesQueue() {
+      const queueContainer = document.getElementById('files-queue');
+      if (!queueContainer) return;
+      
+      const files = state.selectedFiles;
+      
+      if (files.length === 0) {
+        queueContainer.style.display = 'none';
+        return;
+      }
+      
+      queueContainer.style.display = 'flex';
+      queueContainer.innerHTML = '';
+      
+      const isExtracting = state.currentScreenState === 'extracting';
+      const maxVisible = 5;
+      const visibleCount = Math.min(files.length, maxVisible);
+      
+      for (let i = 0; i < visibleCount; i++) {
+        const file = files[i];
+        const item = document.createElement('div');
+        item.className = 'file-queue-item';
+        
+        const iconSVG = file.type === 'PNG' || file.type === 'JPG' ? getImageIconSVG() : getDocumentIconSVG();
+        
+        item.innerHTML = `
+          ${iconSVG}
+          ${isExtracting ? '' : `<div class="file-queue-item-remove" onclick="handleRemoveFileAt(${i}, event)">×</div>`}
+        `;
+        
+        item.title = `${file.name} (${file.type} · ${file.size})`;
+        queueContainer.appendChild(item);
+      }
+      
+      // If more than 5, render "+ N" card
+      if (files.length > maxVisible) {
+        const remaining = files.length - maxVisible;
+        const moreCard = document.createElement('div');
+        moreCard.className = 'file-queue-more';
+        moreCard.textContent = `+${remaining}`;
+        moreCard.title = `${remaining} mais arquivos selecionados`;
+        queueContainer.appendChild(moreCard);
+      }
+    }
+
+    function handleRemoveFileAt(index, event) {
+      if (event) event.stopPropagation();
+      state.selectedFiles.splice(index, 1);
+      
+      if (state.selectedFiles.length === 0) {
+        setScreenState('empty');
+      } else {
+        setScreenState('file_selected');
+      }
+    }
+
+    // ── STATE CONTROLLER MACHINE ─────────────────────────────────────────
+    function setScreenState(newState) {
+      state.currentScreenState = newState;
+
+      // Update dashboard control button highlights
+      document.querySelectorAll('.control-btn').forEach(btn => {
+        btn.classList.remove('active-sim');
+      });
+      const activeBtn = document.getElementById(`sim-btn-${newState}`);
+      if (activeBtn) {
+        activeBtn.classList.add('active-sim');
+      }
+
+      // DOM Target Selectors
+      const uploadButtons = document.getElementById('upload-buttons');
+      const dashedArea = document.getElementById('dashed-area');
+      const filesQueue = document.getElementById('files-queue');
+      const duplicateBanner = document.getElementById('duplicate-banner');
+      const primaryBtn = document.getElementById('primary-btn');
+      const transactionsSection = document.getElementById('transactions-section');
+      const analyzeOtherBtn = document.getElementById('analyze-other-btn');
+      const btnTextElement = document.getElementById('btn-text');
+      const btnIconWrapper = document.getElementById('btn-icon-wrapper');
+      const dashedTitle = document.querySelector('.dashed-title');
+
+      // Default Resets
+      uploadButtons.style.display = 'none';
+      dashedArea.style.display = 'none';
+      filesQueue.style.display = 'none';
+      duplicateBanner.style.display = 'none';
+      transactionsSection.style.display = 'none';
+      analyzeOtherBtn.style.display = 'none';
+      primaryBtn.style.display = 'flex';
+      
+      // Clean up dynamic button and card styles
+      primaryBtn.className = 'primary-btn';
+      primaryBtn.disabled = true;
+
+      // Update upload container titles based on selections count
+      if (dashedTitle) {
+        dashedTitle.textContent = state.selectedFiles.length > 0 ? "Adicionar outro arquivo" : "Nenhum arquivo selecionado";
+      }
+
+      switch (newState) {
+        case 'empty':
+          state.selectedFiles = [];
+          uploadButtons.style.display = 'flex';
+          dashedArea.style.display = 'flex';
+          
+          btnTextElement.textContent = 'Extrair transações';
+          btnIconWrapper.innerHTML = getArrowDownIconSVG();
+          break;
+
+        case 'file_selected':
+          uploadButtons.style.display = 'flex';
+          dashedArea.style.display = 'flex';
+          
+          if (state.selectedFiles.length === 0) {
+            state.selectedFiles.push({ name: 'extrato_mercadopago_junho.pdf', type: 'PDF', size: '1.2 MB' });
+          }
+          
+          renderFilesQueue();
+
+          primaryBtn.classList.add('enabled');
+          primaryBtn.disabled = false;
+          btnTextElement.textContent = 'Extrair transações';
+          btnIconWrapper.innerHTML = getArrowDownIconSVG();
+          break;
+
+        case 'extracting':
+          uploadButtons.style.display = 'none';
+          dashedArea.style.display = 'none';
+          
+          renderFilesQueue();
+
+          primaryBtn.classList.add('loading');
+          btnTextElement.textContent = 'Extraindo transações...';
+          break;
+
+        case 'extracted':
+          uploadButtons.style.display = 'none';
+          dashedArea.style.display = 'none';
+          filesQueue.style.display = 'none';
+
+          primaryBtn.style.display = 'none';
+          transactionsSection.style.display = 'block';
+          analyzeOtherBtn.style.display = 'flex';
+          
+          // Render dynamic consolidated transaction list based on files selected
+          renderTransactionsList();
+          
+          // Auto scroll phone layout down to transactions
+          setTimeout(() => {
+            const content = document.getElementById('phone-content');
+            content.scrollTo({ top: content.scrollHeight, behavior: 'smooth' });
+          }, 150);
+          break;
+
+        case 'duplicate':
+          uploadButtons.style.display = 'flex';
+          dashedArea.style.display = 'flex';
+          duplicateBanner.style.display = 'flex';
+          
+          if (state.selectedFiles.length === 0) {
+            state.selectedFiles.push({ name: 'extrato_mercadopago_junho.pdf', type: 'PDF', size: '1.2 MB' });
+          }
+          
+          renderFilesQueue();
+
+          primaryBtn.classList.add('enabled');
+          primaryBtn.disabled = false;
+          btnTextElement.textContent = 'Extrair transações';
+          btnIconWrapper.innerHTML = getArrowDownIconSVG();
+          break;
+      }
+    }
+
+    // ── MAIN BUTTON INTERACTION FLOW ─────────────────────────────────────────
+    function handlePrimaryAction() {
+      const currentState = state.currentScreenState;
+      
+      if (currentState === 'file_selected' || currentState === 'duplicate') {
+        setScreenState('extracting');
+        setTimeout(() => {
+          setScreenState('extracted');
+        }, 2000);
+      }
+    }
+
+    function handleSimulateSelect(type) {
+      // Pick a mock file to append
+      const baseFile = mockFilesDatabase[mockFileIndex % mockFilesDatabase.length];
+      mockFileIndex++;
+      
+      const newFile = {
+        name: type === 'image' ? `imagem_extrato_0${state.selectedFiles.length + 1}.png` : baseFile.name,
+        type: type === 'image' ? 'PNG' : baseFile.type,
+        size: baseFile.size
+      };
+      
+      state.selectedFiles.push(newFile);
+      setScreenState('file_selected');
+    }
+
+    function handleReset() {
+      // Re-initialize dates and categories
+      state.inline.month = 5;
+      state.inline.year = 2026;
+      state.inline.selectedDate = new Date(2026, 5, 30);
+      state.gallery.month = 5;
+      state.gallery.year = 2026;
+      state.gallery.selectedDate = new Date(2026, 5, 30);
+      
+      state.txCategories = {
+        0: '',
+        1: '',
+        2: ''
+      };
+      
+      state.selectedFiles = [];
+
+      // Reset selects in UI
+      document.querySelectorAll('.category-select').forEach(select => {
+        select.value = '';
+      });
+      
+      renderCalendar('inline');
+      renderCalendar('gallery');
+      
+      // Reset rules input to default
+      const kwInput = document.getElementById('rules-ignore-keywords');
+      if (kwInput) {
+        kwInput.value = "reserva, guardar ao gastar";
+      }
+
+      setScreenState('empty');
+    }
+
+    function handleKeywordsChange() {
+      if (state.currentScreenState === 'extracted') {
+        renderTransactionsList();
+      }
+    }
+
+    // ── GALLERY BOTTOM SHEET MODAL INTERACTIONS ───────────────────────
+    function openGalleryModal(itemIndex) {
+      const modal = document.getElementById('gallery-modal');
+      const previewText = document.getElementById('gallery-preview-filename');
+      const sheetTitle = document.getElementById('gallery-sheet-title');
+      
+      previewText.textContent = `extrato_galeria_0${itemIndex}.png`;
+      sheetTitle.textContent = `Imagem disponível #${itemIndex}`;
+      
+      // Open Bottom Sheet
+      modal.classList.add('active');
+      
+      // Render internal sheet calendar
+      renderCalendar('gallery');
+    }
+
+    function closeGalleryModal() {
+      const modal = document.getElementById('gallery-modal');
+      modal.classList.remove('active');
+      
+      // Reset Modal Button Loading State in case it was loading
+      const btn = document.getElementById('gallery-extract-btn');
+      const spinner = document.getElementById('gallery-btn-spinner');
+      const icon = document.getElementById('gallery-btn-icon-wrapper');
+      const text = document.getElementById('gallery-btn-text');
+      
+      btn.classList.remove('loading');
+      btn.disabled = false;
+      spinner.style.display = 'none';
+      icon.style.display = 'inline-flex';
+      text.textContent = 'Extrair transações';
+    }
+
+    function handleGalleryExtractAction() {
+      const btn = document.getElementById('gallery-extract-btn');
+      const spinner = document.getElementById('gallery-btn-spinner');
+      const icon = document.getElementById('gallery-btn-icon-wrapper');
+      const text = document.getElementById('gallery-btn-text');
+      
+      // Loading states
+      btn.classList.add('loading');
+      btn.disabled = true;
+      spinner.style.display = 'block';
+      icon.style.display = 'none';
+      text.textContent = 'Extraindo transações...';
+
+      setTimeout(() => {
+        // Sync selected date from gallery calendar to inline calendar
+        state.inline.selectedDate = new Date(state.gallery.selectedDate);
+        state.inline.month = state.gallery.month;
+        state.inline.year = state.gallery.year;
+        
+        renderCalendar('inline');
+        
+        // Mock files list initialization for gallery extraction
+        state.selectedFiles = [{ name: `extrato_galeria_01.png`, type: 'PNG', size: '1.9 MB' }];
+        
+        closeGalleryModal();
+        setScreenState('extracted');
+      }, 2000);
+    }
+
+    // ── FINAL CONFIRMATION MODAL ACTIONS ───────────────────────────────────
+    function formatExtractionDate() {
+      const d = new Date();
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      return `${day}/${month}/${year} às ${hours}:${minutes}`;
+    }
+
+    function getActiveTransactions() {
+      const baseList = [
+        { title: "Extra Farma 7037", desc: "Pagamento com Pix · Visa crédito", date: "19 jun · 14h06", amount: -33.16, id: "994273819034", type: "expense" },
+        { title: "Jacqueline Vidigal Leao", desc: "Pix recebido", date: "19 jun · 09h22", amount: 150.00, id: "881273901239", type: "income", badge: "DATA?" },
+        { title: "iFood", desc: "Pagamento com Pix", date: "18 jun · 20h45", amount: -47.90, id: "554901829031", type: "expense" }
+      ];
+      
+      const extraList = [
+        { title: "Posto Ipiranga", desc: "Débito automático", date: "17 jun · 11h30", amount: -120.00, id: "441029384712", type: "expense" },
+        { title: "Padaria Central", desc: "Pagamento com Pix", date: "17 jun · 08h15", amount: -18.50, id: "332910482710", type: "expense" },
+        { title: "Netflix Assinatura", desc: "Cartão de Crédito", date: "16 jun · 23h01", amount: -55.90, id: "112093847561", type: "expense" },
+        { title: "Uber Trip", desc: "Pagamento com Pix", date: "15 jun · 18h40", amount: -24.90, id: "223948571029", type: "expense" },
+        { title: "Google Cloud", desc: "Cartão de Crédito", date: "14 jun · 03h12", amount: -45.00, id: "773948102938", type: "expense" }
+      ];
+      
+      const count = state.selectedFiles.length;
+      const result = [...baseList];
+      
+      // Add more items based on count (starting from 2 selected files)
+      const itemsToAdd = Math.min(count - 1, extraList.length);
+      for (let i = 0; i < itemsToAdd; i++) {
+        result.push(extraList[i]);
+      }
+      
+      return result;
+    }
+
+    function renderTransactionsList() {
+      const container = document.getElementById('transactions-list-container');
+      const counter = document.getElementById('transactions-counter');
+      if (!container) return;
+
+      const activeTxs = getActiveTransactions();
+      
+      // Dynamic header counter
+      const totalFound = activeTxs.length + 2; 
+      const ignoredCount = 2;
+      if (counter) {
+        counter.textContent = `${totalFound} · ${ignoredCount} ignoradas`;
+      }
+
+      container.innerHTML = '';
+      
+      activeTxs.forEach((tx, index) => {
+        const item = document.createElement('div');
+        item.className = 'transaction-item';
+        
+        const badge = tx.badge ? `<span class="badge-data">${tx.badge}</span>` : '';
+        const valClass = tx.type === 'income' ? 'pos' : 'neg';
+        const valSign = tx.type === 'income' ? '+' : '';
+        const valFormatted = `${valSign}R$ ${Math.abs(tx.amount).toFixed(2).replace('.', ',')}`;
+        
+        // Select category dropdown options
+        const categoryOptions = [
+          { val: "", text: "Categoria (Opcional)" },
+          { val: "Alimentação", text: "Alimentação" },
+          { val: "Saúde", text: "Saúde" },
+          { val: "Lazer", text: "Lazer" },
+          { val: "Serviços", text: "Serviços" },
+          { val: "Outros", text: "Outros" }
+        ];
+        
+        const optionsHTML = categoryOptions.map(opt => {
+          const selected = state.txCategories[index] === opt.val ? 'selected' : '';
+          return `<option value="${opt.val}" ${selected}>${opt.text}</option>`;
+        }).join('');
+
+        item.innerHTML = `
+          <div class="transaction-item-left">
+            <div class="transaction-title-row">
+              <span class="transaction-title">${tx.title}</span>
+              ${badge}
+            </div>
+            <div class="transaction-desc">${tx.desc} · <span style="font-family: monospace; font-size: 11px;">ID: ${tx.id}</span></div>
+            <div class="transaction-date">${tx.date}</div>
+            <div class="transaction-category-select-row">
+              <select class="category-select" onchange="updateTxCategory(${index}, this.value)">
+                ${optionsHTML}
+              </select>
+            </div>
+          </div>
+          <div class="transaction-value ${valClass}">${valFormatted}</div>
+        `;
+        
+        container.appendChild(item);
+      });
+    }
+
+    function openConfirmModal() {
+      const modal = document.getElementById('confirm-modal');
+      
+      // Sync parameters to UI
+      document.getElementById('confirm-meta-bank').textContent = state.isBankActive ? "💳 Mercado Pago" : "💳 Nenhum";
+      
+      // Display first filename + extra count dynamically
+      const files = state.selectedFiles;
+      let filenameDisplay = "Nenhum";
+      if (files.length === 1) {
+        filenameDisplay = files[0].name;
+      } else if (files.length > 1) {
+        filenameDisplay = `${files[0].name} (+${files.length - 1} outros)`;
+      }
+      document.getElementById('confirm-meta-filename').textContent = filenameDisplay;
+      
+      // Document selection date
+      const docDate = state.inline.selectedDate;
+      const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+      document.getElementById('confirm-meta-docdate').textContent = `${docDate.getDate()} de ${monthNames[docDate.getMonth()]} de ${docDate.getFullYear()}`;
+      
+      // Extraction Timestamp
+      document.getElementById('confirm-meta-extractdate').textContent = formatExtractionDate();
+      
+      // Get current dynamic list of transactions
+      const activeTxs = getActiveTransactions();
+      
+      // Calculate dynamic sum
+      let sum = 0;
+      activeTxs.forEach(tx => sum += tx.amount);
+      const sumClass = sum >= 0 ? 'pos' : 'neg';
+      const sumSign = sum >= 0 ? '+' : '';
+      const sumFormatted = `${sumSign}R$ ${Math.abs(sum).toFixed(2).replace('.', ',')}`;
+
+      // Update Saldo Histórico card dynamically
+      const startBalance = 1250.00;
+      const projectedBalance = startBalance + sum;
+      const projectedClass = projectedBalance >= 0 ? 'pos' : 'neg';
+      
+      const balanceCard = document.querySelector('.confirm-balance-card');
+      if (balanceCard) {
+        balanceCard.innerHTML = `
+          <div class="balance-row">
+            <span class="balance-label">Saldo Atual (Antes)</span>
+            <span class="balance-val">R$ 1.250,00</span>
+          </div>
+          <div class="balance-row inline-arrow">
+            <span class="balance-arrow-icon">${sum >= 0 ? '↑' : '↓'}</span>
+            <span class="balance-delta-val ${sumClass}">${sumFormatted} (Conciliado)</span>
+          </div>
+          <div class="balance-row final-balance">
+            <span class="balance-label">Novo Saldo (Projetado)</span>
+            <span class="balance-val ${projectedClass}">R$ ${projectedBalance.toFixed(2).replace('.', ',')}</span>
+          </div>
+        `;
+      }
+      
+      // Render dynamic transaction list with category tags and transaction IDs inside modal
+      const txContainer = document.getElementById('confirm-tx-list-container');
+      if (txContainer) {
+        let listHTML = '';
+        activeTxs.forEach((tx, index) => {
+          const valClass = tx.type === 'income' ? 'pos' : 'neg';
+          const valSign = tx.type === 'income' ? '+' : '';
+          const valFormatted = `${valSign}R$ ${Math.abs(tx.amount).toFixed(2).replace('.', ',')}`;
+          
+          listHTML += `
+            <div class="confirm-tx-item">
+              <div style="display: flex; flex-direction: column;">
+                <span style="font-weight: 600;">${tx.title}</span>
+                <span style="font-size: 10px; color: var(--muted); margin-top: 1px; font-family: monospace;">ID: ${tx.id}</span>
+                <span class="confirm-tx-cat-badge">${state.txCategories[index] ? '🏷️ ' + state.txCategories[index] : 'Sem categoria (Opcional)'}</span>
+              </div>
+              <span class="${valClass}">${valFormatted}</span>
+            </div>
+          `;
+        });
+        
+        listHTML += `
+          <div class="confirm-tx-total">
+            <span>Total Conciliado</span>
+            <span class="${sumClass}">${sumFormatted}</span>
+          </div>
+        `;
+        
+        txContainer.innerHTML = listHTML;
+      }
+      
+      modal.classList.add('active');
+    }
+
+    function closeConfirmModal() {
+      const modal = document.getElementById('confirm-modal');
+      modal.classList.remove('active');
+
+      // Reset Confirm Button state
+      const btn = document.getElementById('confirm-save-btn');
+      const spinner = document.getElementById('confirm-save-spinner');
+      const text = document.getElementById('confirm-save-text');
+      
+      btn.classList.remove('loading');
+      btn.disabled = false;
+      spinner.style.display = 'none';
+      text.textContent = 'Salvar Lançamentos';
+    }
+
+    function handleFinalSave() {
+      const btn = document.getElementById('confirm-save-btn');
+      const spinner = document.getElementById('confirm-save-spinner');
+      const text = document.getElementById('confirm-save-text');
+
+      btn.classList.add('loading');
+      btn.disabled = true;
+      spinner.style.display = 'block';
+      text.textContent = 'Salvando transações...';
+
+      setTimeout(() => {
+        spinner.style.display = 'none';
+        text.textContent = '✓ Transações Salvas!';
+        btn.style.backgroundColor = 'var(--accent)';
+        
+        setTimeout(() => {
+          btn.style.backgroundColor = '';
+          closeConfirmModal();
+          handleReset(); // reset phone to empty state
+        }, 1200);
+      }, 1500);
+    }
+
+    // ── INIT INITIALIZATION ─────────────────────────────────────────
+    window.onload = () => {
+      // Generate default calendars
+      renderCalendar('inline');
+      renderCalendar('gallery');
+      
+      // Load initial layout view
+      setScreenState('empty');
+    };
+  </script>
 </body>
 </html>
