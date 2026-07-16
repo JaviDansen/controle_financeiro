@@ -13,6 +13,7 @@ import cardsRoutes from './routes/cards.routes'
 import transactionsRoutes from './routes/transactions.routes'
 import categoriesRoutes from './routes/categories.routes'
 import importRoutes from './routes/import.routes'
+import goalsRoutes from './routes/goals.routes'
 import { requestErrorHandler, requestLogger } from './middlewares/request-logger.middleware'
 
 export const app = express()
@@ -27,6 +28,7 @@ app.use('/cards', cardsRoutes)
 app.use('/transactions', transactionsRoutes)
 app.use('/categories', categoriesRoutes)
 app.use('/import', importRoutes)
+app.use('/goals', goalsRoutes)
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' })

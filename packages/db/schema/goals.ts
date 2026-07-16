@@ -10,6 +10,8 @@ export const goals = pgTable('goals', {
   deadline: date('deadline'),
   category: varchar('category', { length: 100 }),
   isActive: boolean('is_active').notNull().default(true),
+  color: varchar('color', { length: 7 }),
+  emoji: varchar('emoji', { length: 20 }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
