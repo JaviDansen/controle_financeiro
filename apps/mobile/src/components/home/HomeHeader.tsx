@@ -6,9 +6,10 @@ import { colors } from '../../theme/colors';
 interface HomeHeaderProps {
   name: string;
   initials: string;
+  onPressProfile?: () => void;
 }
 
-export function HomeHeader({ name, initials }: HomeHeaderProps) {
+export function HomeHeader({ name, initials, onPressProfile }: HomeHeaderProps) {
   return (
     <View style={{
       flexDirection: 'row',
@@ -18,7 +19,10 @@ export function HomeHeader({ name, initials }: HomeHeaderProps) {
       paddingTop: 8,
       paddingBottom: 6,
     }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <Pressable
+        onPress={onPressProfile}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
+      >
         <View style={{
           width: 40, height: 40, borderRadius: 20,
           backgroundColor: colors.ink,
@@ -34,7 +38,7 @@ export function HomeHeader({ name, initials }: HomeHeaderProps) {
             {name}
           </Text>
         </View>
-      </View>
+      </Pressable>
 
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <Pressable style={{

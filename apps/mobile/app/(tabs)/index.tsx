@@ -27,7 +27,11 @@ export default function HomeScreen() {
 
   return (
     <ScreenContainer>
-        <HomeHeader name={user?.name?.split(' ')[0] ?? ''} initials={initials} />
+        <HomeHeader
+          name={user?.name?.split(' ')[0] ?? ''}
+          initials={initials}
+          onPressProfile={() => router.push('/profile')}
+        />
 
         {/* Hero card de saldo */}
         <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
