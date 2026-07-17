@@ -46,7 +46,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const showAddButton = pathname === '/transactions' || pathname === '/cards';
+  const showAddButton = pathname === '/transactions' || pathname === '/cards' || pathname === '/goals';
 
   const handleAdd = () => {
     if (pathname === '/transactions') {
@@ -58,9 +58,14 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
       router.push('/(tabs)/add');
       return;
     }
+
+    if (pathname === '/goals') {
+      router.push('/(tabs)/add-goal');
+      return;
+    }
   };
 
-  const hiddenRoutes = new Set(['add', 'new-transaction', 'new-transaction-step2', 'new-transaction-step3', 'import-extract']);
+  const hiddenRoutes = new Set(['add', 'new-transaction', 'new-transaction-step2', 'new-transaction-step3', 'import-extract', 'add-goal', 'apport']);
   const routes = state.routes.filter((r) => !hiddenRoutes.has(r.name));
 
   return (
@@ -180,6 +185,13 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="goals"
+        options={{
+          title: 'Metas',
+          tabBarIcon: ({ color, size }) => <Icon.Calendar color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Perfil',
@@ -191,6 +203,8 @@ export default function TabsLayout() {
       <Tabs.Screen name="new-transaction-step2" options={{ href: null, title: '' }} />
       <Tabs.Screen name="new-transaction-step3" options={{ href: null, title: '' }} />
       <Tabs.Screen name="import-extract" options={{ href: null, title: '' }} />
+      <Tabs.Screen name="add-goal" options={{ href: null, title: '' }} />
+      <Tabs.Screen name="apport" options={{ href: null, title: '' }} />
     </Tabs>
   );
 }

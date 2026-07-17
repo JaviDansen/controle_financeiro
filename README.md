@@ -71,7 +71,7 @@ O FinApp é um aplicativo mobile de controle financeiro pessoal construído em f
 | Telas mobile de autenticação | ✅ Concluído |
 | Módulo de Transações | 🔲 Planejado |
 | Módulo de Cartões — implementação da API | ✅ Concluído |
-| Módulo de Metas | 🔲 Planejado |
+| Módulo de Metas | ✅ Concluído |
 | Dashboard Home | 🔲 Planejado |
 
 ---
@@ -310,6 +310,15 @@ Objetivos financeiros com valor alvo, prazo e acompanhamento de progresso.
 | `deadline` | date | Data limite (opcional) |
 | `category` | string | Categoria visual |
 | `is_active` | boolean | Em andamento ou concluída |
+
+**Endpoints:**
+
+| Método | Rota | Descrição |
+|---|---|---|
+| GET | `/goals` | Lista todas as metas do usuário |
+| POST | `/goals` | Cadastra nova meta |
+| PATCH | `/goals/:id` | Atualiza dados da meta |
+| DELETE | `/goals/:id` | Remove meta |
 
 ---
 
